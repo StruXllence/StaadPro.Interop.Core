@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <LangVersion>13.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591;CS1570;CS1571;CS1572;CS1573;CS1574;CS1580;CS1581;CS1584;CS1589;CS1590</WarningsAsErrors>
+    <AssemblyName>StaadPro.Interop.Core</AssemblyName>
+    <RootNamespace>StaadPro.Interop.Core</RootNamespace>
+    <PackageId>StaadPro.Interop.Core</PackageId>
+    <Version>1.0.0</Version>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261105</ReleaseDocumentationVersion>
+    <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
+    <Authors>Srinivasa Rao Masanam</Authors>
+    <Company>StruXllence</Company>
+    <Copyright>Copyright (c) 2026 StruXllence</Copyright>
+    <Description>A strongly-typed Windows .NET wrapper for Bentley STAAD.Pro OpenSTAAD</Description>
+    <PackageReleaseNotes>Established the Windows .NET 9 wrapper and acquisition foundation. Added verified process/model binding, retained roots, coordinated non-overwriting target preparation, installed-application fallback and wrapper lifetime guards. Preserved raw bindings and cached metadata; domain adapters are placeholders, with OSRoot planned first. Requires installed licensed STAAD.Pro. Native compatibility remains feature-specific.</PackageReleaseNotes>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageTags>staad;staad-pro;openstaad;structural-engineering;engineering-automation;csharp;dotnet;net9;windows;com-interop;struxllence</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/StruXllence/StaadPro.Interop.Core</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/StruXllence/StaadPro.Interop.Core</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>images/symbol-only-logo.png</PackageIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../symbol-only-logo.png" Pack="true" PackagePath="images/" />
+    <None Include="../../logo-with-text.png" Pack="true" PackagePath="images/" />
+    <None Include="../../docs/images/logo-with-text-400.png" Pack="true" PackagePath="images/" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="/" />
+    <None Include="../../NOTICE.md" Pack="true" PackagePath="/" />
+    <None Include="../../TRADEMARKS.md" Pack="true" PackagePath="/" />
+    <None Include="../../CITATION.cff" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSES/MIT-legacy.txt" Pack="true" PackagePath="LICENSES/" />
+    <None Include="../../ROADMAP.md" Pack="true" PackagePath="/" />
+    <None Include="../../docs/Licensing.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Wrapper-Foundation.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Installation.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Publishing.md" Pack="true" PackagePath="docs/" />
+    <None Include="$(BaseIntermediateOutputPath)package-docs/README.md" Pack="true" PackagePath="/" />
+    <None Include="$(BaseIntermediateOutputPath)package-docs/Release-Notes.md" Pack="true" PackagePath="docs/" />
+  </ItemGroup>
+  <Target Name="PreparePackageDocumentation" BeforeTargets="_GetPackageFiles">
+    <Error Condition="'$(Authors)' != 'Srinivasa Rao Masanam'" Text="The configured package author is required." />
+    <Error Condition="'$(Company)' != 'StruXllence' or '$(Copyright)' != 'Copyright (c) 2026 StruXllence'" Text="The configured package identity is required." />
+    <Error Condition="'$(PackageLicenseExpression)' != 'Apache-2.0'" Text="Apache-2.0 is required." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(PackageVersion)', '^[0-9A-Za-z][0-9A-Za-z.+-]*$'))" Text="Invalid package version." />
+    <Exec Command="powershell -NoProfile -NonInteractive -File &quot;$(MSBuildProjectDirectory)/../../eng/Prepare-PackageDocumentation.ps1&quot; -PackageVersion &quot;$(PackageVersion)&quot; -DocumentedVersion &quot;$(ReleaseDocumentationVersion)&quot; -ReadmeSource &quot;$(MSBuildProjectDirectory)/../../README.md&quot; -ReleaseNotesSource &quot;$(MSBuildProjectDirectory)/../../docs/Release-Notes.md&quot; -OutputDirectory &quot;$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)package-docs&quot;" />
+  </Target>
+</Project>

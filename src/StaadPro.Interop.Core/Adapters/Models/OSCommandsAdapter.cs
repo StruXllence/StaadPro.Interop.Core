@@ -1,0 +1,20 @@
+using System;
+using StaadPro.Interop.Core.Adapters.Interfaces;
+using StaadPro.Interop.Core.Models;
+namespace StaadPro.Interop.Core.Adapters.Models
+{
+    /// <summary>Captures the Commands binding without implementing domain operations.</summary>
+    public sealed class OSCommandsAdapter : OSBaseAdapter, IOSCommands
+    {
+        /// <summary>Captures the native Commands object from the supplied wrapper.</summary>
+        /// <param name="wrapper">The wrapper exposing the required native binding.</param>
+        /// <exception cref="ArgumentNullException">The wrapper is null.</exception>
+        /// <exception cref="ArgumentException">The native Commands binding is unavailable.</exception>
+        public OSCommandsAdapter(OpenStaadWrapper wrapper) : base(wrapper)
+        {
+            ComObject = (object)wrapper.RawCommands ?? throw new ArgumentException("The Commands binding is unavailable.", nameof(wrapper));
+        }
+        /// <summary>Gets the native object captured when this placeholder was constructed.</summary>
+        public dynamic ComObject { get; }
+    }
+}

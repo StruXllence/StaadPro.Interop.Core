@@ -2,7 +2,7 @@
 
 ## Foundation baseline
 
-The first public tree contains wrapper/acquisition prerequisites and empty domain bindings only. It intentionally starts independently of the inherited full-adapter experiment. Domain methods are introduced alongside reviewed implementations, XML documentation and tests, with OSRoot first. See the [roadmap](../ROADMAP.md).
+The first public tree established wrapper/acquisition prerequisites and empty domain bindings. The current increment adds five guarded OSRoot metadata observations without restoring the inherited full-adapter experiment. Domain methods are introduced alongside reviewed implementations, XML documentation and tests, with OSRoot first. See the [roadmap](../ROADMAP.md) and [metadata contracts](Root-Metadata.md).
 
 The immediate target is net9.0-windows using SDK 9.0.3xx and Visual Studio 2022 17.14. SDKs 9.0.304 and 10.0.403 are installed on the reviewed PC. An isolated CLI SDK 10 lane can verify the same net9.0 target or evaluate a future net10.0 target; it does not make net10.0 supported in Visual Studio 2022. Runtime servicing must be revisited before a long-term supported release.
 
@@ -35,7 +35,7 @@ Parallelize detached managed processing, not raw COM calls through Task.Run. A C
 
 Start with wrapper-backed native version, units and window information; distinguish native StaadVersion from host ApplicationVersion and document snapshots/fallbacks. Then implement file/process/model observations, model lifecycle/job/project operations, analysis operations/results and optional version-aware capabilities. No function is considered complete from an interface signature or stub alone.
 
-The Framework Root surface has 53 common and three optional contracts. Other domain inventories are references for later phases rather than present Core functionality. Main-source workflows take priority over native-only expansion; parked Load/Property contracts remain approval-gated. Review dependency order before expanding Output/Support/Design/IDEA workflows.
+The Framework Root surface has 53 common and three optional contracts. Five common metadata observations are now exposed in Core; 48 common and three optional contracts remain pending. Next review file/folder, physical-model, error-text and process-ID observations. Other domain inventories are references for later phases rather than present Core functionality. Main-source workflows take priority over native-only expansion; parked Load/Property contracts remain approval-gated. Review dependency order before expanding Output/Support/Design/IDEA workflows.
 
 ## Reliability and release gates
 

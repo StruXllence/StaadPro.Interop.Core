@@ -2,7 +2,7 @@
 
 ## Scope
 
-This preview implements OpenStaadWrapper and its acquisition prerequisites. It preserves all thirty source properties plus IsConnected, two constructors, RefreshUnits, RefreshComObjects and Dispose. Domain interfaces/adapters are placeholders with only binding properties. OSRoot functions are planned next, not included through hidden partial classes.
+This preview implements OpenStaadWrapper and its acquisition prerequisites. It preserves all thirty source properties plus IsConnected, two constructors, RefreshUnits, RefreshComObjects and Dispose. Root now exposes five guarded cache observations; other domain interfaces/adapters retain only binding properties. See [Root metadata](Root-Metadata.md) for the implemented contracts. Adapters remain single, non-partial classes.
 
 The source reference is the separate [Framework project](https://github.com/StruXllence/StaadPro.Interop/tree/20821c50c9e1e3a3955d7e111cdf906d5b921588/src/StaadPro.Interop). It was inspected read-only. Earlier inherited Core experiments are not the implementation scope of this first clean package.
 
@@ -83,14 +83,14 @@ The provider never opens a file into an existing named/blank instance during acq
 
 StaadVersion is the native version and returns an independent copy. ApplicationVersion is the host assembly version. Base/input unit properties are cached. A failed/unparseable input-unit observation may fall back to Kip/Feet for Imperial base units or kN/Meter otherwise; a fallback is not a proven native unit. A missing base member yields Unknown. The window handle is non-owning and can be zero.
 
-RefreshUnits rereads units without rebinding. RefreshComObjects rebuilds adapters and metadata in place; reacquire domain bindings afterward. Refresh is not a native transaction and can leave partially refreshed bindings if a native call fails. Owner-thread/reentrancy guards prevent nested refresh/disposal, not external model edits or arbitrary raw COM use.
+RefreshUnits rereads units without rebinding. RefreshComObjects rebuilds adapters and metadata in place; reacquire domain bindings afterward. Root metadata reads reject replaced adapters even when the underlying native object is unchanged. They share the constructing-thread/non-reentrancy guard with refresh/disposal and reject reads during either refresh, preventing callbacks from observing a partially refreshed cache. Refresh is not a native transaction and can leave partially refreshed bindings if a native call fails. Guards do not prevent external model edits or validate arbitrary raw COM use.
 
-Dispose clears native/managed bindings without final-releasing shared RCWs or disposing injected host services. It must run on the constructing thread while live; repeated completed disposal is harmless. IsConnected is a managed retained-state observation, not server liveness.
+Dispose clears native/managed bindings without final-releasing shared RCWs or disposing injected host services. It must run on the constructing thread while live; repeated completed disposal is harmless. Retained Root adapters reject managed observations after disposal. IsConnected is a managed retained-state observation, not server liveness.
 
 ## Reliability boundaries and qualification
 
 Operational success always requires verified identity/readiness. Timeout/cancellation are observed between synchronous native calls; they cannot safely abort a hung COM call. Missing installation, license dialogs, permissions, startup failures and inaccessible roots remain possible. The library reports those limits and never fabricates a successful wrapper.
 
-The first checkpoint passed 132 offline tests for wrapper metadata/parity, lifecycle/context, process/model changes, blank validation, discovery policy, cancellation, one-shot startup, redirects, retained roots and atomic file races. Package smoke tests separately check a fresh reference, XML examples and absence of domain operations/dependency leakage. Native acceptance across supported builds, blank states and licensing configurations remains a release qualification task.
+The foundation's 132 offline tests cover wrapper metadata/parity, lifecycle/context, process/model changes, blank validation, discovery policy, cancellation, one-shot startup, redirects, retained roots and atomic file races. The current increment adds 43 Root tests for 175 total. Package verification checks a fresh reference, fourteen XML examples, README/Root-guide compilation, five guarded Root observations and dependency isolation. Native acceptance across supported builds, blank states and licensing configurations remains a release qualification task.
 
 Read-only native checks on 5 November 2026 succeeded for named-session attachment and matching-target reuse on STAAD.Pro 26.00.01.491 with Windows .NET 9. One snapshot was incomplete and reported an unmapped application; a later snapshot was complete. Matching-target acquisition returned the same verified process without a startup attempt. No file was opened/created and no application was launched or closed by these checks.

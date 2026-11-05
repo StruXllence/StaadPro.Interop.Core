@@ -77,11 +77,17 @@ namespace StaadPro.Interop.Core.Tests.Services
             Assert.That(OpenStaadInstallationLocator.FindConventional(new[] { programFolder }, _ => false), Is.Null);
         }
         [Test]
-        public void AllDomainInterfacesAreBindingOnlyPlaceholders()
+        public void OnlyRootExposesTheFiveApprovedMetadataOperations()
         {
             var interfaces = typeof(IOSBase).Assembly.GetTypes().Where(t => t.IsInterface && t.Namespace == typeof(IOSBase).Namespace).ToArray();
             Assert.That(interfaces.Length, Is.EqualTo(12));
-            foreach (Type contract in interfaces) Assert.That(contract.GetMethods().Where(m => !m.IsSpecialName), Is.Empty, contract.Name);
+            foreach (Type contract in interfaces)
+            {
+                var operations = contract.GetMethods().Where(m => !m.IsSpecialName).Select(m => m.Name).ToArray();
+                if (contract == typeof(IOSRoot))
+                    Assert.That(operations, Is.EquivalentTo(new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle" }));
+                else Assert.That(operations, Is.Empty, contract.Name);
+            }
         }
         [Test]
         public void FoundationHasNoWpfFrameworkOrThirdPartyRuntimeReference()

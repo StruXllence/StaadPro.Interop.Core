@@ -76,7 +76,8 @@ namespace StaadPro.Interop.Core.Models
         public object RawOpenStaad { get; private set; }
 
         /// <summary>Gets the managed root adapter bound to RawOpenStaad.</summary>
-        /// <remarks>Refreshed by RefreshComObjects; null after disposal.</remarks>
+        /// <remarks>Exposes cached native-version, units and window observations on this wrapper's constructing thread.
+        /// RefreshComObjects replaces the adapter; reacquire this property afterward. Null after disposal.</remarks>
         public IOSRoot Root { get; private set; }
 
         /// <summary>Gets the native Geometry automation interface.</summary>
@@ -245,10 +246,23 @@ namespace StaadPro.Interop.Core.Models
             using (operationContext.Enter()) UpdateUnitCache();
         }
 
+        // Root observations share the lifecycle gate so callbacks cannot read half-refreshed caches.
+        internal T ReadRootMetadata<T>(OSRootAdapter adapter, Func<OpenStaadWrapper, T> read)
+        {
+            ThrowIfDisposed();
+            using (operationContext.Enter())
+            {
+                if (!ReferenceEquals(Root, adapter))
+                    throw new InvalidOperationException("This Root binding was replaced by RefreshComObjects; reacquire wrapper.Root.");
+                return read(this);
+            }
+        }
+
         /// <summary>Clears this wrapper's native and managed bindings without closing STAAD or a model.</summary>
         /// <remarks>Idempotent. Leaves cached metadata and injected host services available. Does not call FinalReleaseComObject
         /// or dispose caller-owned services. An undisposed wrapper must be disposed on its constructing thread, outside a refresh.
-        /// A repeated disposal after completion is harmless. Previously captured adapters are not revoked; native ownership remains external.</remarks>
+        /// A repeated disposal after completion is harmless. Managed Root observations reject disposed bindings;
+        /// previously captured raw objects remain caller-managed and native ownership remains external.</remarks>
         /// <exception cref="InvalidOperationException">An undisposed wrapper is disposed on another thread or during a native refresh.</exception>
         public void Dispose()
         {

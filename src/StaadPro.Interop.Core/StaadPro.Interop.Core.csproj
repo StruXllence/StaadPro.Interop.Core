@@ -10,13 +10,13 @@
     <RootNamespace>StaadPro.Interop.Core</RootNamespace>
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261105</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261105.1</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
     <Description>A strongly-typed Windows .NET wrapper for Bentley STAAD.Pro OpenSTAAD</Description>
-    <PackageReleaseNotes>Established the Windows .NET 9 wrapper and acquisition foundation. Added verified process/model binding, retained roots, coordinated non-overwriting target preparation, installed-application fallback and wrapper lifetime guards. Preserved raw bindings and cached metadata; domain adapters are placeholders, with OSRoot planned first. Requires installed licensed STAAD.Pro. Native compatibility remains feature-specific.</PackageReleaseNotes>
+    <PackageReleaseNotes>Ported five wrapper-backed Root observations: GetApplicationVersion, GetBaseUnit, GetInputUnitForForce, GetInputUnitForLength and GetMainWindowHandle. Reused cached native metadata without additional COM calls, preserved unit fallback and non-owning window semantics, and added owner-thread, refresh and disposal guards. Included complete interface/concrete XML IntelliSense and Root usage guidance. Other domain operations remain pending.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staad-pro;openstaad;structural-engineering;engineering-automation;csharp;dotnet;net9;windows;com-interop;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -37,6 +37,7 @@
     <None Include="../../ROADMAP.md" Pack="true" PackagePath="/" />
     <None Include="../../docs/Licensing.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Wrapper-Foundation.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Root-Metadata.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Installation.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Publishing.md" Pack="true" PackagePath="docs/" />
     <None Include="$(BaseIntermediateOutputPath)package-docs/README.md" Pack="true" PackagePath="/" />

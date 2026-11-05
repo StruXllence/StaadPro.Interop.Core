@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace StaadPro.Interop.Core.Services.Wrapper
 {
-    // Protects native cache/lifetime operations; raw objects and domain calls retain their own context requirements.
+    // Serializes lifecycle work and Root cache observations; raw native objects bypass this guard.
     internal sealed class WrapperOperationContext
     {
         private readonly int ownerThreadId = Environment.CurrentManagedThreadId;
@@ -19,9 +19,9 @@ namespace StaadPro.Interop.Core.Services.Wrapper
         internal IDisposable Enter()
         {
             if (Environment.CurrentManagedThreadId != ownerThreadId)
-                throw new InvalidOperationException("Refresh and dispose OpenStaadWrapper on the thread that constructed it.");
+                throw new InvalidOperationException("Use managed Root observations, refresh and dispose on the thread that constructed OpenStaadWrapper.");
             if (operationInProgress)
-                throw new InvalidOperationException("OpenStaadWrapper refresh and disposal cannot be reentered during a native operation.");
+                throw new InvalidOperationException("OpenStaadWrapper refresh, disposal and Root observations cannot be reentered during an operation.");
             operationInProgress = true;
             return new OperationLease(this);
         }

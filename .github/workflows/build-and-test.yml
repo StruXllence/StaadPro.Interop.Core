@@ -12,9 +12,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.3xx'
-      - name: Build Foundation
+      - name: Build Core
         run: dotnet build StaadPro.Interop.Core.sln -c Release
-      - name: Test Foundation
+      - name: Test Core
         run: dotnet test StaadPro.Interop.Core.sln -c Release --no-build
       - name: Pack Preview
         run: dotnet pack src/StaadPro.Interop.Core/StaadPro.Interop.Core.csproj -c Release --no-build -p:PackageVersion=1.0.0-preview.ci.${{ github.run_number }} -o artifacts/package

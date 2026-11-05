@@ -18,13 +18,28 @@ try {
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
+    if ([string]$metadata.title -ne 'StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)') { throw 'Unexpected package title.' }
+    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','five Root observations')) {
+        if (([string]$metadata.description).IndexOf($term,[StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Incomplete package description: $term" }
+    }
+    $packageTags = @(([string]$metadata.tags) -split '\s+' | Where-Object { $_ })
+    foreach ($tag in @('openstaad','staadpro','csharp','dotnet-core','dotnet9','windows','com-interop','structural-engineering')) {
+        if ($packageTags -notcontains $tag) { throw "Missing package tag: $tag" }
+    }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','ROADMAP.md','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/logo-with-text.png','images/logo-with-text-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','ROADMAP.md','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
     if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch 'five.*Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
-    if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-400.png)')) { throw 'Unexpected banner.' }
-    if ($metadata.icon -ne 'images/symbol-only-logo.png' -or $archive.GetEntry([string]$metadata.icon).Length -gt 1MB) { throw 'Invalid icon.' }
+    if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
+    foreach ($badge in @(
+        'https://github.com/StruXllence/StaadPro.Interop.Core/actions/workflows/build-and-test.yml/badge.svg?branch=staadpro-interop-core',
+        'https://img.shields.io/nuget/vpre/StaadPro.Interop.Core?style=flat-square&label=nuget&color=F78C1E',
+        'https://img.shields.io/badge/License-Apache%202.0-007EC6?style=flat-square',
+        'https://img.shields.io/badge/.NET-9.0%20Windows-512BD4?style=flat-square&logo=dotnet&logoColor=white'
+    )) { if (!$readme.Contains($badge)) { throw "Missing or incorrect Core badge: $badge" } }
+    if ($readme.Contains('img.shields.io/badge/.NET_Framework') -or $readme.Contains('img.shields.io/nuget/vpre/StaadPro.Interop?')) { throw 'Badges must describe the Core package.' }
+    if ($metadata.icon -ne 'images/logo-with-text-core-400.png' -or $archive.GetEntry([string]$metadata.icon).Length -gt 1MB) { throw 'Invalid icon.' }
     $version = [string] $metadata.version
     if ($readme -notmatch ('(?m)^## Version ' + [regex]::Escape($version) + '\r?$') -or (Read-Entry 'docs/Release-Notes.md') -notmatch ('(?m)^## ' + [regex]::Escape($version) + ' - ')) { throw 'Package version and current documentation differ.' }
     if ($documentation.SelectNodes('//include|//inheritdoc').Count -ne 0) { throw 'Shipped IntelliSense must expand source documentation.' }

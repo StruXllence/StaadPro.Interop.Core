@@ -77,7 +77,7 @@ namespace StaadPro.Interop.Core.Tests.Services
             Assert.That(OpenStaadInstallationLocator.FindConventional(new[] { programFolder }, _ => false), Is.Null);
         }
         [Test]
-        public void OnlyRootExposesTheTenApprovedObservationOperations()
+        public void OnlyRootExposesTheFifteenApprovedObservationOperations()
         {
             var interfaces = typeof(IOSBase).Assembly.GetTypes().Where(t => t.IsInterface && t.Namespace == typeof(IOSBase).Namespace).ToArray();
             Assert.That(interfaces.Length, Is.EqualTo(12));
@@ -86,7 +86,8 @@ namespace StaadPro.Interop.Core.Tests.Services
                 var operations = contract.GetMethods().Where(m => !m.IsSpecialName).Select(m => m.Name).ToArray();
                 if (contract == typeof(IOSRoot))
                     Assert.That(operations, Is.EquivalentTo(new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle",
-                        "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId" }));
+                        "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId",
+                        "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen" }));
                 else Assert.That(operations, Is.Empty, contract.Name);
             }
         }

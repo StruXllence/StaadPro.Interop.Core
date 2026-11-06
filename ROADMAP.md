@@ -1,6 +1,6 @@
 # StaadPro.Interop.Core roadmap
 
-**Updated: 6 November 2026.** This independent repository contains the wrapper/acquisition foundation and ten OSRoot observations. Binding placeholders preserve the remaining domain surface while APIs are implemented and qualified incrementally.
+**Updated: 6 November 2026.** This independent repository contains the wrapper/acquisition foundation and fifteen OSRoot observations. Binding placeholders preserve the remaining domain surface while APIs are implemented and qualified incrementally.
 
 ## Current release scope
 
@@ -11,8 +11,8 @@
 | Acquisition | Native OLE discovery, PID/start-time identity, filename-output validation, readiness, blank selection, retained/registered roots, explicit policies and diagnostics |
 | Startup | Explicit or detected installation; coordinated non-overwrite model creation, one startup attempt per instance request and final process/model verification |
 | Lifecycle | Constructing-thread and non-reentrancy checks for wrapper refresh/disposal; no automatic process shutdown |
-| Domains | Five cached and five live OSRoot observations; ten other domains remain binding-only |
-| Verification | 356 passing managed tests; 24 compiled XML examples plus README/two Root-guide examples; native acceptance remains separate |
+| Domains | Five cached, five live model/process observations and five path/identity helpers; ten other domains remain binding-only |
+| Verification | 555 passing managed tests; 34 compiled XML examples plus README/three Root-guide examples; native acceptance remains separate |
 | Package | StaadPro.Interop.Core preview; manually uploaded after package verification |
 
 ## Implementation order
@@ -46,7 +46,9 @@ Completed `GetApplicationVersion()`, `GetBaseUnit()`, `GetInputUnitForForce()`, 
 
 Also completed `GetStaadFileFullPath()`, `GetStaadFileFolder()`, `IsPhysicalModel()`, `GetErrorMessage()` and `GetProcessId()`. These live observations preserve native outputs and share the same binding/lifecycle guard. See [Root observations](docs/Root-Observations.md).
 
-The Framework reference has 53 common Root methods and three optional contracts. Core now exposes ten common contracts; 43 common and three optional contracts remain pending. Next prioritize the main-source path helpers `GetStaadFileNameOnly()`, `GetAnlFileFullPath()` and `GetOpenedStaadFilename()`, followed by `IsTarget(string)` and `ModelIsOpen(string)` after reviewing their path/blank semantics. Model mutations and analysis remain later work. These are planning counts, not native qualification claims.
+Also completed `GetStaadFileNameOnly()`, `GetAnlFileFullPath()`, `GetOpenedStaadFilename()`, `IsTarget(string)` and `ModelIsOpen(string)`. They share one native filename read per helper, preserve blank/malformed distinctions and compare complete normalized paths. See [path helpers](docs/Root-Path-Helpers.md).
+
+The Framework reference has 53 common Root methods and three optional contracts. Core now exposes fifteen common contracts; 38 common and three optional contracts remain pending. Next review main-source model lifecycle operations, beginning with silent mode, save, open, close and application display, before job/project and analysis work. Define explicit mutation/status/lifetime contracts before implementation. These are planning counts, not native qualification claims.
 
 ## Per-function modernization gate
 

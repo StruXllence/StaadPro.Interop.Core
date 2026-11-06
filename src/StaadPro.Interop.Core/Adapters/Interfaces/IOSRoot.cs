@@ -211,5 +211,131 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(processId);
         /// </code></example>
         uint GetProcessId();
+
+        /// <summary>Reads the current model's filename and extension without its directory.</summary>
+        /// <returns>The Windows filename component with its original spelling, case and Unicode text.
+        /// An explicitly empty native path, or a path ending in a directory separator, yields an empty filename.</returns>
+        /// <remarks><para>Reads native GetSTAADFile once with Boolean true, then extracts the filename from that one
+        /// full-path snapshot. It does not use a separate native filename-only mode, normalize to an absolute path,
+        /// require a .std extension, check file existence or change the model. Relative paths remain valid inputs to
+        /// the managed extraction. Invalid Windows path characters are rejected explicitly for Framework compatibility.</para>
+        /// <para>Uses the wrapper's constructing STA thread and current Root binding. Disposal, replaced bindings,
+        /// another thread or a nested Root/lifecycle operation are rejected before native dispatch. No acquisition,
+        /// metadata refresh, file access, retries or worker-thread dispatch occurs. The native call can block and the
+        /// model may change after this observation; a filename is not proof of readiness or physical-file identity.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">Native output is unwritten or non-string, or the binding/thread/operation state is invalid.</exception>
+        /// <exception cref="ArgumentException">The native path contains invalid Windows path characters.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native signature.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// string filename = wrapper.Root.GetStaadFileNameOnly();
+        /// Console.WriteLine(filename.Length == 0 ? "No filename reported" : filename);
+        /// </code></example>
+        string GetStaadFileNameOnly();
+
+        /// <summary>Derives the expected uppercase .ANL path from one current model-path observation.</summary>
+        /// <returns>The snapshot's directory combined with its filename stem and .ANL, or empty for an explicitly
+        /// empty native path. A relative native path produces a relative result despite this method's historic name.</returns>
+        /// <remarks><para>Reads GetSTAADFile exactly once with Boolean true. Removes only the final extension and uses
+        /// Windows Path directory/filename/combine semantics, preserving earlier dots in the name. Does not call the
+        /// public filename/full-path helpers in succession: both directory and stem come from the same snapshot.
+        /// No .std extension or existing filename is required; directory-shaped input can derive a .ANL filename
+        /// without proving that it describes a real model. Invalid Windows path characters are rejected.</para>
+        /// <para>The returned path is a prediction, not evidence that an analysis file or usable results exist.
+        /// No file is read/created, analysis started, model opened/saved, or wrapper metadata refreshed. Uses the
+        /// constructing STA thread and current Root binding; disposed/replaced/wrong-thread/nested operations are
+        /// rejected before native access. No retry or background dispatch occurs; synchronous COM can block.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">Native output is unwritten or non-string, or the binding/thread/operation state is invalid.</exception>
+        /// <exception cref="ArgumentException">The native path contains invalid Windows path characters.</exception>
+        /// <exception cref="System.IO.PathTooLongException">A path exceeds a limit enforced by the runtime's Path operations.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native signature.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// string analysisPath = wrapper.Root.GetAnlFileFullPath();
+        /// Console.WriteLine(analysisPath); // Expected path only; no analysis/result availability check.
+        /// </code></example>
+        string GetAnlFileFullPath();
+
+        /// <summary>Reads the current model's filename as a normalized absolute Windows path.</summary>
+        /// <returns>The absolute path resolved from one native full-path snapshot, or empty only when native explicitly
+        /// writes an empty string. A nonempty whitespace-only path is invalid rather than an unnamed-model result.</returns>
+        /// <remarks><para>Calls GetSTAADFile once with Boolean true and applies Windows Path.GetFullPath using the
+        /// process working directory observed after the native read. Dot segments, relative paths and separator forms
+        /// follow the modern Windows Path API. Invalid path characters are rejected explicitly. Unlike
+        /// <c>GetStaadFileFullPath()</c>, this method normalizes the text; neither method resolves filesystem links,
+        /// checks existence, requires a .std extension or proves model readiness.</para>
+        /// <para>The working directory is process-wide; serialize changes to it when interpreting relative paths.
+        /// Uses the wrapper's constructing STA thread and current Root binding. Disposal, replacement, another thread
+        /// and nested Root/lifecycle work are rejected before COM access. No model mutation, acquisition, implicit
+        /// refresh/save, retry or background call occurs. The native read can block and is not a lasting identity guarantee.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">Native output is unwritten or non-string, or the binding/thread/operation state is invalid.</exception>
+        /// <exception cref="ArgumentException">The native path is nonempty whitespace, contains invalid path characters, or cannot be normalized.</exception>
+        /// <exception cref="System.IO.PathTooLongException">The native path exceeds a limit enforced by the runtime.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native signature.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// string openedPath = wrapper.Root.GetOpenedStaadFilename();
+        /// Console.WriteLine(openedPath.Length == 0 ? "Unnamed session" : openedPath);
+        /// </code></example>
+        string GetOpenedStaadFilename();
+
+        /// <summary>Tests whether this bound session currently reports the requested complete model path.</summary>
+        /// <param name="staadFileFullPath">Non-null, non-whitespace Windows path. Relative paths are accepted and
+        /// resolved against the process working directory captured before native access; no .std extension is required.</param>
+        /// <returns>True for an ordinal case-insensitive match of normalized complete paths; false for a different
+        /// directory/model or an explicitly empty native filename, even if two different models share a basename.</returns>
+        /// <remarks><para>Validates and normalizes the requested path before one GetSTAADFile call with Boolean true.
+        /// Normalizes the native path against that same captured working directory, so a native callback changing the
+        /// process directory cannot make the two relative paths use different bases. Does not trim text, resolve links,
+        /// check file existence or enumerate other STAAD sessions. This is a textual comparison; Windows case-sensitive
+        /// directories or filesystem aliases can differ from that comparison. Empty native output means false; malformed,
+        /// unwritten and nonempty whitespace native output throws. Invalid Windows path characters are rejected.</para>
+        /// <para>Equivalent to <c>ModelIsOpen(string)</c> under the corrected Framework full-path contract; it is not a
+        /// basename check or a native readiness probe. Uses the constructing STA thread and current Root binding;
+        /// disposed/replaced/wrong-thread/nested operations are rejected before dispatch. Performs no acquisition,
+        /// opening, analysis, save, refresh, retry or worker-thread call. Native model changes can follow the snapshot.</para></remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="staadFileFullPath"/> is null; rejected before native access.</exception>
+        /// <exception cref="ArgumentException">The requested path is blank/invalid, or the nonempty native path cannot be normalized.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">Native output is unwritten or non-string, or the binding/thread/operation state is invalid.</exception>
+        /// <exception cref="System.IO.PathTooLongException">A path exceeds a limit enforced by the runtime.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native signature.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// bool matches = wrapper.Root.IsTarget(@"C:\Models\Frame.std");
+        /// Console.WriteLine(matches); // Snapshot identity, not a readiness or file-existence guarantee.
+        /// </code></example>
+        bool IsTarget(string staadFileFullPath);
+
+        /// <summary>Tests whether the specified complete path is the model currently reported by this bound root.</summary>
+        /// <param name="fileFullPath">Non-null, non-whitespace Windows path, including relative paths. The comparison
+        /// captures the process working directory before native access; a .std extension and existing file are not required.</param>
+        /// <returns>True for a normalized ordinal case-insensitive full-path match; false for an unnamed native session
+        /// or a different full path. Equal basenames in different directories do not identify the same model.</returns>
+        /// <remarks><para>Uses the same shared identity comparison as <c>IsTarget(string)</c>, preserving this method's
+        /// original parameter name. Validates/normalizes the request before one GetSTAADFile call with Boolean true;
+        /// the model path is never passed as the native include-full-path flag. Both relative paths use a single captured
+        /// working-directory base. Explicit empty native output yields false, while unwritten/non-string/nonempty
+        /// whitespace output and invalid Windows path characters are rejected. No text trimming or link resolution occurs.</para>
+        /// <para>This read-only snapshot neither searches all running models nor checks Geometry/Load readiness or
+        /// filesystem identity. Use the constructing STA thread and current Root binding. Disposal, refresh replacement,
+        /// wrong-thread access and nested Root/lifecycle work are rejected before native dispatch. No model mutation,
+        /// acquisition, polling, retries, metadata refresh or worker-thread dispatch occurs. Native COM can block.</para></remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="fileFullPath"/> is null; rejected before native access.</exception>
+        /// <exception cref="ArgumentException">The requested path is blank/invalid, or the nonempty native path cannot be normalized.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">Native output is unwritten or non-string, or the binding/thread/operation state is invalid.</exception>
+        /// <exception cref="System.IO.PathTooLongException">A path exceeds a limit enforced by the runtime.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native signature.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// bool isOpen = wrapper.Root.ModelIsOpen(@"C:\Models\Frame.std");
+        /// Console.WriteLine(isOpen);
+        /// </code></example>
+        bool ModelIsOpen(string fileFullPath);
+
     }
 }

@@ -1,6 +1,6 @@
 # Live Root observations
 
-These five parameterless methods query the native root already bound to `wrapper.Root`. Each makes exactly one native call; none acquires another session, opens/saves a model, scans processes or refreshes wrapper metadata. They complement the five [cached metadata observations](Root-Metadata.md), bringing Core to ten common Root contracts.
+These five parameterless methods query the native root already bound to `wrapper.Root`. Each makes exactly one native call; none acquires another session, opens/saves a model, scans processes or refreshes wrapper metadata. Together with the five [cached metadata observations](Root-Metadata.md) and five [path helpers](Root-Path-Helpers.md), the current Core package exposes fifteen common Root contracts.
 
 | Managed signature | Native operation | Result and validation |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Both reference-output calls begin with a nonempty, per-call BSTR sentinel. An un
 
 ## Thread, lifetime and observation limits
 
-All ten Root methods share the existing wrapper operation lease. Use the constructing STA thread and coordinate all operations on the same native session. Wrong-thread calls, nested Root queries and callbacks attempting refresh/disposal are rejected before further native dispatch. The lease is released after success, validation failures and native exceptions. This managed gate does not serialize independently created wrappers or raw-object callers.
+All fifteen current Root methods share the existing wrapper operation lease. Use the constructing STA thread and coordinate all operations on the same native session. Wrong-thread calls, nested Root queries and callbacks attempting refresh/disposal are rejected before further native dispatch. The lease is released after success, validation failures and native exceptions. This managed gate does not serialize independently created wrappers or raw-object callers.
 
 `RefreshUnits()` keeps Root usable. `RefreshComObjects()` replaces Root, so reacquire `wrapper.Root` afterward; an old adapter throws even if its native root object is unchanged. Disposal causes `ObjectDisposedException`. A separately constructed adapter is not the current wrapper binding and cannot bypass validation. Raw `ComObject` access bypasses these protections.
 
@@ -65,6 +65,8 @@ Modernization preserves one native call per observation, uses static guard deleg
 
 The 181 new managed cases cover exact/empty/Unicode/whitespace text, BSTR initialization and untouched outputs, non-string rejection, current-root identity and external changes, every built-in integer representation, Boolean/PID boundaries, malformed coercible values, original COM exceptions, missing members, stale/disposed/manual bindings, wrong-thread access, callbacks during refresh and nested query/lifecycle operations. Matching expanded interface/concrete XML is checked for every new method.
 
-Together with the 175 existing cases, **356 managed tests pass**. The installed-package verifier exercises all ten Root methods, compiles **24 XML examples**, README usage and both Root guides, and checks the restored archive, installed XML and dependency isolation. Examples compile without running their native operations.
+Together with the 175 existing cases and 199 subsequent path/identity cases, **555 managed tests pass**. The installed-package verifier exercises all fifteen Root methods, compiles **34 XML examples**, README usage and all three Root guides, and checks the restored archive, installed XML and dependency isolation. Examples compile without running their native operations.
 
-No new live native qualification was performed for this increment. The earlier foundation's limited read-only STAAD.Pro 26.00.01.491 observations are historical evidence only. Blank-session behavior, native error-state behavior, physical/analytical models and servicing builds still need controlled native acceptance. Core has **43 common and three optional Root contracts pending**; other domains remain binding-only.
+No new live native qualification was performed for this increment. The earlier foundation's limited read-only STAAD.Pro 26.00.01.491 observations are historical evidence only. Blank-session behavior, native error-state behavior, physical/analytical models and servicing builds still need controlled native acceptance. The subsequent [path-helper increment](Root-Path-Helpers.md) brings Core to fifteen common contracts with **38 common and three optional Root contracts pending**; other domains remain binding-only.
+
+The current package also includes five [path/identity helpers](Root-Path-Helpers.md); their derivation and normalized comparison contracts complement the exact native observations described here.

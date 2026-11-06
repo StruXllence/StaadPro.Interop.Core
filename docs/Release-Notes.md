@@ -1,5 +1,13 @@
 # Release notes
 
+## 1.0.0-preview.20261106.1 - 6 November 2026
+
+Ported the main-source `GetStaadFileNameOnly()`, `GetAnlFileFullPath()`, `GetOpenedStaadFilename()`, `IsTarget(string staadFileFullPath)` and `ModelIsOpen(string fileFullPath)` contracts. Preserved their public names, parameter names and return types with complete matching interface/concrete XML. All five reuse one validated native filename snapshot per call and the existing wrapper operation lease.
+
+Derived uppercase `.ANL` paths without mixing model snapshots. Kept explicit blank output distinct from malformed/unwritten data and compared normalized complete paths rather than basenames. Relative comparisons use one captured working directory, and explicit character checks retain the Framework rejection of quotes, angle brackets, pipe, NUL and controls under modern Windows Path APIs. Native failures propagate without retries, acquisition or model mutations. Added the [Root path/identity guide](Root-Path-Helpers.md).
+
+Passed **555 managed tests**, including **199 new path cases**. A fresh installed-package consumer exercises all fifteen Root contracts and compiles **34 XML examples**, README usage and all three Root guides. The Release build reports zero warnings/errors. Core now exposes **15 of 53 common Root contracts**; **38 common and three optional contracts remain pending**. Other domains remain binding-only. No new live native or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261106 - 6 November 2026
 
 Ported `GetStaadFileFullPath()`, `GetStaadFileFolder()`, `IsPhysicalModel()`, `GetErrorMessage()` and `GetProcessId()` from the reviewed Framework Root contracts. Each performs one native query on the current bound root. Preserved exact native text, distinguished explicitly empty from unwritten reference outputs, and validated physical-model flags and positive UInt32 process identifiers without permissive coercion.

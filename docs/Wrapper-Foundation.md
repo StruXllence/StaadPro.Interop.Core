@@ -2,7 +2,7 @@
 
 ## Scope
 
-This preview implements OpenStaadWrapper and its acquisition prerequisites. It preserves all thirty source properties plus IsConnected, two constructors, RefreshUnits, RefreshComObjects and Dispose. Root now exposes five guarded cache observations; other domain interfaces/adapters retain only binding properties. See [Root metadata](Root-Metadata.md) for the implemented contracts. Adapters remain single, non-partial classes.
+This preview implements OpenStaadWrapper and its acquisition prerequisites. It preserves all thirty source properties plus IsConnected, two constructors, RefreshUnits, RefreshComObjects and Dispose. Root now exposes five guarded cache observations and five guarded live model/process observations; other domain interfaces/adapters retain only binding properties. See [Root metadata](Root-Metadata.md) for the implemented contracts. Adapters remain single, non-partial classes.
 
 The source reference is the separate [Framework project](https://github.com/StruXllence/StaadPro.Interop/tree/20821c50c9e1e3a3955d7e111cdf906d5b921588/src/StaadPro.Interop). It was inspected read-only. Earlier inherited Core experiments are not the implementation scope of this first clean package.
 
@@ -91,6 +91,6 @@ Dispose clears native/managed bindings without final-releasing shared RCWs or di
 
 Operational success always requires verified identity/readiness. Timeout/cancellation are observed between synchronous native calls; they cannot safely abort a hung COM call. Missing installation, license dialogs, permissions, startup failures and inaccessible roots remain possible. The library reports those limits and never fabricates a successful wrapper.
 
-The foundation's 132 offline tests cover wrapper metadata/parity, lifecycle/context, process/model changes, blank validation, discovery policy, cancellation, one-shot startup, redirects, retained roots and atomic file races. The current increment adds 43 Root tests for 175 total. Package verification checks a fresh reference, fourteen XML examples, README/Root-guide compilation, five guarded Root observations and dependency isolation. Native acceptance across supported builds, blank states and licensing configurations remains a release qualification task.
+The foundation's 132 offline tests cover wrapper metadata/parity, lifecycle/context, process/model changes, blank validation, discovery policy, cancellation, one-shot startup, redirects, retained roots and atomic file races. Root contributes 43 cache and 181 live-observation cases for 356 total tests. Package verification checks a fresh reference, 24 XML examples, README/two Root-guide compilation, ten guarded Root observations and dependency isolation. Native acceptance across supported builds, blank states and licensing configurations remains a release qualification task.
 
 Read-only native checks on 5 November 2026 succeeded for named-session attachment and matching-target reuse on STAAD.Pro 26.00.01.491 with Windows .NET 9. One snapshot was incomplete and reported an unmapped application; a later snapshot was complete. Matching-target acquisition returned the same verified process without a startup attempt. No file was opened/created and no application was launched or closed by these checks.

@@ -1,6 +1,6 @@
 # StaadPro.Interop.Core roadmap
 
-**Updated: 5 November 2026.** This independent repository contains the wrapper/acquisition foundation and the first five OSRoot metadata observations. Binding placeholders preserve the remaining domain surface while APIs are implemented and qualified incrementally.
+**Updated: 6 November 2026.** This independent repository contains the wrapper/acquisition foundation and ten OSRoot observations. Binding placeholders preserve the remaining domain surface while APIs are implemented and qualified incrementally.
 
 ## Current release scope
 
@@ -11,8 +11,8 @@
 | Acquisition | Native OLE discovery, PID/start-time identity, filename-output validation, readiness, blank selection, retained/registered roots, explicit policies and diagnostics |
 | Startup | Explicit or detected installation; coordinated non-overwrite model creation, one startup attempt per instance request and final process/model verification |
 | Lifecycle | Constructing-thread and non-reentrancy checks for wrapper refresh/disposal; no automatic process shutdown |
-| Domains | Five wrapper-backed OSRoot observations; ten other domains remain binding-only |
-| Verification | 175 passing managed tests; fourteen compiled XML examples plus README/Root-guide usage; native acceptance remains separate |
+| Domains | Five cached and five live OSRoot observations; ten other domains remain binding-only |
+| Verification | 356 passing managed tests; 24 compiled XML examples plus README/two Root-guide examples; native acceptance remains separate |
 | Package | StaadPro.Interop.Core preview; manually uploaded after package verification |
 
 ## Implementation order
@@ -31,7 +31,7 @@
 | 9: IDEA StatiCa | Models and pure transforms, followed by extraction/mapping/export | Prerequisite domains, equilibrium/units/axes and artifact-delivery validation |
 | 10: Approved native expansion | Native-only operations not supplied by reviewed source workflows | Explicit contract evidence and approval for parked Load/Property work |
 
-OSRoot is the first domain; its five exposed metadata observations reuse the wrapper cache. Internal metadata/readiness calls used solely by acquisition do not count as additional Root ports. Other placeholder interfaces will receive signatures only alongside implementations, documentation and tests. No partial adapters will be introduced.
+OSRoot is the first domain; its five metadata observations reuse the wrapper cache, and five model/process observations query the bound root. Internal metadata/readiness calls used solely by acquisition do not count as additional Root ports. Other placeholder interfaces will receive signatures only alongside implementations, documentation and tests. No partial adapters will be introduced.
 
 ## OSRoot first increments
 
@@ -44,7 +44,9 @@ OSRoot is the first domain; its five exposed metadata observations reuse the wra
 
 Completed `GetApplicationVersion()`, `GetBaseUnit()`, `GetInputUnitForForce()`, `GetInputUnitForLength()` and `GetMainWindowHandle()`. These five parameterless contracts retain their Framework return types under the Core namespace. They perform no extra native calls, share the wrapper's lifecycle guard and reject replaced/disposed bindings. See [Root metadata](docs/Root-Metadata.md) for source mapping, modernization decisions, tests and qualification limits.
 
-The Framework reference has 53 common Root methods and three optional contracts. Core now exposes five of those common contracts; 48 common and three optional contracts remain pending. Next review model/file/process observations, starting with `GetStaadFileFullPath()`, `GetStaadFileFolder()`, `IsPhysicalModel()`, `GetErrorMessage()` and `GetProcessId()`. These are planning counts, not native qualification claims.
+Also completed `GetStaadFileFullPath()`, `GetStaadFileFolder()`, `IsPhysicalModel()`, `GetErrorMessage()` and `GetProcessId()`. These live observations preserve native outputs and share the same binding/lifecycle guard. See [Root observations](docs/Root-Observations.md).
+
+The Framework reference has 53 common Root methods and three optional contracts. Core now exposes ten common contracts; 43 common and three optional contracts remain pending. Next prioritize the main-source path helpers `GetStaadFileNameOnly()`, `GetAnlFileFullPath()` and `GetOpenedStaadFilename()`, followed by `IsTarget(string)` and `ModelIsOpen(string)` after reviewing their path/blank semantics. Model mutations and analysis remain later work. These are planning counts, not native qualification claims.
 
 ## Per-function modernization gate
 

@@ -4,9 +4,9 @@ using StaadPro.Interop.Core.Models;
 
 namespace StaadPro.Interop.Core.Adapters.Interfaces
 {
-    /// <summary>Observes the owning wrapper's cached STAAD version, units and application window.</summary>
-    /// <remarks>These five observations do not dispatch native calls. Use the wrapper's constructing thread,
-    /// outside refresh/disposal. Reacquire Root after RefreshComObjects; other Root operations are not yet ported.</remarks>
+    /// <summary>Observes cached STAAD metadata and live model, folder, classification, error and process information.</summary>
+    /// <remarks>Metadata methods read wrapper snapshots; model/process methods query the bound native root.
+    /// Use the constructing thread outside another Root/lifecycle operation. Reacquire Root after RefreshComObjects.</remarks>
     public interface IOSRoot : IOSBase
     {
         /// <summary>Gets the captured native Root object for advanced, apartment-aware interoperation.</summary>
@@ -104,5 +104,112 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(root.GetMainWindowHandle()); // Borrowed snapshot; do not close it.
         /// </code></example>
         IntPtr GetMainWindowHandle();
+
+        /// <summary>Reads the current model's full path directly from this bound OpenSTAAD root.</summary>
+        /// <returns>The exact string written by native GetSTAADFile, including an explicitly written empty string for a blank/unnamed session.</returns>
+        /// <remarks><para>Calls GetSTAADFile once with a BSTR-initialized internal output and Boolean true for full-path inclusion.
+        /// Rejects an unwritten output, null or a non-string value rather than reporting a blank. Preserves Unicode,
+        /// whitespace, case and separators without path normalization, filesystem checks or changing the current directory.
+        /// This live snapshot may differ from acquisition's earlier ActualPath. Empty output alone does not prove readiness.</para>
+        /// <para>Use the wrapper's constructing STA thread and serialize shared-session access. The binding is rejected
+        /// after disposal or replacement by RefreshComObjects; RefreshUnits retains it. Calls during another managed Root
+        /// observation or wrapper refresh/disposal are rejected before native dispatch. No acquisition, model opening,
+        /// saving, implicit metadata refresh, retry or worker-thread dispatch occurs. A synchronous native call can block.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The native response is malformed, the adapter was replaced,
+        /// the caller is on another thread, or a managed Root/lifecycle operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The bound root does not expose the required member.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// string modelPath = wrapper.Root.GetStaadFileFullPath();
+        /// Console.WriteLine(modelPath.Length == 0 ? "No model filename reported" : modelPath);
+        /// </code></example>
+        string GetStaadFileFullPath();
+
+        /// <summary>Reads the current model folder directly from this bound OpenSTAAD root.</summary>
+        /// <returns>The exact folder string written by native GetSTAADFileFolder, preserving empty output, whitespace and trailing separators.</returns>
+        /// <remarks><para>Calls the native void GetSTAADFileFolder once with a BSTR-initialized internal output.
+        /// Rejects an unwritten output, null or a non-string value. Unlike deriving a folder from GetStaadFileFullPath,
+        /// this preserves the folder reported by STAAD and performs no filename query. Does not normalize the directory,
+        /// check its existence or create it. Empty output does not establish why the folder is unavailable.</para>
+        /// <para>Use the wrapper's constructing STA thread and serialize shared-session access. The binding is rejected
+        /// after disposal or replacement by RefreshComObjects; RefreshUnits retains it. Calls during another managed Root
+        /// observation or wrapper refresh/disposal are rejected before native dispatch. No acquisition, model opening,
+        /// saving, implicit metadata refresh, retry or worker-thread dispatch occurs. A synchronous native call can block.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The native response is malformed, the adapter was replaced,
+        /// the caller is on another thread, or a managed Root/lifecycle operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The bound root does not expose the required member.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// string modelFolder = wrapper.Root.GetStaadFileFolder();
+        /// Console.WriteLine(modelFolder);
+        /// </code></example>
+        string GetStaadFileFolder();
+
+        /// <summary>Reads whether this bound OpenSTAAD root reports a physical model.</summary>
+        /// <returns>True for native Boolean true or integral one; false for Boolean false or integral zero.</returns>
+        /// <remarks><para>Calls native IsPhysicalModel once. Rejects every other integer, null, strings, floating-point,
+        /// decimal and pointer values instead of coercing them into a model classification. False reports only the native
+        /// predicate; it does not certify an analytical model is loaded or ready. Behavior for a blank or unsupported
+        /// session is not inferred. Does not convert the model, query a path or initiate analysis.</para>
+        /// <para>Use the wrapper's constructing STA thread and serialize shared-session access. The binding is rejected
+        /// after disposal or replacement by RefreshComObjects; RefreshUnits retains it. Calls during another managed Root
+        /// observation or wrapper refresh/disposal are rejected before native dispatch. No acquisition, model opening,
+        /// saving, implicit metadata refresh, retry or worker-thread dispatch occurs. A synchronous native call can block.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The native response is malformed, the adapter was replaced,
+        /// the caller is on another thread, or a managed Root/lifecycle operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The bound root does not expose the required member.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// bool isPhysical = wrapper.Root.IsPhysicalModel();
+        /// Console.WriteLine(isPhysical);
+        /// </code></example>
+        bool IsPhysicalModel();
+
+        /// <summary>Reads the error-message text currently reported by this bound OpenSTAAD root.</summary>
+        /// <returns>The exact native string, including Unicode, line breaks, whitespace or an explicitly returned empty string.</returns>
+        /// <remarks><para>Calls native GetErrorMessage once on explicit request. Rejects null and non-string responses.
+        /// Empty text does not establish that prior operations succeeded. The vendor contract does not specify whether
+        /// reading consumes or clears the error; stable repeated reads, history and a nondestructive peek are not promised.
+        /// Unlike catching a managed exception, this reads the application's current error text, which another operation
+        /// may have replaced. It is never implicitly called from another operation's failure handler.</para>
+        /// <para>Use the wrapper's constructing STA thread and serialize shared-session access. The binding is rejected
+        /// after disposal or replacement by RefreshComObjects; RefreshUnits retains it. Calls during another managed Root
+        /// observation or wrapper refresh/disposal are rejected before native dispatch. No acquisition, model opening,
+        /// saving, implicit metadata refresh, retry or worker-thread dispatch occurs. A synchronous native call can block.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The native response is malformed, the adapter was replaced,
+        /// the caller is on another thread, or a managed Root/lifecycle operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The bound root does not expose the required member.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// string nativeMessage = wrapper.Root.GetErrorMessage();
+        /// Console.WriteLine(nativeMessage);
+        /// </code></example>
+        string GetErrorMessage();
+
+        /// <summary>Reads the process identifier reported by this bound OpenSTAAD root.</summary>
+        /// <returns>A positive UInt32 process identifier, between one and UInt32.MaxValue inclusive.</returns>
+        /// <remarks><para>Calls native GetProcessId once and accepts integral CLR representations only. Rejects zero,
+        /// negative/overflowing values, Boolean, string, floating-point, decimal and pointer-shaped responses.
+        /// Unlike GetMainWindowHandle's cached borrowed HWND, this is a live PID query, not a process handle.
+        /// Does not enumerate processes, consult a global active object or construct a Process. The identifier can
+        /// become stale or be reused; no process-liveness, ownership or model-readiness guarantee is made.</para>
+        /// <para>Use the wrapper's constructing STA thread and serialize shared-session access. The binding is rejected
+        /// after disposal or replacement by RefreshComObjects; RefreshUnits retains it. Calls during another managed Root
+        /// observation or wrapper refresh/disposal are rejected before native dispatch. No acquisition, model opening,
+        /// saving, implicit metadata refresh, retry or worker-thread dispatch occurs. A synchronous native call can block.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The native response is malformed, the adapter was replaced,
+        /// the caller is on another thread, or a managed Root/lifecycle operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The bound root does not expose the required member.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// uint processId = wrapper.Root.GetProcessId();
+        /// Console.WriteLine(processId);
+        /// </code></example>
+        uint GetProcessId();
     }
 }

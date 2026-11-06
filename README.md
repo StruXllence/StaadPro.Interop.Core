@@ -20,9 +20,9 @@ dotnet add ./YourApp.csproj package StaadPro.Interop.Core --prerelease --source 
 
 In Visual Studio's NuGet Package Manager, enable **Include prerelease** and search for **StaadPro.Interop.Core**. Target `net9.0-windows` and use an STA entry point for native automation. The NuGet badge tracks the latest public preview; see the [installation guide](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Installation.md) for exact-version and local-feed instructions.
 
-## Version 1.0.0-preview.20261105.2
+## Version 1.0.0-preview.20261106
 
-This Core preview contains the wrapper/acquisition foundation and **five cached Root observations**: `GetApplicationVersion()`, `GetBaseUnit()`, `GetInputUnitForForce()`, `GetInputUnitForLength()` and `GetMainWindowHandle()`. Geometry, Load, Output, Property, Support, Design, Commands, Table, View and IDEA StatiCa remain binding-only placeholders. Other Root operations are pending.
+This Core preview contains the wrapper/acquisition foundation and **ten Root observations**. Five read cached metadata: `GetApplicationVersion()`, `GetBaseUnit()`, `GetInputUnitForForce()`, `GetInputUnitForLength()` and `GetMainWindowHandle()`. Five query the bound native root: `GetStaadFileFullPath()`, `GetStaadFileFolder()`, `IsPhysicalModel()`, `GetErrorMessage()` and `GetProcessId()`. Geometry, Load, Output, Property, Support, Design, Commands, Table, View and IDEA StatiCa remain binding-only placeholders. Other Root operations are pending.
 
 The package targets **net9.0-windows**. It has no dependency on the Framework StaadPro.Interop package, WPF or Newtonsoft.Json. Live use requires a separately installed, licensed STAAD.Pro application with compatible OpenSTAAD members. Build/package checks do not certify every native build or licensing state.
 
@@ -54,6 +54,11 @@ internal static class Program
         Console.WriteLine(root.GetInputUnitForForce());
         Console.WriteLine(root.GetInputUnitForLength());
         Console.WriteLine(root.GetMainWindowHandle());
+        Console.WriteLine(root.GetStaadFileFullPath());
+        Console.WriteLine(root.GetStaadFileFolder());
+        Console.WriteLine(root.IsPhysicalModel());
+        Console.WriteLine(root.GetErrorMessage());
+        Console.WriteLine(root.GetProcessId());
     }
 }
 ~~~
@@ -64,9 +69,11 @@ Create, use and dispose connections on the appropriate Windows STA thread. Wrapp
 
 ## Root metadata and IntelliSense
 
-The five Root methods reuse wrapper snapshots without COM dispatch. `GetApplicationVersion()` returns an independent native version, distinct from the host assembly version. Input units can be compatibility fallbacks; the handle is borrowed and may be zero or stale. `RefreshUnits()` updates units while retaining Root. After `RefreshComObjects()`, reacquire `wrapper.Root`: retained adapters are rejected. Root reads also reject disposal, another thread and reads during refresh. See the [Root metadata contracts](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Root-Metadata.md).
+The five metadata methods reuse wrapper snapshots without COM dispatch. `GetApplicationVersion()` returns an independent native version, distinct from the host assembly version. Input units can be compatibility fallbacks; the handle is borrowed and may be zero or stale. `RefreshUnits()` updates units while retaining Root. After `RefreshComObjects()`, reacquire `wrapper.Root`: retained adapters are rejected. Root reads also reject disposal, another thread and reads during refresh. See the [Root metadata contracts](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Root-Metadata.md).
 
-Passed **175 offline tests**, including 43 Root metadata cases alongside the 132 foundation cases for identity/readiness, busy and blank states, atomic file races, startup verification, wrapper parity and lifecycle guards. Installed-package verification compiles fourteen XML examples, README usage and the Root guide, and exercises the five observations using a managed native stand-in. Earlier read-only named-session and same-process target-reuse checks succeeded on STAAD.Pro 26.00.01.491 without startup; this increment adds no new live native qualification. The limited evidence does not establish full cross-version/startup support.
+The five [live Root observations](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Root-Observations.md) each issue one native query. Path/folder/error text is preserved exactly; unwritten or malformed text is rejected rather than treated as a blank. Physical-model flags and process IDs are validated without coercing arbitrary values. All managed Root reads share binding, thread and reentrancy guards. A PID is a live identifier; the cached window handle is a different value. Error-message reads retain native state semantics.
+
+Passed **356 offline tests**, including 181 new live-observation cases, 43 cached-metadata cases and 132 foundation cases. Installed-package verification compiles 24 XML examples, README usage and both Root guides, and exercises all ten observations using a managed native stand-in. Earlier read-only named-session and same-process target-reuse checks succeeded on STAAD.Pro 26.00.01.491 without startup; this increment adds no new live native qualification. The limited evidence does not establish full cross-version/startup support.
 
 [Roadmap](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/ROADMAP.md) Â· [Installation](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Installation.md) Â· [Wrapper and acquisition design](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Wrapper-Foundation.md) Â· [Publishing](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Publishing.md)
 
@@ -78,7 +85,7 @@ This package targets Windows .NET 9 (`net9.0-windows`), using late-bound COM acc
 
 ### Does this preview automate geometry, loads or analysis?
 
-The current Core preview provides session acquisition and five cached Root metadata observations. Other domain adapters are binding placeholders. Follow the [porting roadmap](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/ROADMAP.md) for implemented and pending functions.
+The current Core preview provides session acquisition, five cached Root metadata observations and five live model/process observations. Other domain adapters are binding placeholders. Follow the [porting roadmap](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/ROADMAP.md) for implemented and pending functions.
 
 ### Where can I find examples or report an issue?
 

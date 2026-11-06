@@ -76,7 +76,7 @@ namespace StaadPro.Interop.Core.Models
         public object RawOpenStaad { get; private set; }
 
         /// <summary>Gets the managed root adapter bound to RawOpenStaad.</summary>
-        /// <remarks>Exposes cached native-version, units and window observations on this wrapper's constructing thread.
+        /// <remarks>Exposes cached metadata and live model/process observations on this wrapper's constructing thread.
         /// RefreshComObjects replaces the adapter; reacquire this property afterward. Null after disposal.</remarks>
         public IOSRoot Root { get; private set; }
 
@@ -246,8 +246,8 @@ namespace StaadPro.Interop.Core.Models
             using (operationContext.Enter()) UpdateUnitCache();
         }
 
-        // Root observations share the lifecycle gate so callbacks cannot read half-refreshed caches.
-        internal T ReadRootMetadata<T>(OSRootAdapter adapter, Func<OpenStaadWrapper, T> read)
+        // Root reads share the lifecycle gate to reject stale bindings and nested native/lifecycle work.
+        internal T ReadRootObservation<T>(OSRootAdapter adapter, Func<OpenStaadWrapper, T> read)
         {
             ThrowIfDisposed();
             using (operationContext.Enter())

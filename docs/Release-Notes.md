@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261106 - 6 November 2026
+
+Ported `GetStaadFileFullPath()`, `GetStaadFileFolder()`, `IsPhysicalModel()`, `GetErrorMessage()` and `GetProcessId()` from the reviewed Framework Root contracts. Each performs one native query on the current bound root. Preserved exact native text, distinguished explicitly empty from unwritten reference outputs, and validated physical-model flags and positive UInt32 process identifiers without permissive coercion.
+
+Shared the existing wrapper operation guard with live reads. Disposed/replaced bindings, another thread and nested Root/refresh/disposal operations are rejected before dispatch. Native failures propagate unchanged without retries or secondary error-message probes. Reused the acquisition path reader and existing native-value validation; no new public return models, tuples or reference-output parameters were required.
+
+Added complete matching interface/concrete XML IntelliSense and the [Root observations guide](Root-Observations.md). Passed 356 managed tests, including 181 new observation cases. A fresh installed-package consumer exercises all ten Root contracts and compiles 24 XML examples plus README and both Root guides. The Windows .NET 9 package remains independent of WPF and the Framework assembly.
+
+Core now exposes ten of 53 common Root contracts; 43 common and three optional contracts remain pending. Other domains remain binding-only. Native blank-model, error-state and servicing-build qualification remains separate; this increment adds no live native acceptance.
+
 ## 1.0.0-preview.20261105.2 - 5 November 2026
 
 Retained the five cached Root observations: `GetApplicationVersion()`, `GetBaseUnit()`, `GetInputUnitForForce()`, `GetInputUnitForLength()` and `GetMainWindowHandle()`. They reuse the wrapper snapshots without extra native dispatch, return an independent native version and preserve input-unit fallback and non-owning window semantics. Reacquire `wrapper.Root` after `RefreshComObjects()`; `RefreshUnits()` preserves the binding.

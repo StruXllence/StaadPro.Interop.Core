@@ -64,7 +64,6 @@ flowchart TD
     R -->|Budget remains| B
     R -->|Expired or cancelled| X
 ~~~
-
 After startup, retry remains in launched-process verification and never initiates a second startup. Known busy targets and mapped unreadable identities wait rather than falling through to launch.
 
 A blank requires an explicitly empty filename and zero nodes, members, plates, solids, primary loads, reference loads and combinations. Invalid/negative/unavailable counts are not zero. ExistingBlank leaves the requested file unopened. The checks do not prove the absence of every native setting/definition or prevent external edits immediately afterwards.

@@ -1,7 +1,5 @@
 # Root filename, analysis-path and model identity helpers
 
-Preview `1.0.0-preview.20261106.1` adds five main-source Root helpers. Their public names, return types and parameter names are preserved on `IOSRoot` and the single non-partial `OSRootAdapter`. All five reuse the existing native filename reader and wrapper operation lease. Each valid call reads `GetSTAADFile` once with Boolean `true`; none opens, saves, closes, analyzes or acquires a model.
-
 | Function | Contract |
 | --- | --- |
 | `GetStaadFileNameOnly()` | Extracts the Windows filename and extension from one raw path snapshot; preserves case/Unicode; explicit blank yields empty |
@@ -22,7 +20,6 @@ Console.WriteLine(root.GetOpenedStaadFilename());
 Console.WriteLine(root.IsTarget(@"C:\Models\Frame.std"));
 Console.WriteLine(root.ModelIsOpen(@"C:\Other\Frame.std")); // Same basename alone does not match.
 ~~~
-
 For `C:\Models\Frame.v2.STD`, the filename is `Frame.v2.STD` and the expected analysis path is `C:\Models\Frame.v2.ANL`. Only the last extension is replaced. For `relative.std`, the analysis path is `relative.ANL`; the historic `FullPath` name does not force an absolute output. A reported directory/root is not validated as a real filename and can derive a `.ANL` filename under the runtime's directory/combine rules. No file existence, result freshness or analysis availability is implied.
 
 ## Blank, malformed and native outputs
@@ -37,16 +34,8 @@ The two predicates normalize the requested path before native access. Null/white
 
 Dot segments and normal separator variations are normalized by the Windows runtime; letter case is preserved and text is not trimmed by this library. Comparison is `OrdinalIgnoreCase` and includes the whole path. Equal basenames in different directories remain different. Filesystem links, aliases, case-sensitive directories, network availability and physical file identity are not resolved. A true result describes a textual snapshot of this root alone, not every STAAD process or Geometry/Load readiness. Coordinate process-wide working-directory changes and native session edits outside the wrapper too.
 
-## Source mapping and modernization
-
-All five names and signatures occur in the original main-source Root interface. The reviewed Framework implementations already correct two source issues: deriving `.ANL` from two native reads could mix directory and filename from different models, and the old `ModelIsOpen` passed a model path into the native Boolean flag and compared only basenames. Core retains the single-read derivation, actual Boolean flag and complete normalized identity comparison.
-
-Existing `OpenStaadModelIdentityReader` validation and the wrapper's `ReadRootObservation` lease are reused. One internal `RootModelPaths` helper owns detached path processing. There are no new public result models, tuples, reference-output parameters, version strategies or runtime dependencies. The Path APIs and ordinal comparison remain appropriate; COM cost dominates these short strings. The modern base-directory overload provides a concrete consistency improvement. A static character array preserves legacy rejection without repeated allocation. No speculative SIMD/pooling, background COM dispatch or performance claims are introduced. See Microsoft's [Path normalization contract](https://learn.microsoft.com/en-us/dotnet/api/system.io.path.getfullpath?view=net-9.0) and [Windows runtime implementation](https://github.com/dotnet/runtime/blob/v9.0.0/src/libraries/System.Private.CoreLib/src/System/IO/Path.Windows.cs).
-
 ## Lifetime, tests and qualification
 
 Use the wrapper's constructing STA thread and reacquire Root after `RefreshComObjects()`. `RefreshUnits()` preserves the binding. Disposed/replaced/manual-noncurrent bindings, another thread and nested Root/lifecycle operations are rejected before native dispatch. The lease is released after validation and native failures. It cannot prevent changes by other wrappers/raw callers, make the multi-call consumer workflow atomic or interrupt a hung COM call.
 
 The increment adds **199 path cases**, bringing the offline suite to **555 tests**. Cases cover Unicode/UNC/relative paths, multiple extensions, exact `.ANL` derivation and one-read behavior, full-path comparison, a working-directory-changing callback, empty/unwritten/malformed output, invalid request parameter names, explicit character validation, native failures, binding/thread/refresh/reentrancy guards and matching complete XML on interfaces/concrete adapters. A fresh NuGet consumer exercises all fifteen Root contracts, checks the predicate signatures and compiles **34 XML examples**, README usage and all three Root guides.
-
-No native STAAD execution or new engineering qualification was performed for this increment. The unchanged native filename route was reviewed in the prior observation increment; offline path tests do not qualify every STAAD build/session or filesystem convention. Core now exposes **15 of 53 common Root contracts**; **38 common and three optional contracts remain pending**. Other domains remain binding-only. Review main-source model lifecycle and job/project operations next, with explicit mutation/status/lifetime contracts before implementation.

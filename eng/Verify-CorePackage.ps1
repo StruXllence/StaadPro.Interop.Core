@@ -10,6 +10,9 @@ function Read-Entry([string] $name) {
     try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
 }
 try {
+    foreach ($entry in $archive.Entries) {
+        if ($entry.FullName -match '(?i)(^|/)ROADMAP\.md$|Implementation-Plan|(^|/)reports/|(^|/)artifacts/') { throw "Unexpected package entry: $($entry.FullName)" }
+    }
     $asset = 'lib/net9.0-windows7.0/StaadPro.Interop.Core.dll'
     if ($null -eq $archive.GetEntry($asset) -or @($archive.Entries | Where-Object FullName -like 'lib/*/*.dll').Count -ne 1) { throw 'Expected one Windows .NET 9 Core asset.' }
     [xml] $documentation = Read-Entry ($asset.Replace('.dll','.xml'))
@@ -17,11 +20,12 @@ try {
     $rootGuide = Read-Entry 'docs/Root-Metadata.md'
     $observationGuide = Read-Entry 'docs/Root-Observations.md'
     $pathGuide = Read-Entry 'docs/Root-Path-Helpers.md'
+    $lifecycleGuide = Read-Entry 'docs/Root-Model-Lifecycle.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
     if ([string]$metadata.title -ne 'StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)') { throw 'Unexpected package title.' }
-    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','fifteen Root observations')) {
+    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','twenty Root operations')) {
         if (([string]$metadata.description).IndexOf($term,[StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Incomplete package description: $term" }
     }
     $packageTags = @(([string]$metadata.tags) -split '\s+' | Where-Object { $_ })
@@ -30,9 +34,9 @@ try {
     }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','ROADMAP.md','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
-    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch 'fifteen Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
+    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch 'twenty Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
     if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
     foreach ($badge in @(
         'https://github.com/StruXllence/StaadPro.Interop.Core/actions/workflows/build-and-test.yml/badge.svg?branch=staadpro-interop-core',
@@ -41,12 +45,19 @@ try {
         'https://img.shields.io/badge/.NET-9.0%20Windows-512BD4?style=flat-square&logo=dotnet&logoColor=white'
     )) { if (!$readme.Contains($badge)) { throw "Missing or incorrect Core badge: $badge" } }
     if ($readme.Contains('img.shields.io/badge/.NET_Framework') -or $readme.Contains('img.shields.io/nuget/vpre/StaadPro.Interop?')) { throw 'Badges must describe the Core package.' }
-    if ($metadata.icon -ne 'images/logo-with-text-core-400.png' -or $archive.GetEntry([string]$metadata.icon).Length -gt 1MB) { throw 'Invalid icon.' }
+    if ($metadata.icon -ne 'images/symbol-only-logo-core.png' -or $archive.GetEntry([string]$metadata.icon).Length -gt 1MB) { throw 'Invalid icon.' }
+    Add-Type -AssemblyName System.Drawing
+    $iconStream = $archive.GetEntry([string]$metadata.icon).Open()
+    $iconBitmap = $null
+    try {
+        $iconBitmap = [Drawing.Bitmap]::new($iconStream)
+        if ($iconBitmap.Width -ne $iconBitmap.Height -or $iconBitmap.GetPixel(0,0).A -ne 0) { throw 'The Core icon must be square with a transparent background.' }
+    } finally { if ($null -ne $iconBitmap) { $iconBitmap.Dispose() }; $iconStream.Dispose() }
     $version = [string] $metadata.version
     if ($readme -notmatch ('(?m)^## Version ' + [regex]::Escape($version) + '\r?$') -or (Read-Entry 'docs/Release-Notes.md') -notmatch ('(?m)^## ' + [regex]::Escape($version) + ' - ')) { throw 'Package version and current documentation differ.' }
     if ($documentation.SelectNodes('//include|//inheritdoc').Count -ne 0) { throw 'Shipped IntelliSense must expand source documentation.' }
-    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen')) {
-        $memberId = if ($operation -in @('IsTarget','ModelIsOpen')) { $operation + '(System.String)' } else { $operation }
+    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen','SetSilentMode','SaveModel','OpenSTAADFile','CloseSTAADFile','ShowApplication')) {
+        $memberId = if ($operation -in @('IsTarget','ModelIsOpen','OpenSTAADFile')) { $operation + '(System.String)' } elseif ($operation -in @('SetSilentMode','SaveModel')) { $operation + '(StaadPro.Interop.Core.Enums.SilentMode)' } else { $operation }
         $contract = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Interfaces.IOSRoot.$memberId']")
         $implementation = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Models.OSRootAdapter.$memberId']")
         if ($null -eq $contract -or $null -eq $implementation -or $contract.InnerXml -cne $implementation.InnerXml) { throw "Missing/mismatched Root documentation: $operation" }
@@ -63,6 +74,7 @@ $project = "<Project Sdk='Microsoft.NET.Sdk'><PropertyGroup><TargetFramework>net
 [IO.File]::WriteAllText((Join-Path $consumer 'Consumer.csproj'), $project)
 $smoke = @'
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -80,6 +92,15 @@ public sealed class NativeRoot
     { Calls++; major = 26; update = 0; revision = 1; build = 491; return "26.00.01.491"; }
     public int GetMainWindowHandle() { Calls++; return 12345; }
     public object PathValue = @"C:\Models\Structure.std", FolderValue = @"C:\Models\", PhysicalValue = true, ErrorValue = "", ProcessIdValue = 321u;
+    public readonly List<string> LifecycleCalls = new List<string>();
+    public Exception MutationFailure;
+    public object PreviousMode = false;
+    private void Mutation(string name) { Calls++; LifecycleCalls.Add(name); if (MutationFailure != null) throw MutationFailure; }
+    public object SetSilentMode(object mode) { if (mode is not int) throw new Exception("Mode must be Int32."); Mutation("SetSilentMode"); return PreviousMode; }
+    public void SaveModel(object mode) { if (mode is not int) throw new Exception("Save mode must be Int32."); Mutation("SaveModel"); }
+    public void OpenSTAADFile(object path) { if (path is not string text || !System.IO.Path.IsPathFullyQualified(text)) throw new Exception("Open requires a full path."); Mutation("OpenSTAADFile"); }
+    public void CloseSTAADFile() => Mutation("CloseSTAADFile");
+    public object ShowApplication() { Mutation("ShowApplication"); return false; }
     public bool WriteOutput = true;
     public void GetSTAADFile(ref object value, object fullPath)
     { Calls++; if (value is not string || fullPath is not true) throw new Exception("Incorrect native filename arguments."); if (WriteOutput) value = PathValue; }
@@ -147,7 +168,32 @@ internal static class PackageSmoke
             foreach (Action read in new Action[] { () => current.GetStaadFileFullPath(), () => current.GetStaadFileFolder(), () => current.IsPhysicalModel(), () => current.GetErrorMessage(), () => current.GetProcessId(), () => current.GetStaadFileNameOnly(), () => current.GetAnlFileFullPath(), () => current.GetOpenedStaadFilename(), () => current.IsTarget(@"C:\Models\Structure.std"), () => current.ModelIsOpen(@"C:\Models\Structure.std") })
             { int before = native.Calls; bool rejected = false; try { read(); } catch (ObjectDisposedException) { rejected = true; } if (!rejected || native.Calls != before) throw new Exception("Disposed live observation dispatched."); }
         }
-        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen" };
+        var mutableNative = new NativeRoot();
+        using (var wrapper = new OpenStaadWrapper(mutableNative))
+        {
+            var root = wrapper.Root;
+            if (!root.SetSilentMode(SilentMode.Enable)) throw new Exception("Previous false mode was misread as failure.");
+            if (!ReferenceEquals(root.SaveModel(SilentMode.Disable), root) || !ReferenceEquals(root.OpenSTAADFile(@"relative\Frame.std"), root) || !ReferenceEquals(root.CloseSTAADFile(), root) || !ReferenceEquals(root.ShowApplication(), root)) throw new Exception("Fluent adapter identity changed.");
+            if (!mutableNative.LifecycleCalls.SequenceEqual(new[] { "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication" })) throw new Exception("Incorrect lifecycle dispatch order.");
+            int before = mutableNative.Calls;
+            bool invalidMode = false, invalidPath = false;
+            try { root.SetSilentMode((SilentMode)2); } catch (ArgumentOutOfRangeException e) { invalidMode = e.ParamName == "silentMode"; }
+            try { root.OpenSTAADFile(null); } catch (ArgumentNullException e) { invalidPath = e.ParamName == "filePath"; }
+            if (!invalidMode || !invalidPath || mutableNative.Calls != before) throw new Exception("Invalid lifecycle input was dispatched.");
+            var nativeError = new System.Runtime.InteropServices.COMException("native mutation failure");
+            mutableNative.MutationFailure = nativeError;
+            if (root.SetSilentMode(SilentMode.Enable)) throw new Exception("Silent native failure was accepted.");
+            bool propagated = false;
+            try { root.SaveModel(SilentMode.Enable); } catch (System.Runtime.InteropServices.COMException e) { propagated = ReferenceEquals(e, nativeError); }
+            if (!propagated) throw new Exception("Save error identity changed.");
+            mutableNative.MutationFailure = null;
+            Action<IOSRoot>[] writes = { r => r.SetSilentMode(SilentMode.Enable), r => r.SaveModel(SilentMode.Enable), r => r.OpenSTAADFile(@"C:\Models\Frame.std"), r => r.CloseSTAADFile(), r => r.ShowApplication() };
+            wrapper.RefreshComObjects(); before = mutableNative.Calls;
+            foreach (var write in writes) { bool rejected = false; try { write(root); } catch (InvalidOperationException) { rejected = true; } if (!rejected || mutableNative.Calls != before) throw new Exception("Stale lifecycle binding dispatched."); }
+            var current = wrapper.Root; wrapper.Dispose();
+            foreach (var write in writes) { bool rejected = false; try { write(current); } catch (ObjectDisposedException) { rejected = true; } if (!rejected || mutableNative.Calls != before) throw new Exception("Disposed lifecycle binding dispatched."); }
+        }
+        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication" };
         foreach (var contract in assembly.GetTypes().Where(t=>t.IsInterface && t.Namespace=="StaadPro.Interop.Core.Adapters.Interfaces"))
         {
             var methods = contract.GetMethods().Where(m=>!m.IsSpecialName).ToArray();
@@ -159,12 +205,17 @@ internal static class PackageSmoke
                     var parameters = method.GetParameters();
                     if (method.Name == "IsTarget" || method.Name == "ModelIsOpen")
                     { if (parameters.Length != 1 || parameters[0].ParameterType != typeof(string) || parameters[0].Name != (method.Name == "IsTarget" ? "staadFileFullPath" : "fileFullPath") || parameters[0].IsOptional) throw new Exception("Path predicate signature changed."); }
+                    else if (method.Name == "SetSilentMode" || method.Name == "SaveModel")
+                    { if (parameters.Length != 1 || parameters[0].ParameterType != typeof(SilentMode) || parameters[0].Name != "silentMode" || parameters[0].IsOptional || method.ReturnType != (method.Name == "SetSilentMode" ? typeof(bool) : typeof(IOSRoot))) throw new Exception("Mode signature changed."); }
+                    else if (method.Name == "OpenSTAADFile")
+                    { if (parameters.Length != 1 || parameters[0].ParameterType != typeof(string) || parameters[0].Name != "filePath" || parameters[0].IsOptional || method.ReturnType != typeof(IOSRoot)) throw new Exception("Open signature changed."); }
                     else if (parameters.Length != 0) throw new Exception("Unexpected Root parameters.");
+                    if ((method.Name == "CloseSTAADFile" || method.Name == "ShowApplication") && method.ReturnType != typeof(IOSRoot)) throw new Exception("Fluent return changed.");
                 }
             }
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }
-        Console.WriteLine("PASS: installed foundation, fifteen guarded Root observations, XML and dependency isolation.");
+        Console.WriteLine("PASS: installed foundation, twenty guarded Root operations, XML and dependency isolation.");
     }
 }
 '@
@@ -181,6 +232,9 @@ if ([string]::IsNullOrWhiteSpace($observationCode)) { throw 'Missing live Root g
 $pathCode = [regex]::Match($pathGuide, '(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
 if ([string]::IsNullOrWhiteSpace($pathCode)) { throw 'Missing Root path guide usage example.' }
 [IO.File]::WriteAllText((Join-Path $consumer 'RootPathExample.cs'), 'using System; using StaadPro.Interop.Core.Models; internal static class RootPathExample { static void Example() { using var wrapper = new OpenStaadWrapper(new NativeRoot());' + [Environment]::NewLine + $pathCode + [Environment]::NewLine + '}}')
+$lifecycleCode = [regex]::Match($lifecycleGuide, '(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if ([string]::IsNullOrWhiteSpace($lifecycleCode)) { throw 'Missing lifecycle guide usage example.' }
+[IO.File]::WriteAllText((Join-Path $consumer 'RootLifecycleExample.cs'), 'using System; using StaadPro.Interop.Core.Models; internal static class RootLifecycleExample { static void Example() { using var wrapper = new OpenStaadWrapper(new NativeRoot());' + [Environment]::NewLine + $lifecycleCode + [Environment]::NewLine + '}}')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -201,4 +255,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all three Root guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all four Root guide examples compiled without executing native examples.')

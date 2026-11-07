@@ -246,8 +246,8 @@ namespace StaadPro.Interop.Core.Models
             using (operationContext.Enter()) UpdateUnitCache();
         }
 
-        // Root reads share the lifecycle gate to reject stale bindings and nested native/lifecycle work.
-        internal T ReadRootObservation<T>(OSRootAdapter adapter, Func<OpenStaadWrapper, T> read)
+        // Root operations share the lifecycle gate to reject stale bindings and nested native/lifecycle work.
+        internal T UseRootBinding<T>(OSRootAdapter adapter, Func<OpenStaadWrapper, T> read)
         {
             ThrowIfDisposed();
             using (operationContext.Enter())

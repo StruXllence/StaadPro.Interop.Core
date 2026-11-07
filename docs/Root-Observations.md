@@ -28,7 +28,6 @@ Console.WriteLine($"PID {processId}: '{modelPath}' in '{modelFolder}', physical=
 string nativeMessage = root.GetErrorMessage();
 Console.WriteLine(nativeMessage);
 ~~~
-
 ## Choosing the right observation
 
 `GetStaadFileFullPath()` reads the current native filename. Acquisition's `ActualPath` describes the earlier acquisition outcome and may differ after an external model change. The method requests full-path inclusion with a Boolean, as specified by OpenSTAAD. It does not normalize the returned text, require an absolute path, consult the filesystem or change the working directory.
@@ -51,22 +50,10 @@ All fifteen current Root methods share the existing wrapper operation lease. Use
 
 Separate calls are separate snapshots, not an atomic model/process record. External model changes can occur between calls. None certifies model readiness, supports a hard native-call deadline or changes the session intentionally. Native error-state side effects remain vendor-defined.
 
-## Source mapping and Core decisions
-
-The ReInvented source was inspected strictly read-only. Its `GetStaadFileFullPath()` is the original workflow; the Framework project strengthens it with BSTR-output validation and Boolean full-path inclusion. The other four methods come from the completed Framework Root expansion. All five retain their Framework signatures and return types under Core namespaces. No unrelated source domain implementations were restored.
-
-Core reuses `OpenStaadModelIdentityReader.ReadPath()` for filename handling, avoiding a second inconsistent definition of a blank filename. The internal `RootCommonQueryService` contains folder/classification/error/PID dispatch and reuses the existing `NativeValues` validators. `IOSRoot` and its single non-partial `OSRootAdapter` remain the public entry points. No new public types or overload families are needed for parameterless observations.
-
-The installed 2024, 2025 and 2026 Root manuals describe the same native contracts for these operations. One internal common service is appropriate; speculative version subclasses would add no behavior. This documentation comparison is not live cross-version qualification.
-
-Modernization preserves one native call per observation, uses static guard delegates, shares existing validation and keeps COM on the caller's context. No Task.Run, thread-pool dispatch, unnecessary process lookup or filesystem access is added. Native round-trip cost dominates these small projections; no unmeasured throughput claim is made.
-
 ## Verification and remaining work
 
 The 181 new managed cases cover exact/empty/Unicode/whitespace text, BSTR initialization and untouched outputs, non-string rejection, current-root identity and external changes, every built-in integer representation, Boolean/PID boundaries, malformed coercible values, original COM exceptions, missing members, stale/disposed/manual bindings, wrong-thread access, callbacks during refresh and nested query/lifecycle operations. Matching expanded interface/concrete XML is checked for every new method.
 
 Together with the 175 existing cases and 199 subsequent path/identity cases, **555 managed tests pass**. The installed-package verifier exercises all fifteen Root methods, compiles **34 XML examples**, README usage and all three Root guides, and checks the restored archive, installed XML and dependency isolation. Examples compile without running their native operations.
-
-No new live native qualification was performed for this increment. The earlier foundation's limited read-only STAAD.Pro 26.00.01.491 observations are historical evidence only. Blank-session behavior, native error-state behavior, physical/analytical models and servicing builds still need controlled native acceptance. The subsequent [path-helper increment](Root-Path-Helpers.md) brings Core to fifteen common contracts with **38 common and three optional Root contracts pending**; other domains remain binding-only.
 
 The current package also includes five [path/identity helpers](Root-Path-Helpers.md); their derivation and normalized comparison contracts complement the exact native observations described here.

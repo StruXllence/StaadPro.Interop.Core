@@ -46,6 +46,12 @@ namespace StaadPro.Interop.Core.Services.Root.Common
             return string.Equals(normalized, Path.GetFullPath(opened, baseDirectory), StringComparison.OrdinalIgnoreCase);
         }
 
+        internal static string NormalizeRequestedPath(string filePath)
+        {
+            ValidateNamedPath(filePath, nameof(filePath));
+            return Path.GetFullPath(filePath, Environment.CurrentDirectory);
+        }
+
         private static void ValidateNamedPath(string path, string parameterName)
         {
             if (path == null) throw new ArgumentNullException(parameterName);

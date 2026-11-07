@@ -11,22 +11,23 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261106.1</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261107</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
-    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, cached native version and input-unit queries, main-window metadata, live model/path/process observations and model identity/path helpers with XML IntelliSense. This preview implements the wrapper foundation and fifteen Root observations; other domain operations remain pending. Requires installed, licensed STAAD.Pro.</Description>
-    <PackageReleaseNotes>Ported GetStaadFileNameOnly, GetAnlFileFullPath, GetOpenedStaadFilename, IsTarget and ModelIsOpen with complete matching XML IntelliSense. Preserved one native filename read per helper, blank versus malformed output, uppercase .ANL derivation and normalized full-path comparison. Added consistent relative-path comparison and retained thread, binding, disposal and reentrancy guards. Fifteen common Root contracts are now implemented; other domains remain pending.</PackageReleaseNotes>
+    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies twenty Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; other domain adapters are binding-only placeholders.</Description>
+    <PackageReleaseNotes>Ported SetSilentMode, SaveModel, OpenSTAADFile, CloseSTAADFile and ShowApplication with complete matching XML IntelliSense. Preserved enum, path and fluent return contracts, explicit native completion/error behavior, and constructing-thread, binding and reentrancy guards. Twenty Root operations are implemented; see the model lifecycle guide for save/open/close readiness and refresh requirements.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/StruXllence/StaadPro.Interop.Core</RepositoryUrl>
     <PackageProjectUrl>https://github.com/StruXllence/StaadPro.Interop.Core</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageIcon>images/logo-with-text-core-400.png</PackageIcon>
+    <PackageIcon>images/symbol-only-logo-core.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../../symbol-only-logo-core.png" Pack="true" PackagePath="images/" />
     <None Include="../../symbol-only-logo.png" Pack="true" PackagePath="images/" />
     <None Include="../../logo-with-text-core.png" Pack="true" PackagePath="images/" />
     <None Include="../../docs/images/logo-with-text-core-400.png" Pack="true" PackagePath="images/" />
@@ -35,11 +36,11 @@
     <None Include="../../TRADEMARKS.md" Pack="true" PackagePath="/" />
     <None Include="../../CITATION.cff" Pack="true" PackagePath="/" />
     <None Include="../../LICENSES/MIT-legacy.txt" Pack="true" PackagePath="LICENSES/" />
-    <None Include="../../ROADMAP.md" Pack="true" PackagePath="/" />
     <None Include="../../docs/Licensing.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Wrapper-Foundation.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Metadata.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Observations.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Root-Model-Lifecycle.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Path-Helpers.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Installation.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Publishing.md" Pack="true" PackagePath="docs/" />

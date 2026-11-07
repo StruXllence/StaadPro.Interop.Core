@@ -4,7 +4,7 @@ using StaadPro.Interop.Core.Models;
 
 namespace StaadPro.Interop.Core.Adapters.Interfaces
 {
-    /// <summary>Observes cached STAAD metadata and live model, folder, classification, error and process information.</summary>
+    /// <summary>Provides guarded metadata, model observations and STAAD model/application operations.</summary>
     /// <remarks>Metadata methods read wrapper snapshots; model/process methods query the bound native root.
     /// Use the constructing thread outside another Root/lifecycle operation. Reacquire Root after RefreshComObjects.</remarks>
     public interface IOSRoot : IOSBase
@@ -337,5 +337,106 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// </code></example>
         bool ModelIsOpen(string fileFullPath);
 
+
+        /// <summary>Requests warning suppression on the bound STAAD application.</summary>
+        /// <param name="silentMode">A defined SilentMode: Disable (0) or Enable (1), forwarded once as a native Int32. It is an application setting; license and filesystem errors can still display dialogs.</param>
+        /// <returns>True when the native invocation returns without throwing; false when native dispatch throws, including a missing member. The native return is the previous mode and is deliberately ignored, even when false, zero, null or another shape. This Boolean does not report that previous value or certify warning suppression.</returns>
+        /// <remarks><para>Unlike SaveModel(silentMode), this changes the application setting without saving. It issues one SetSilentMode call and does not query, restore or persist that setting. The native previous-mode VARIANT is not interpreted as a success flag. Native exceptions are converted to false to preserve the Boolean contract; enum validation and wrapper lifetime/thread/reentrancy errors occur outside that catch and propagate. A false return can follow a partial native change; no automatic retry is performed.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>No metadata or adapter refresh is performed. Coordinate model ownership and UI access before calling. Normal completion does not certify native readiness, dialog completion or engineering correctness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">silentMode is not Disable (0) or Enable (1); no native call occurs.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.SetSilentMode(StaadPro.Interop.Core.Enums.SilentMode.Enable);
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        bool SetSilentMode(SilentMode silentMode);
+
+        /// <summary>Requests a native save of the model currently associated with this bound STAAD session.</summary>
+        /// <param name="silentMode">A defined SilentMode: Disable (0) or Enable (1), sent as the native save-option Int32. Suppression covers supported warnings only; unnamed models and errors may still display dialogs.</param>
+        /// <returns>This same Root adapter after the native void invocation returns without throwing. It does not acknowledge file persistence or prove that a prompt was accepted.</returns>
+        /// <remarks><para>Unlike SetSilentMode(silentMode), this passes the mode directly to SaveModel without changing a separate application setting. Saves through STAAD; it does not write managed file contents, run analysis, query paths, restore settings or verify disk output. Saving can write files or require user interaction. Native void completion has no Boolean or numeric status to interpret.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>No metadata or adapter refresh is performed. Coordinate model ownership and UI access before calling. Normal completion does not certify native readiness, dialog completion or engineering correctness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">silentMode is not Disable (0) or Enable (1); no native call occurs.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.SaveModel(StaadPro.Interop.Core.Enums.SilentMode.Enable);
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        IOSRoot SaveModel(SilentMode silentMode);
+
+        /// <summary>Requests that the bound STAAD application open the specified model.</summary>
+        /// <param name="filePath">A non-null, non-whitespace Windows model path. Relative paths use one captured process working directory and are normalized to an absolute path before dispatch. A .std extension and existing file are not required or checked by this method.</param>
+        /// <returns>This same Root adapter after the native void invocation returns without throwing; model identity and database readiness are not verified.</returns>
+        /// <remarks><para>Unlike session acquisition, this requests a model switch on this exact root and never attaches to another process. Validates and normalizes the path before one OpenSTAADFile call. Explicit invalid-character checks retain Windows path validation under modern .NET. Does not check existence, create files, close/save first, wait or poll Geometry/Load readiness. The current model may be affected and native prompts can appear. A normal return is not evidence that the target became available.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>Opening or closing can leave cached units, metadata and domain bindings stale. After the caller establishes native readiness, call wrapper.RefreshComObjects and reacquire wrapper.Root and other adapters. This method does not refresh automatically and does not wait for the transition; a failure may follow partial native effects.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">filePath is null.</exception>
+        /// <exception cref="ArgumentException">filePath is blank or contains invalid Windows path characters.</exception>
+        /// <exception cref="System.IO.PathTooLongException">Path normalization exceeds a runtime path limit.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.OpenSTAADFile(@"C:\Models\Frame.std");
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        IOSRoot OpenSTAADFile(string filePath);
+
+        /// <summary>Requests that the bound STAAD application close its current model.</summary>
+        /// <returns>This same Root adapter after the native void invocation returns without throwing. It does not certify that the file was closed or that the session remains ready.</returns>
+        /// <remarks><para>Unlike disposing OpenStaadWrapper, this requests a native model change. Calls CloseSTAADFile once with no arguments; it does not invoke SaveModel, discard changes explicitly, terminate STAAD, dispose the wrapper or acquire a replacement session. STAAD controls prompts and dirty-model handling. Native void completion supplies no Boolean or numeric acknowledgement.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>Opening or closing can leave cached units, metadata and domain bindings stale. After the caller establishes native readiness, call wrapper.RefreshComObjects and reacquire wrapper.Root and other adapters. This method does not refresh automatically and does not wait for the transition; a failure may follow partial native effects.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.CloseSTAADFile();
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        IOSRoot CloseSTAADFile();
+
+        /// <summary>Requests that the bound STAAD application become visible.</summary>
+        /// <returns>This same Root adapter after the native invocation returns without throwing. Visibility, foreground focus and repaint completion are not verified.</returns>
+        /// <remarks><para>Unlike window-handle queries and model opening, this issues the source-compatible ShowApplication request on this exact root. Ignores any native return. Does not launch another process, open/save/close a model, run analysis or explicitly maximize, restore or activate a window through Windows APIs. Native availability and graphical effects are build-dependent.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>No metadata or adapter refresh is performed. Coordinate model ownership and UI access before calling. Normal completion does not certify native readiness, dialog completion or engineering correctness.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.ShowApplication();
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        IOSRoot ShowApplication();
     }
 }

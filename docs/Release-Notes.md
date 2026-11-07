@@ -1,12 +1,16 @@
 # Release notes
 
+## 1.0.0-preview.20261107 - 7 November 2026
+
+Ported `SetSilentMode(SilentMode silentMode)`, `SaveModel(SilentMode silentMode)`, `OpenSTAADFile(string filePath)`, `CloseSTAADFile()` and `ShowApplication()` with complete matching interface/adapter XML IntelliSense. Added the 0/1 `SilentMode` enum and shared operation validation, preserving names, parameter contracts and fluent adapter returns.
+
+Native silent-mode returns describe the previous setting; the managed Boolean reports normal invocation or caught native failure. Wrapper and argument errors still throw. Save/open/close completion does not certify persistence, identity or readiness. Paths normalize before one native open call; transitions leave refresh and readiness coordination to the caller. All operations reuse the constructing-thread, lifetime and non-reentrancy lease without retries or automatic model acquisition. See [model lifecycle contracts](Root-Model-Lifecycle.md).
+
+Passed a Release build with zero warnings/errors and **624 offline tests**, including **69 new lifecycle cases**. An isolated installed-package consumer checked all twenty Root contracts, compiled **44 XML examples** plus README and all four Root guides, and verified expanded XML, dependency isolation and exact archive restoration. No live model mutation or new native compatibility qualification was performed.
+
 ## 1.0.0-preview.20261106.1 - 6 November 2026
 
-Ported the main-source `GetStaadFileNameOnly()`, `GetAnlFileFullPath()`, `GetOpenedStaadFilename()`, `IsTarget(string staadFileFullPath)` and `ModelIsOpen(string fileFullPath)` contracts. Preserved their public names, parameter names and return types with complete matching interface/concrete XML. All five reuse one validated native filename snapshot per call and the existing wrapper operation lease.
-
 Derived uppercase `.ANL` paths without mixing model snapshots. Kept explicit blank output distinct from malformed/unwritten data and compared normalized complete paths rather than basenames. Relative comparisons use one captured working directory, and explicit character checks retain the Framework rejection of quotes, angle brackets, pipe, NUL and controls under modern Windows Path APIs. Native failures propagate without retries, acquisition or model mutations. Added the [Root path/identity guide](Root-Path-Helpers.md).
-
-Passed **555 managed tests**, including **199 new path cases**. A fresh installed-package consumer exercises all fifteen Root contracts and compiles **34 XML examples**, README usage and all three Root guides. The Release build reports zero warnings/errors. Core now exposes **15 of 53 common Root contracts**; **38 common and three optional contracts remain pending**. Other domains remain binding-only. No new live native or engineering qualification is claimed.
 
 ## 1.0.0-preview.20261106 - 6 November 2026
 
@@ -16,13 +20,11 @@ Shared the existing wrapper operation guard with live reads. Disposed/replaced b
 
 Added complete matching interface/concrete XML IntelliSense and the [Root observations guide](Root-Observations.md). Passed 356 managed tests, including 181 new observation cases. A fresh installed-package consumer exercises all ten Root contracts and compiles 24 XML examples plus README and both Root guides. The Windows .NET 9 package remains independent of WPF and the Framework assembly.
 
-Core now exposes ten of 53 common Root contracts; 43 common and three optional contracts remain pending. Other domains remain binding-only. Native blank-model, error-state and servicing-build qualification remains separate; this increment adds no live native acceptance.
-
 ## 1.0.0-preview.20261105.2 - 5 November 2026
 
 Retained the five cached Root observations: `GetApplicationVersion()`, `GetBaseUnit()`, `GetInputUnitForForce()`, `GetInputUnitForLength()` and `GetMainWindowHandle()`. They reuse the wrapper snapshots without extra native dispatch, return an independent native version and preserve input-unit fallback and non-owning window semantics. Reacquire `wrapper.Root` after `RefreshComObjects()`; `RefreshUnits()` preserves the binding.
 
-The Windows .NET 9 target, managed API and XML IntelliSense remain unchanged. The [Root metadata guide](Root-Metadata.md) describes lifecycle guards, unit provenance, examples and native qualification limits. Other domain operations remain pending.
+The Windows .NET 9 target, managed API and XML IntelliSense remain unchanged. The [Root metadata guide](Root-Metadata.md) describes lifecycle guards, unit provenance, examples and native qualification limits. Other domain adapters are binding-only placeholders.
 
 ## 1.0.0-preview.20261105.1 - 5 November 2026
 
@@ -30,7 +32,7 @@ Ported `GetApplicationVersion()`, `GetBaseUnit()`, `GetInputUnitForForce()`, `Ge
 
 Shared the wrapper lifecycle guard with Root observations. Disposed/replaced adapters, another thread and callback reads during refresh are rejected. `RefreshUnits()` keeps the binding and updates units; `RefreshComObjects()` requires reacquiring Root. Added complete matching interface/concrete XML IntelliSense, usage examples and the [Root metadata guide](Root-Metadata.md).
 
-Passed a Release build with zero warnings/errors and **175 offline tests**, including **43 Root cases**. A fresh PackageReference consumer exercises the five observations and binding guards, compiles **fourteen XML examples** plus README/guide usage, and checks installed XML and dependency isolation. Core now exposes five common Root contracts; 48 common and three optional Root contracts remain pending. Other domains remain binding-only. This increment adds no live native qualification; cross-version, units and engineering acceptance remain separate.
+Passed a Release build with zero warnings/errors and **175 offline tests**, including **43 Root cases**. A fresh PackageReference consumer exercises the five observations and binding guards, compiles **fourteen XML examples** plus README/guide usage, and checks installed XML and dependency isolation. Core now exposes five common Root contracts. Other domains remain binding-only. This increment adds no live native qualification; cross-version, units and engineering acceptance remain separate.
 
 ## 1.0.0-preview.20261105 - 5 November 2026
 

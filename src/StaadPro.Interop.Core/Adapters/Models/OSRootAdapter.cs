@@ -7,7 +7,7 @@ using StaadPro.Interop.Core.Services.Root.Common;
 
 namespace StaadPro.Interop.Core.Adapters.Models
 {
-    /// <summary>Exposes guarded cached metadata and live model/process observations for the owning wrapper.</summary>
+    /// <summary>Exposes guarded metadata, model observations and model/application operations for the owning wrapper.</summary>
     /// <remarks>Metadata methods read wrapper snapshots; model/process methods dispatch to the captured native root.
     /// Use the constructing thread and reacquire Root after RefreshComObjects.</remarks>
     public sealed class OSRootAdapter : OSBaseAdapter, IOSRoot
@@ -41,7 +41,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// var version = root.GetApplicationVersion();
         /// Console.WriteLine(version?.Display ?? "Unavailable");
         /// </code></example>
-        public ApplicationVersion GetApplicationVersion() => Wrapper.ReadRootObservation(this, static wrapper => wrapper.StaadVersion);
+        public ApplicationVersion GetApplicationVersion() => Wrapper.UseRootBinding(this, static wrapper => wrapper.StaadVersion);
 
         /// <summary>Gets the cached model base unit system for this Root binding.</summary>
         /// <returns>The observed base-system enum. Unknown represents an absent member, null or DBNull;
@@ -58,7 +58,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// var root = wrapper.Root;
         /// Console.WriteLine(root.GetBaseUnit());
         /// </code></example>
-        public BaseUnitSystem GetBaseUnit() => Wrapper.ReadRootObservation(this, static wrapper => wrapper.BaseUnitSystem);
+        public BaseUnitSystem GetBaseUnit() => Wrapper.UseRootBinding(this, static wrapper => wrapper.BaseUnitSystem);
 
         /// <summary>Gets the cached model input force unit for this Root binding.</summary>
         /// <returns>The wrapper's force-unit enum. When no usable native unit was observed, the compatibility fallback
@@ -77,7 +77,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// var root = wrapper.Root;
         /// Console.WriteLine(root.GetInputUnitForForce()); // May be the documented compatibility fallback.
         /// </code></example>
-        public ForceInputUnit GetInputUnitForForce() => Wrapper.ReadRootObservation(this, static wrapper => wrapper.InputForceUnit);
+        public ForceInputUnit GetInputUnitForForce() => Wrapper.UseRootBinding(this, static wrapper => wrapper.InputForceUnit);
 
         /// <summary>Gets the cached model input length unit for this Root binding.</summary>
         /// <returns>The wrapper's length-unit enum. When no usable native unit was observed, the compatibility fallback
@@ -96,7 +96,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// var root = wrapper.Root;
         /// Console.WriteLine(root.GetInputUnitForLength()); // May be the documented compatibility fallback.
         /// </code></example>
-        public LengthInputUnit GetInputUnitForLength() => Wrapper.ReadRootObservation(this, static wrapper => wrapper.InputLengthUnit);
+        public LengthInputUnit GetInputUnitForLength() => Wrapper.UseRootBinding(this, static wrapper => wrapper.InputLengthUnit);
 
         /// <summary>Gets the cached, non-owning STAAD application main-window handle for this Root binding.</summary>
         /// <returns>The wrapper's cached handle, including a configured model-window service's value. Zero is used when
@@ -115,7 +115,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// var root = wrapper.Root;
         /// Console.WriteLine(root.GetMainWindowHandle()); // Borrowed snapshot; do not close it.
         /// </code></example>
-        public IntPtr GetMainWindowHandle() => Wrapper.ReadRootObservation(this, static wrapper => wrapper.StaadApplicationWindowHandle);
+        public IntPtr GetMainWindowHandle() => Wrapper.UseRootBinding(this, static wrapper => wrapper.StaadApplicationWindowHandle);
 
         /// <summary>Reads the current model's full path directly from this bound OpenSTAAD root.</summary>
         /// <returns>The exact string written by native GetSTAADFile, including an explicitly written empty string for a blank/unnamed session.</returns>
@@ -136,7 +136,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// string modelPath = wrapper.Root.GetStaadFileFullPath();
         /// Console.WriteLine(modelPath.Length == 0 ? "No model filename reported" : modelPath);
         /// </code></example>
-        public string GetStaadFileFullPath() => Wrapper.ReadRootObservation(this, static wrapper => OpenStaadModelIdentityReader.ReadPath(wrapper.RawOpenStaad));
+        public string GetStaadFileFullPath() => Wrapper.UseRootBinding(this, static wrapper => OpenStaadModelIdentityReader.ReadPath(wrapper.RawOpenStaad));
 
         /// <summary>Reads the current model folder directly from this bound OpenSTAAD root.</summary>
         /// <returns>The exact folder string written by native GetSTAADFileFolder, preserving empty output, whitespace and trailing separators.</returns>
@@ -157,7 +157,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// string modelFolder = wrapper.Root.GetStaadFileFolder();
         /// Console.WriteLine(modelFolder);
         /// </code></example>
-        public string GetStaadFileFolder() => Wrapper.ReadRootObservation(this, static wrapper => RootCommonQueryService.GetStaadFileFolder(wrapper.RawOpenStaad));
+        public string GetStaadFileFolder() => Wrapper.UseRootBinding(this, static wrapper => RootCommonQueryService.GetStaadFileFolder(wrapper.RawOpenStaad));
 
         /// <summary>Reads whether this bound OpenSTAAD root reports a physical model.</summary>
         /// <returns>True for native Boolean true or integral one; false for Boolean false or integral zero.</returns>
@@ -178,7 +178,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// bool isPhysical = wrapper.Root.IsPhysicalModel();
         /// Console.WriteLine(isPhysical);
         /// </code></example>
-        public bool IsPhysicalModel() => Wrapper.ReadRootObservation(this, static wrapper => RootCommonQueryService.IsPhysicalModel(wrapper.RawOpenStaad));
+        public bool IsPhysicalModel() => Wrapper.UseRootBinding(this, static wrapper => RootCommonQueryService.IsPhysicalModel(wrapper.RawOpenStaad));
 
         /// <summary>Reads the error-message text currently reported by this bound OpenSTAAD root.</summary>
         /// <returns>The exact native string, including Unicode, line breaks, whitespace or an explicitly returned empty string.</returns>
@@ -200,7 +200,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// string nativeMessage = wrapper.Root.GetErrorMessage();
         /// Console.WriteLine(nativeMessage);
         /// </code></example>
-        public string GetErrorMessage() => Wrapper.ReadRootObservation(this, static wrapper => RootCommonQueryService.GetErrorMessage(wrapper.RawOpenStaad));
+        public string GetErrorMessage() => Wrapper.UseRootBinding(this, static wrapper => RootCommonQueryService.GetErrorMessage(wrapper.RawOpenStaad));
 
         /// <summary>Reads the process identifier reported by this bound OpenSTAAD root.</summary>
         /// <returns>A positive UInt32 process identifier, between one and UInt32.MaxValue inclusive.</returns>
@@ -222,7 +222,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// uint processId = wrapper.Root.GetProcessId();
         /// Console.WriteLine(processId);
         /// </code></example>
-        public uint GetProcessId() => Wrapper.ReadRootObservation(this, static wrapper => RootCommonQueryService.GetProcessId(wrapper.RawOpenStaad));
+        public uint GetProcessId() => Wrapper.UseRootBinding(this, static wrapper => RootCommonQueryService.GetProcessId(wrapper.RawOpenStaad));
 
         /// <summary>Reads the current model's filename and extension without its directory.</summary>
         /// <returns>The Windows filename component with its original spelling, case and Unicode text.
@@ -244,7 +244,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// string filename = wrapper.Root.GetStaadFileNameOnly();
         /// Console.WriteLine(filename.Length == 0 ? "No filename reported" : filename);
         /// </code></example>
-        public string GetStaadFileNameOnly() => Wrapper.ReadRootObservation(this, static wrapper => RootModelPaths.GetStaadFileNameOnly(wrapper.RawOpenStaad));
+        public string GetStaadFileNameOnly() => Wrapper.UseRootBinding(this, static wrapper => RootModelPaths.GetStaadFileNameOnly(wrapper.RawOpenStaad));
 
         /// <summary>Derives the expected uppercase .ANL path from one current model-path observation.</summary>
         /// <returns>The snapshot's directory combined with its filename stem and .ANL, or empty for an explicitly
@@ -268,7 +268,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// string analysisPath = wrapper.Root.GetAnlFileFullPath();
         /// Console.WriteLine(analysisPath); // Expected path only; no analysis/result availability check.
         /// </code></example>
-        public string GetAnlFileFullPath() => Wrapper.ReadRootObservation(this, static wrapper => RootModelPaths.GetAnlFileFullPath(wrapper.RawOpenStaad));
+        public string GetAnlFileFullPath() => Wrapper.UseRootBinding(this, static wrapper => RootModelPaths.GetAnlFileFullPath(wrapper.RawOpenStaad));
 
         /// <summary>Reads the current model's filename as a normalized absolute Windows path.</summary>
         /// <returns>The absolute path resolved from one native full-path snapshot, or empty only when native explicitly
@@ -292,7 +292,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// string openedPath = wrapper.Root.GetOpenedStaadFilename();
         /// Console.WriteLine(openedPath.Length == 0 ? "Unnamed session" : openedPath);
         /// </code></example>
-        public string GetOpenedStaadFilename() => Wrapper.ReadRootObservation(this, static wrapper => RootModelPaths.GetOpenedStaadFilename(wrapper.RawOpenStaad));
+        public string GetOpenedStaadFilename() => Wrapper.UseRootBinding(this, static wrapper => RootModelPaths.GetOpenedStaadFilename(wrapper.RawOpenStaad));
 
         /// <summary>Tests whether this bound session currently reports the requested complete model path.</summary>
         /// <param name="staadFileFullPath">Non-null, non-whitespace Windows path. Relative paths are accepted and
@@ -320,7 +320,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// bool matches = wrapper.Root.IsTarget(@"C:\Models\Frame.std");
         /// Console.WriteLine(matches); // Snapshot identity, not a readiness or file-existence guarantee.
         /// </code></example>
-        public bool IsTarget(string staadFileFullPath) => Wrapper.ReadRootObservation(this, wrapper => RootModelPaths.MatchesOpenedModel(wrapper.RawOpenStaad, staadFileFullPath, nameof(staadFileFullPath)));
+        public bool IsTarget(string staadFileFullPath) => Wrapper.UseRootBinding(this, wrapper => RootModelPaths.MatchesOpenedModel(wrapper.RawOpenStaad, staadFileFullPath, nameof(staadFileFullPath)));
 
         /// <summary>Tests whether the specified complete path is the model currently reported by this bound root.</summary>
         /// <param name="fileFullPath">Non-null, non-whitespace Windows path, including relative paths. The comparison
@@ -347,7 +347,124 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// bool isOpen = wrapper.Root.ModelIsOpen(@"C:\Models\Frame.std");
         /// Console.WriteLine(isOpen);
         /// </code></example>
-        public bool ModelIsOpen(string fileFullPath) => Wrapper.ReadRootObservation(this, wrapper => RootModelPaths.MatchesOpenedModel(wrapper.RawOpenStaad, fileFullPath, nameof(fileFullPath)));
+        public bool ModelIsOpen(string fileFullPath) => Wrapper.UseRootBinding(this, wrapper => RootModelPaths.MatchesOpenedModel(wrapper.RawOpenStaad, fileFullPath, nameof(fileFullPath)));
 
+
+        /// <summary>Requests warning suppression on the bound STAAD application.</summary>
+        /// <param name="silentMode">A defined SilentMode: Disable (0) or Enable (1), forwarded once as a native Int32. It is an application setting; license and filesystem errors can still display dialogs.</param>
+        /// <returns>True when the native invocation returns without throwing; false when native dispatch throws, including a missing member. The native return is the previous mode and is deliberately ignored, even when false, zero, null or another shape. This Boolean does not report that previous value or certify warning suppression.</returns>
+        /// <remarks><para>Unlike SaveModel(silentMode), this changes the application setting without saving. It issues one SetSilentMode call and does not query, restore or persist that setting. The native previous-mode VARIANT is not interpreted as a success flag. Native exceptions are converted to false to preserve the Boolean contract; enum validation and wrapper lifetime/thread/reentrancy errors occur outside that catch and propagate. A false return can follow a partial native change; no automatic retry is performed.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>No metadata or adapter refresh is performed. Coordinate model ownership and UI access before calling. Normal completion does not certify native readiness, dialog completion or engineering correctness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">silentMode is not Disable (0) or Enable (1); no native call occurs.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.SetSilentMode(StaadPro.Interop.Core.Enums.SilentMode.Enable);
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        public bool SetSilentMode(SilentMode silentMode) => Wrapper.UseRootBinding(this, wrapper => RootModelOperations.SetSilentMode(wrapper.RawOpenStaad, silentMode));
+
+        /// <summary>Requests a native save of the model currently associated with this bound STAAD session.</summary>
+        /// <param name="silentMode">A defined SilentMode: Disable (0) or Enable (1), sent as the native save-option Int32. Suppression covers supported warnings only; unnamed models and errors may still display dialogs.</param>
+        /// <returns>This same Root adapter after the native void invocation returns without throwing. It does not acknowledge file persistence or prove that a prompt was accepted.</returns>
+        /// <remarks><para>Unlike SetSilentMode(silentMode), this passes the mode directly to SaveModel without changing a separate application setting. Saves through STAAD; it does not write managed file contents, run analysis, query paths, restore settings or verify disk output. Saving can write files or require user interaction. Native void completion has no Boolean or numeric status to interpret.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>No metadata or adapter refresh is performed. Coordinate model ownership and UI access before calling. Normal completion does not certify native readiness, dialog completion or engineering correctness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">silentMode is not Disable (0) or Enable (1); no native call occurs.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.SaveModel(StaadPro.Interop.Core.Enums.SilentMode.Enable);
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        public IOSRoot SaveModel(SilentMode silentMode) => Wrapper.UseRootBinding(this, wrapper =>
+        {
+            RootModelOperations.SaveModel(wrapper.RawOpenStaad, silentMode);
+            return this;
+        });
+
+        /// <summary>Requests that the bound STAAD application open the specified model.</summary>
+        /// <param name="filePath">A non-null, non-whitespace Windows model path. Relative paths use one captured process working directory and are normalized to an absolute path before dispatch. A .std extension and existing file are not required or checked by this method.</param>
+        /// <returns>This same Root adapter after the native void invocation returns without throwing; model identity and database readiness are not verified.</returns>
+        /// <remarks><para>Unlike session acquisition, this requests a model switch on this exact root and never attaches to another process. Validates and normalizes the path before one OpenSTAADFile call. Explicit invalid-character checks retain Windows path validation under modern .NET. Does not check existence, create files, close/save first, wait or poll Geometry/Load readiness. The current model may be affected and native prompts can appear. A normal return is not evidence that the target became available.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>Opening or closing can leave cached units, metadata and domain bindings stale. After the caller establishes native readiness, call wrapper.RefreshComObjects and reacquire wrapper.Root and other adapters. This method does not refresh automatically and does not wait for the transition; a failure may follow partial native effects.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">filePath is null.</exception>
+        /// <exception cref="ArgumentException">filePath is blank or contains invalid Windows path characters.</exception>
+        /// <exception cref="System.IO.PathTooLongException">Path normalization exceeds a runtime path limit.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.OpenSTAADFile(@"C:\Models\Frame.std");
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        public IOSRoot OpenSTAADFile(string filePath) => Wrapper.UseRootBinding(this, wrapper =>
+        {
+            RootModelOperations.OpenSTAADFile(wrapper.RawOpenStaad, filePath);
+            return this;
+        });
+
+        /// <summary>Requests that the bound STAAD application close its current model.</summary>
+        /// <returns>This same Root adapter after the native void invocation returns without throwing. It does not certify that the file was closed or that the session remains ready.</returns>
+        /// <remarks><para>Unlike disposing OpenStaadWrapper, this requests a native model change. Calls CloseSTAADFile once with no arguments; it does not invoke SaveModel, discard changes explicitly, terminate STAAD, dispose the wrapper or acquire a replacement session. STAAD controls prompts and dirty-model handling. Native void completion supplies no Boolean or numeric acknowledgement.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>Opening or closing can leave cached units, metadata and domain bindings stale. After the caller establishes native readiness, call wrapper.RefreshComObjects and reacquire wrapper.Root and other adapters. This method does not refresh automatically and does not wait for the transition; a failure may follow partial native effects.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.CloseSTAADFile();
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        public IOSRoot CloseSTAADFile() => Wrapper.UseRootBinding(this, wrapper =>
+        {
+            RootModelOperations.CloseSTAADFile(wrapper.RawOpenStaad);
+            return this;
+        });
+
+        /// <summary>Requests that the bound STAAD application become visible.</summary>
+        /// <returns>This same Root adapter after the native invocation returns without throwing. Visibility, foreground focus and repaint completion are not verified.</returns>
+        /// <remarks><para>Unlike window-handle queries and model opening, this issues the source-compatible ShowApplication request on this exact root. Ignores any native return. Does not launch another process, open/save/close a model, run analysis or explicitly maximize, restore or activate a window through Windows APIs. Native availability and graphical effects are build-dependent.</para>
+        /// <para>Use the constructing COM thread and the current wrapper.Root binding. The shared wrapper lease rejects disposal, stale adapters, other-thread calls and nested Root/refresh/disposal operations before native dispatch. Raw-object access and external UI edits bypass this guard. Invocation is synchronous and may block; there is no worker-thread dispatch, hard in-process timeout, rollback or alternate-instance fallback.</para>
+        /// <para>No metadata or adapter refresh is performed. Coordinate model ownership and UI access before calling. Normal completion does not certify native readiness, dialog completion or engineering correctness.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The adapter was replaced, the caller uses another thread, or another guarded operation is in progress.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; its original exception and HRESULT propagate, potentially after partial effects.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required native member/signature.</exception>
+        /// <example>With an owned connected session on its constructing STA thread:<code>
+        /// bool requestNativeChange = false; // Enable only when this session/model change is intended.
+        /// if (requestNativeChange)
+        /// {
+        ///     var result = wrapper.Root.ShowApplication();
+        ///     Console.WriteLine(result);
+        /// }</code></example>
+        public IOSRoot ShowApplication() => Wrapper.UseRootBinding(this, wrapper =>
+        {
+            RootModelOperations.ShowApplication(wrapper.RawOpenStaad);
+            return this;
+        });
     }
 }

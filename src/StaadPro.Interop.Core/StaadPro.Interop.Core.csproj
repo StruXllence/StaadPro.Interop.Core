@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261108.1</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261108.2</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
-    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies twenty-five Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; other domain adapters are binding-only placeholders.</Description>
-    <PackageReleaseNotes>Ported GetShortJobInfo, GetFullJobInfo, MinimizeStaadMainWindow, MaximizeStaadMainWindow and RestoreStaadMainWindow with complete matching XML IntelliSense. Added editable job snapshots with strict native output and culture-aware date validation. Window requests validate live handles and process ownership before asynchronous state requests. Reused binding, thread and non-reentrancy guards. Twenty-five Root operations are implemented; see the job information/window guide for contracts and native qualification limits.</PackageReleaseNotes>
+    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies thirty Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; other domain adapters are binding-only placeholders.</Description>
+    <PackageReleaseNotes>Ported SetInputUnitsEx, AwaitModelHandle, OpenStaadModel, CloseCurrentStaadModel and CloseWriteReopenStaadFile with matching complete XML IntelliSense. Added validated unit codes, exact full-path identity polling, monotonic deadlines and guarded existing-file replacement with bounded close/lock waiting. Retained caller-thread, binding and lifetime guards. Thirty Root operations are implemented; see the model coordination guide for partial effects and native qualification limits.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -41,6 +41,7 @@
     <None Include="../../docs/Root-Metadata.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Observations.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Job-Information-and-Windows.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Root-Model-Coordination.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Model-Lifecycle.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Path-Helpers.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Installation.md" Pack="true" PackagePath="docs/" />

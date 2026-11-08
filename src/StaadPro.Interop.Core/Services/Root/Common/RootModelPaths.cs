@@ -27,11 +27,14 @@ namespace StaadPro.Interop.Core.Services.Root.Common
         }
 
         internal static string GetOpenedStaadFilename(object root)
+            => GetOpenedStaadFilename(root, Environment.CurrentDirectory);
+
+        internal static string GetOpenedStaadFilename(object root, string baseDirectory)
         {
             string path = OpenStaadModelIdentityReader.ReadPath(root);
             if (path.Length == 0) return string.Empty;
             ValidateNamedPath(path, null);
-            return Path.GetFullPath(path, Environment.CurrentDirectory);
+            return Path.GetFullPath(path, baseDirectory);
         }
 
         internal static bool MatchesOpenedModel(object root, string requestedPath, string parameterName)
@@ -47,9 +50,12 @@ namespace StaadPro.Interop.Core.Services.Root.Common
         }
 
         internal static string NormalizeRequestedPath(string filePath)
+            => NormalizeRequestedPath(filePath, nameof(filePath), Environment.CurrentDirectory);
+
+        internal static string NormalizeRequestedPath(string filePath, string parameterName, string baseDirectory)
         {
-            ValidateNamedPath(filePath, nameof(filePath));
-            return Path.GetFullPath(filePath, Environment.CurrentDirectory);
+            ValidateNamedPath(filePath, parameterName);
+            return Path.GetFullPath(filePath, baseDirectory);
         }
 
         private static void ValidateNamedPath(string path, string parameterName)

@@ -6,6 +6,13 @@ namespace StaadPro.Interop.Core.Services.Root.Common
     // The owning wrapper supplies the thread, lifetime and non-reentrancy lease.
     internal static class RootModelOperations
     {
+        internal static void SetInputUnitsEx(object root, LengthInputUnit lengthUnit, ForceInputUnit forceUnit)
+        {
+            if (!Enum.IsDefined(lengthUnit)) throw new ArgumentOutOfRangeException(nameof(lengthUnit));
+            if (!Enum.IsDefined(forceUnit)) throw new ArgumentOutOfRangeException(nameof(forceUnit));
+            ((dynamic)root).SetInputUnits((int)lengthUnit, (int)forceUnit);
+        }
+
         internal static bool SetSilentMode(object root, SilentMode silentMode)
         {
             Validate(silentMode);

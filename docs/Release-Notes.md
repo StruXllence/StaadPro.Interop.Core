@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261108.2 - 8 November 2026
+
+Ported `SetInputUnitsEx`, `AwaitModelHandle`, `OpenStaadModel`, `CloseCurrentStaadModel` and `CloseWriteReopenStaadFile` with preserved signatures, optional defaults and complete matching interface/adapter XML IntelliSense. Core now exposes thirty Root operations.
+
+Validated named length/force codes before one native unit change; cached units refresh only on explicit request. Added exact normalized full-path polling with a captured working directory, elapsed-time deadlines, bounded sleeps and original native errors. Opening requests once and identifies the target; a timeout does not undo that request or establish domain readiness.
+
+Guarded close/write/reopen with current-model matching, an independent line snapshot, pre-close file validation, bounded blank-model/lock-release waiting and sibling temporary-file publication without truncation fallback. Intervening model changes stop writing or reopening where detected. Partial native/file effects and original failures remain visible. All workflows retain the wrapper's constructing-thread, current-binding and non-reentrancy lease. See [input units and model coordination](Root-Model-Coordination.md) for contracts and limits.
+
+Passed **975 offline tests**, including **174 new cases**, and a Release build with zero warnings/errors. Installed-package verification checks thirty Root signatures, compiles **64 XML examples**, README usage and all six Root guides, verifies expanded IntelliSense and archive equality, and exercises managed workflows against an owned temporary file. No live model mutation or new cross-version native qualification was performed.
+
 ## 1.0.0-preview.20261108.1 - 8 November 2026
 
 Provides the twenty-five documented Root operations, including detached job-information snapshots and ownership-checked asynchronous main-window controls. Retains the signatures, output/date validation, notifications, native error behavior and wrapper lifetime/thread guards described in [job information and window contracts](Root-Job-Information-and-Windows.md).

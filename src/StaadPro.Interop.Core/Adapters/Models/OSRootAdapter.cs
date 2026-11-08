@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using StaadPro.Interop.Core.Adapters.Interfaces;
 using StaadPro.Interop.Core.Enums;
 using StaadPro.Interop.Core.Models;
@@ -21,6 +22,8 @@ namespace StaadPro.Interop.Core.Adapters.Models
         {
             ComObject = (object)wrapper.RawOpenStaad ?? throw new ArgumentException("The Root binding is unavailable.", nameof(wrapper));
         }
+        internal Func<IRootPollingClock> PollingClockFactory { get; set; } = () => new RootPollingClock();
+        internal IRootModelFiles ModelFiles { get; set; } = new RootModelFiles();
         internal IRootWindowApi WindowApi { get; set; } = RootWindowApi.Instance;
 
         /// <summary>Gets the native object captured when this adapter was constructed.</summary>
@@ -575,6 +578,218 @@ namespace StaadPro.Interop.Core.Adapters.Models
                 RootWindowControl.Request(wrapper.RawOpenStaad, 9, WindowApi);
                 return true;
             });
+        }
+
+        /// <summary>Sets the current model's input length and force units using existing enum codes.</summary>
+        /// <param name="lengthUnit">Defined LengthInputUnit value: Inch=0, Feet=2, CentiMeter=3, Meter=4, MilliMeter=5, DeciMeter=6 or KiloMeter=7.</param>
+        /// <param name="forceUnit">Defined ForceInputUnit value 0 through 7: KiloPound, Pound, KiloGram, MetricTon, Newton, KiloNewton, MegaNewton or DecaNewton.</param>
+        /// <returns>This root adapter after the native void call returns without an exception.</returns>
+        /// <remarks>
+        /// <para>Validates both enums before one SetInputUnits call, sending integer length then
+        /// force codes unchanged. The native API is void; no Boolean/numeric status is interpreted
+        /// and no read-back is performed. Undefined enum values, including the unnamed length code 1,
+        /// are rejected even though the installed vendor documentation lists 1 as another Feet code.</para>
+        /// <para>This changes native input-unit state used by subsequent input operations. It does
+        /// not rescale existing managed values, convert already-stored results, change the base
+        /// unit system, save the model or restore previous units. A native failure may have partial
+        /// effects; no rollback is supplied. Coordinate session access on the appropriate COM thread.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one Root operation lease,
+        /// including every poll, sleep and file operation. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposed, replaced, wrong-thread and reentrant bindings are rejected before native or filesystem work.
+        /// Does not refresh cached units or domain bindings; after a model transition, refresh explicitly outside
+        /// this operation and reacquire adapters. The guard does not coordinate raw-object or external UI access.</para>
+        /// <para>Wrapper unit properties and cached Root unit getters retain their prior snapshots. After this method
+        /// returns, call wrapper.RefreshUnits() explicitly to reread units without replacing Root. The method
+        /// returns this same adapter and never infers native success from a return value.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// or another Root/lifecycle operation is in progress.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Either unit value is not defined by its public enum; rejected before native access.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native unit change fails; the original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The installed root lacks a compatible SetInputUnits signature.</exception>
+        /// <example>
+        /// With a connected wrapper on its constructing STA thread:
+        /// <code>
+        /// wrapper.Root.SetInputUnitsEx(StaadPro.Interop.Core.Enums.LengthInputUnit.Meter, StaadPro.Interop.Core.Enums.ForceInputUnit.KiloNewton);
+        /// </code>
+        /// </example>
+        public IOSRoot SetInputUnitsEx(LengthInputUnit lengthUnit, ForceInputUnit forceUnit)
+        {
+            return Wrapper.UseRootBinding(this, wrapper =>
+            {
+                RootModelOperations.SetInputUnitsEx(wrapper.RawOpenStaad, lengthUnit, forceUnit);
+                return this;
+            });
+        }
+
+        /// <summary>Polls this root until its reported full model path matches the requested path or the elapsed-time limit expires.</summary>
+        /// <param name="fileFullPath">Non-null, non-whitespace Windows model path, normalized before polling; relative input uses the process working directory.</param>
+        /// <param name="timeoutDurationInSeconds">Finite positive timeout in seconds within TimeSpan limits; default 60. Counts native polling time.</param>
+        /// <param name="sleepIntervalInSeconds">Finite positive polling interval in seconds within TimeSpan limits; default 0.1. Sleeps are capped by the remaining budget.</param>
+        /// <returns>True when a matching path is observed within the logical budget; false on timeout. This does not verify Geometry/Load readiness or analysis results.</returns>
+        /// <remarks>
+        /// <para>Checks immediately, then reads one native filename per poll with ordinal
+        /// case-insensitive full-path comparison. An explicitly blank filename is a nonmatch.
+        /// No open/save/close or application launch is performed. Native/read/path errors throw
+        /// instead of being treated as a blank session or timeout.</para>
+        /// <para>Uses a monotonic elapsed-time budget and synchronous waits on the caller's COM
+        /// thread. It does not pump UI messages, offer cancellation or prevent native model changes
+        /// after a match. A synchronous native call can exceed the timeout; the budget cannot abort it.
+        /// Thread.Sleep resolution can exceed the last remaining interval. Serialize session access.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one Root operation lease,
+        /// including every poll, sleep and file operation. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposed, replaced, wrong-thread and reentrant bindings are rejected before native or filesystem work.
+        /// Does not refresh cached units or domain bindings; after a model transition, refresh explicitly outside
+        /// this operation and reacquire adapters. The guard does not coordinate raw-object or external UI access.</para>
+        /// <para>Captures the process working directory before dispatch and uses it for the requested path and every
+        /// relative native filename throughout this workflow. Filename identity does not prove domain readiness
+        /// or validate the .STD contents. No new process, provider acquisition or alternate-session fallback occurs.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is in progress, or a required native filename is malformed.</exception>
+        /// <exception cref="ArgumentNullException">fileFullPath is null.</exception>
+        /// <exception cref="ArgumentException">The requested path is empty/whitespace, or requested/native text has invalid Windows syntax.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A duration is nonpositive, NaN, infinite or outside supported limits; rejected before native access.</exception>
+        /// <exception cref="NotSupportedException">A path format is unsupported.</exception>
+        /// <exception cref="System.IO.PathTooLongException">A path exceeds runtime limits.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native polling fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible filename API.</exception>
+        /// <example><code>
+        /// bool identified = wrapper.Root.AwaitModelHandle(@"C:\Models\Frame.v2.STD", 1, 0.01);
+        /// Console.WriteLine(identified);
+        /// </code></example>
+        public bool AwaitModelHandle(string fileFullPath, double timeoutDurationInSeconds = 60, double sleepIntervalInSeconds = 0.1)
+        {
+            return Wrapper.UseRootBinding(this, wrapper => RootModelWorkflow.AwaitModelHandle(wrapper.RawOpenStaad,
+                fileFullPath, timeoutDurationInSeconds, sleepIntervalInSeconds, PollingClockFactory));
+        }
+
+        /// <summary>Requests opening a model once, then waits for this root to report that exact normalized model path.</summary>
+        /// <param name="staadFileFullPath">Non-null, non-whitespace Windows model path, normalized before the native request.</param>
+        /// <param name="sleepInterval">Positive polling interval in milliseconds, capped by the remaining budget.</param>
+        /// <param name="maxWaitTime">Positive total logical limit in seconds, including the native open call; default 600.</param>
+        /// <returns>True when the exact normalized path is observed within the budget; false on timeout. A false result does not undo the open request or prove that the model stayed closed.</returns>
+        /// <remarks>
+        /// <para>Validates all input before one OpenSTAADFile request, then checks immediately and
+        /// polls native full paths with ordinal case-insensitive comparison. Uses elapsed seconds rather than an iteration count. A similarly named model in
+        /// another folder is not a match. It requests opening even if the target was already open.</para>
+        /// <para>Model switching can affect unsaved work and captured interfaces; native dialogs may
+        /// block. No auto-save, rollback, new process creation or Geometry/Load readiness check occurs.
+        /// Uses synchronous caller-thread sleeps without UI pumping or cancellation. A monotonic
+        /// budget cannot interrupt a blocked COM call. Native and path failures propagate unchanged.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one Root operation lease,
+        /// including every poll, sleep and file operation. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposed, replaced, wrong-thread and reentrant bindings are rejected before native or filesystem work.
+        /// Does not refresh cached units or domain bindings; after a model transition, refresh explicitly outside
+        /// this operation and reacquire adapters. The guard does not coordinate raw-object or external UI access.</para>
+        /// <para>Captures the process working directory before dispatch and uses it for the requested path and every
+        /// relative native filename throughout this workflow. Filename identity does not prove domain readiness
+        /// or validate the .STD contents. No new process, provider acquisition or alternate-session fallback occurs.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is in progress, or a required native filename is malformed.</exception>
+        /// <exception cref="ArgumentNullException">staadFileFullPath is null.</exception>
+        /// <exception cref="ArgumentException">The requested path is empty/whitespace, or requested/native text has invalid Windows syntax.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">sleepInterval or maxWaitTime is nonpositive; no native call occurs.</exception>
+        /// <exception cref="NotSupportedException">A path format is unsupported.</exception>
+        /// <exception cref="System.IO.PathTooLongException">A path exceeds runtime limits.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native open or polling fails; the original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible open or filename API.</exception>
+        /// <example><code>
+        /// bool identified = wrapper.Root.OpenStaadModel(@"C:\Models\Frame.v2.STD", 10, 1);
+        /// Console.WriteLine(identified);
+        /// </code></example>
+        public bool OpenStaadModel(string staadFileFullPath, int sleepInterval, int maxWaitTime = 600)
+        {
+            return Wrapper.UseRootBinding(this, wrapper => RootModelWorkflow.OpenStaadModel(wrapper.RawOpenStaad,
+                staadFileFullPath, sleepInterval, maxWaitTime, PollingClockFactory));
+        }
+
+        /// <summary>Requests a silent close only when this root reports a non-whitespace current model filename.</summary>
+        /// <remarks>
+        /// <para>Reads one full native filename. Explicit empty/whitespace text causes no mutation.
+        /// Otherwise calls native SetSilentMode with integer 1, then CloseSTAADFile once. The previous silent setting is ignored and not restored.</para>
+        /// <para>Does not explicitly save unsaved work, verify closing, terminate STAAD or dispose
+        /// the wrapper. Native dialogs can block despite silent mode, and captured model interfaces
+        /// can become unusable after closing. A filename can change after the read; callers must
+        /// coordinate UI/session access on the correct COM thread. Native failures propagate,
+        /// and a failure after setting silent mode can leave that setting changed.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one Root operation lease,
+        /// including every poll, sleep and file operation. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposed, replaced, wrong-thread and reentrant bindings are rejected before native or filesystem work.
+        /// Does not refresh cached units or domain bindings; after a model transition, refresh explicitly outside
+        /// this operation and reacquire adapters. The guard does not coordinate raw-object or external UI access.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is in progress, or a required native filename is malformed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Filename, silent-mode or close dispatch fails; the original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible filename, silent-mode or close API.</exception>
+        /// <example><code>
+        /// wrapper.Root.CloseCurrentStaadModel(); // explicitly requests closing; does not auto-save
+        /// </code></example>
+        public void CloseCurrentStaadModel()
+        {
+            Wrapper.UseRootBinding(this, wrapper =>
+            {
+                RootModelWorkflow.CloseCurrentStaadModel(wrapper.RawOpenStaad);
+                return true;
+            });
+        }
+
+        /// <summary>Closes the matching current model, replaces its existing file contents and requests reopening after bounded close/lock-release waiting.</summary>
+        /// <param name="filePath">Non-null, non-whitespace Windows path to the existing current model; normalized before dispatch.</param>
+        /// <param name="fileContents">Non-null list snapshotted before mutation. Lines are written as UTF-8 without BOM using platform newlines; null entries become empty lines.</param>
+        /// <param name="sleepTimeMilliseconds">Positive retry interval in milliseconds; capped by the remaining close/lock-release budget. Default 200.</param>
+        /// <param name="maxTimeMilliseconds">Nonnegative close/lock-release wait limit in milliseconds after the close request. Default 5000; zero permits only an immediate check.</param>
+        /// <returns>True when replacement completed and the target was identified or its reopen request returned; false for a nonmatching model, wait expiry or an intervening model switch. False can follow native side effects or a completed file replacement.</returns>
+        /// <remarks>
+        /// <para>Validates input, snapshots lines and requires the current normalized path to match
+        /// the target before closing. Rejects missing, directory or read-only targets before mutation.
+        /// Sets native silent mode to 1 without restoring it, requests closing, then waits for an
+        /// explicitly empty filename and exclusive read/write availability. Only Windows sharing/
+        /// lock violations are retried; other filesystem errors propagate.</para>
+        /// <para>Publishes a complete exclusively created sibling temporary file using File.Replace,
+        /// without truncation fallback. Only owned temporary cleanup is attempted. Rechecks blank
+        /// identity before writing and avoids reopening over a different intervening model. The
+        /// exclusive probe is a snapshot, not a transaction with external writers or the STAAD UI.
+        /// Native and filesystem races remain possible; replacement does not preserve original encoding.</para>
+        /// <para>The budget does not bound close/write/open native calls or force-abort COM. No
+        /// explicit save, backup, rollback, directory creation, process launch or reopen-readiness
+        /// verification occurs. Errors propagate; a failure can leave silent mode enabled, the model
+        /// closed or the replacement published. Serialize access on the correct session COM thread.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one Root operation lease,
+        /// including every poll, sleep and file operation. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposed, replaced, wrong-thread and reentrant bindings are rejected before native or filesystem work.
+        /// Does not refresh cached units or domain bindings; after a model transition, refresh explicitly outside
+        /// this operation and reacquire adapters. The guard does not coordinate raw-object or external UI access.</para>
+        /// <para>Captures the process working directory before dispatch and uses it for the requested path and every
+        /// relative native filename throughout this workflow. Filename identity does not prove domain readiness
+        /// or validate the .STD contents. No new process, provider acquisition or alternate-session fallback occurs.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is in progress, or a required native filename is malformed.</exception>
+        /// <exception cref="ArgumentNullException">filePath or fileContents is null.</exception>
+        /// <exception cref="ArgumentException">A requested path is empty/whitespace, or requested/native path syntax is invalid.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">sleepTimeMilliseconds is nonpositive or maxTimeMilliseconds is negative.</exception>
+        /// <exception cref="NotSupportedException">A path or filesystem operation is unsupported.</exception>
+        /// <exception cref="System.IO.IOException">The target is missing/a directory or a non-lock filesystem operation fails; original failures propagate.</exception>
+        /// <exception cref="UnauthorizedAccessException">The target is read-only or permissions prevent required access.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native identity, silent-mode, close or open dispatch fails.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a required native signature.</exception>
+        /// <example><code>
+        /// var editedLines = new System.Collections.Generic.List&lt;string&gt; { "STAAD SPACE", "UNIT METER KN", "FINISH" };
+        /// bool requested = wrapper.Root.CloseWriteReopenStaadFile(@"C:\Models\Frame.v2.STD", editedLines);
+        /// Console.WriteLine(requested); // explicit file replacement; no reopen-readiness guarantee
+        /// </code></example>
+        public bool CloseWriteReopenStaadFile(string filePath, List<string> fileContents, int sleepTimeMilliseconds = 200, int maxTimeMilliseconds = 5000)
+        {
+            return Wrapper.UseRootBinding(this, wrapper => RootModelWorkflow.CloseWriteReopenStaadFile(wrapper.RawOpenStaad,
+                filePath, fileContents, sleepTimeMilliseconds, maxTimeMilliseconds, PollingClockFactory, ModelFiles));
         }
     }
 }

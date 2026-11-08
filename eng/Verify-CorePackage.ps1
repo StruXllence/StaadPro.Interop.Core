@@ -22,11 +22,12 @@ try {
     $pathGuide = Read-Entry 'docs/Root-Path-Helpers.md'
     $lifecycleGuide = Read-Entry 'docs/Root-Model-Lifecycle.md'
     $jobWindowGuide = Read-Entry 'docs/Root-Job-Information-and-Windows.md'
+    $coordinationGuide = Read-Entry 'docs/Root-Model-Coordination.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
     if ([string]$metadata.title -ne 'StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)') { throw 'Unexpected package title.' }
-    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','twenty-five Root operations')) {
+    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','thirty Root operations')) {
         if (([string]$metadata.description).IndexOf($term,[StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Incomplete package description: $term" }
     }
     $packageTags = @(([string]$metadata.tags) -split '\s+' | Where-Object { $_ })
@@ -35,9 +36,9 @@ try {
     }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
-    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch 'twenty-five Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
+    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch 'thirty Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
     if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
     foreach ($badge in @(
         'https://github.com/StruXllence/StaadPro.Interop.Core/actions/workflows/build-and-test.yml/badge.svg?branch=staadpro-interop-core',
@@ -57,12 +58,12 @@ try {
     $version = [string] $metadata.version
     if ($readme -notmatch ('(?m)^## Version ' + [regex]::Escape($version) + '\r?$') -or (Read-Entry 'docs/Release-Notes.md') -notmatch ('(?m)^## ' + [regex]::Escape($version) + ' - ')) { throw 'Package version and current documentation differ.' }
     if ($documentation.SelectNodes('//include|//inheritdoc').Count -ne 0) { throw 'Shipped IntelliSense must expand source documentation.' }
-    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen','SetSilentMode','SaveModel','OpenSTAADFile','CloseSTAADFile','ShowApplication','GetShortJobInfo','GetFullJobInfo','MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow')) {
-        $memberId = if ($operation -in @('IsTarget','ModelIsOpen','OpenSTAADFile')) { $operation + '(System.String)' } elseif ($operation -in @('SetSilentMode','SaveModel')) { $operation + '(StaadPro.Interop.Core.Enums.SilentMode)' } else { $operation }
+    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen','SetSilentMode','SaveModel','OpenSTAADFile','CloseSTAADFile','ShowApplication','GetShortJobInfo','GetFullJobInfo','MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','SetInputUnitsEx','AwaitModelHandle','OpenStaadModel','CloseCurrentStaadModel','CloseWriteReopenStaadFile')) {
+        $memberId = if ($operation -in @('IsTarget','ModelIsOpen','OpenSTAADFile')) { $operation + '(System.String)' } elseif ($operation -in @('SetSilentMode','SaveModel')) { $operation + '(StaadPro.Interop.Core.Enums.SilentMode)' } elseif ($operation -eq 'SetInputUnitsEx') { $operation + '(StaadPro.Interop.Core.Enums.LengthInputUnit,StaadPro.Interop.Core.Enums.ForceInputUnit)' } elseif ($operation -eq 'AwaitModelHandle') { $operation + '(System.String,System.Double,System.Double)' } elseif ($operation -eq 'OpenStaadModel') { $operation + '(System.String,System.Int32,System.Int32)' } elseif ($operation -eq 'CloseWriteReopenStaadFile') { $operation + '(System.String,System.Collections.Generic.List{System.String},System.Int32,System.Int32)' } else { $operation }
         $contract = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Interfaces.IOSRoot.$memberId']")
         $implementation = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Models.OSRootAdapter.$memberId']")
         if ($null -eq $contract -or $null -eq $implementation -or $contract.InnerXml -cne $implementation.InnerXml) { throw "Missing/mismatched Root documentation: $operation" }
-        foreach ($section in @('summary','returns','remarks','exception','example/code')) { if ($section -eq 'returns' -and $operation -in @('MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow')) { continue }; if ($null -eq $contract.SelectSingleNode($section)) { throw "Incomplete Root documentation: $operation/$section" } }
+        foreach ($section in @('summary','returns','remarks','exception','example/code')) { if ($section -eq 'returns' -and $operation -in @('MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','CloseCurrentStaadModel')) { continue }; if ($null -eq $contract.SelectSingleNode($section)) { throw "Incomplete Root documentation: $operation/$section" } }
     }
     $examples = @($documentation.SelectNodes('//example/code'))
 }
@@ -102,12 +103,14 @@ public sealed class NativeRoot
     public object PathValue = @"C:\Models\Structure.std", FolderValue = @"C:\Models\", PhysicalValue = true, ErrorValue = "", ProcessIdValue = 321u;
     public readonly List<string> LifecycleCalls = new List<string>();
     public Exception MutationFailure;
+    public bool TransitionPaths;
     public object PreviousMode = false;
     private void Mutation(string name) { Calls++; LifecycleCalls.Add(name); if (MutationFailure != null) throw MutationFailure; }
     public object SetSilentMode(object mode) { if (mode is not int) throw new Exception("Mode must be Int32."); Mutation("SetSilentMode"); return PreviousMode; }
+    public void SetInputUnits(object length, object force) { if (length is not int || force is not int) throw new Exception("Units require Int32."); Mutation("SetInputUnits"); }
     public void SaveModel(object mode) { if (mode is not int) throw new Exception("Save mode must be Int32."); Mutation("SaveModel"); }
-    public void OpenSTAADFile(object path) { if (path is not string text || !System.IO.Path.IsPathFullyQualified(text)) throw new Exception("Open requires a full path."); Mutation("OpenSTAADFile"); }
-    public void CloseSTAADFile() => Mutation("CloseSTAADFile");
+    public void OpenSTAADFile(object path) { if (path is not string text || !System.IO.Path.IsPathFullyQualified(text)) throw new Exception("Open requires a full path."); Mutation("OpenSTAADFile"); if (TransitionPaths) PathValue = text; }
+    public void CloseSTAADFile() { Mutation("CloseSTAADFile"); if (TransitionPaths) PathValue = ""; }
     public object ShowApplication() { Mutation("ShowApplication"); return false; }
     public bool WriteOutput = true;
     public void GetSTAADFile(ref object value, object fullPath)
@@ -231,7 +234,32 @@ internal static class PackageSmoke
             var current=wrapper.Root;wrapper.Dispose();
             foreach (var operation in newOperations) { rejected=false;try{operation(current);}catch(ObjectDisposedException){rejected=true;}if(!rejected||jobNative.Calls!=before)throw new Exception("Disposed job/window binding dispatched."); }
         }
-        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow" };
+        var workflowNative = new NativeRoot { TransitionPaths = true };
+        using (var wrapper = new OpenStaadWrapper(workflowNative))
+        {
+            var root = wrapper.Root;
+            if (!ReferenceEquals(root.SetInputUnitsEx(LengthInputUnit.Meter,ForceInputUnit.KiloNewton),root)) throw new Exception("Unit adapter identity changed.");
+            if (!root.AwaitModelHandle(@"c:/models/./STRUCTURE.std",1,.01)) throw new Exception("Exact model wait failed.");
+            if (!root.OpenStaadModel(@"C:\Models\Other.std",1,1)) throw new Exception("Open and identity wait failed.");
+            root.CloseCurrentStaadModel();
+            if (root.GetStaadFileFullPath()!="") throw new Exception("Conditional close failed.");
+            string directory=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"StaadCoreConsumer-"+Guid.NewGuid().ToString("N"));
+            System.IO.Directory.CreateDirectory(directory);
+            string target=System.IO.Path.Combine(directory,"Owned.std");
+            try
+            {
+                System.IO.File.WriteAllText(target,"original");workflowNative.PathValue=target;
+                if (!root.CloseWriteReopenStaadFile(target,new List<string>{"STAAD SPACE",null,"FINISH"},1,0)) throw new Exception("File workflow failed.");
+                if (System.IO.File.ReadAllText(target)!="STAAD SPACE"+Environment.NewLine+Environment.NewLine+"FINISH"+Environment.NewLine || !root.ModelIsOpen(target) || System.IO.Directory.GetFiles(directory).Length!=1) throw new Exception("Replacement/cleanup/reopen contract failed.");
+            }
+            finally { foreach(string owned in System.IO.Directory.GetFiles(directory)) System.IO.File.Delete(owned);System.IO.Directory.Delete(directory,false); }
+            Action<IOSRoot>[] operations={r=>r.SetInputUnitsEx(LengthInputUnit.Meter,ForceInputUnit.KiloNewton),r=>r.AwaitModelHandle(@"C:\Models\Other.std",1,.01),r=>r.OpenStaadModel(@"C:\Models\Other.std",1,1),r=>r.CloseCurrentStaadModel(),r=>r.CloseWriteReopenStaadFile(@"C:\Models\Other.std",new List<string>())};
+            wrapper.RefreshComObjects();int before=workflowNative.Calls;
+            foreach(var operation in operations){bool rejected=false;try{operation(root);}catch(InvalidOperationException){rejected=true;}if(!rejected||workflowNative.Calls!=before)throw new Exception("Stale workflow binding dispatched.");}
+            var current=wrapper.Root;wrapper.Dispose();
+            foreach(var operation in operations){bool rejected=false;try{operation(current);}catch(ObjectDisposedException){rejected=true;}if(!rejected||workflowNative.Calls!=before)throw new Exception("Disposed workflow binding dispatched.");}
+        }
+        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile" };
         foreach (var contract in assembly.GetTypes().Where(t=>t.IsInterface && t.Namespace=="StaadPro.Interop.Core.Adapters.Interfaces"))
         {
             var methods = contract.GetMethods().Where(m=>!m.IsSpecialName).ToArray();
@@ -247,10 +275,19 @@ internal static class PackageSmoke
                     { if (parameters.Length != 1 || parameters[0].ParameterType != typeof(SilentMode) || parameters[0].Name != "silentMode" || parameters[0].IsOptional || method.ReturnType != (method.Name == "SetSilentMode" ? typeof(bool) : typeof(IOSRoot))) throw new Exception("Mode signature changed."); }
                     else if (method.Name == "OpenSTAADFile")
                     { if (parameters.Length != 1 || parameters[0].ParameterType != typeof(string) || parameters[0].Name != "filePath" || parameters[0].IsOptional || method.ReturnType != typeof(IOSRoot)) throw new Exception("Open signature changed."); }
+                    else if (method.Name == "SetInputUnitsEx")
+                    { if (!parameters.Select(p=>p.ParameterType).SequenceEqual(new[] { typeof(LengthInputUnit),typeof(ForceInputUnit) }) || !parameters.Select(p=>p.Name).SequenceEqual(new[] { "lengthUnit","forceUnit" }) || parameters.Any(p=>p.IsOptional) || method.ReturnType!=typeof(IOSRoot)) throw new Exception("Unit signature changed."); }
+                    else if (method.Name == "AwaitModelHandle")
+                    { if (!parameters.Select(p=>p.ParameterType).SequenceEqual(new[] { typeof(string),typeof(double),typeof(double) }) || !parameters.Select(p=>p.Name).SequenceEqual(new[] { "fileFullPath","timeoutDurationInSeconds","sleepIntervalInSeconds" }) || parameters[0].IsOptional || !parameters.Skip(1).All(p=>p.IsOptional) || !parameters.Skip(1).Select(p=>p.DefaultValue).SequenceEqual(new object[] { 60d,.1d }) || method.ReturnType!=typeof(bool)) throw new Exception("Wait signature changed."); }
+                    else if (method.Name == "OpenStaadModel")
+                    { if (!parameters.Select(p=>p.ParameterType).SequenceEqual(new[] { typeof(string),typeof(int),typeof(int) }) || !parameters.Select(p=>p.Name).SequenceEqual(new[] { "staadFileFullPath","sleepInterval","maxWaitTime" }) || parameters.Take(2).Any(p=>p.IsOptional) || !parameters[2].IsOptional || !Equals(parameters[2].DefaultValue,600) || method.ReturnType!=typeof(bool)) throw new Exception("Open/wait signature changed."); }
+                    else if (method.Name == "CloseWriteReopenStaadFile")
+                    { if (!parameters.Select(p=>p.ParameterType).SequenceEqual(new[] { typeof(string),typeof(List<string>),typeof(int),typeof(int) }) || !parameters.Select(p=>p.Name).SequenceEqual(new[] { "filePath","fileContents","sleepTimeMilliseconds","maxTimeMilliseconds" }) || parameters.Take(2).Any(p=>p.IsOptional) || !parameters.Skip(2).All(p=>p.IsOptional) || !parameters.Skip(2).Select(p=>p.DefaultValue).SequenceEqual(new object[] { 200,5000 }) || method.ReturnType!=typeof(bool)) throw new Exception("Rewrite signature changed."); }
                     else if (parameters.Length != 0) throw new Exception("Unexpected Root parameters.");
                     if (method.Name == "GetShortJobInfo" && method.ReturnType != typeof(ShortJobInfo)) throw new Exception("Short job result type changed.");
                     if (method.Name == "GetFullJobInfo" && method.ReturnType != typeof(FullJobInfo)) throw new Exception("Full job result type changed.");
                     if ((method.Name == "MinimizeStaadMainWindow" || method.Name == "MaximizeStaadMainWindow" || method.Name == "RestoreStaadMainWindow") && method.ReturnType != typeof(void)) throw new Exception("Window return contract changed.");
+                    if (method.Name == "CloseCurrentStaadModel" && method.ReturnType != typeof(void)) throw new Exception("Close current result changed.");
                     if ((method.Name == "CloseSTAADFile" || method.Name == "ShowApplication") && method.ReturnType != typeof(IOSRoot)) throw new Exception("Fluent return changed.");
                 }
             }
@@ -266,7 +303,7 @@ internal static class PackageSmoke
             var entry=docs.Descendants("member").Single(e=>(string)e.Attribute("name")==methodId);
             if (entry.Element("returns")==null || entry.Elements("param").Count()!=factory.GetParameters().Length) throw new Exception("Incomplete job factory IntelliSense.");
         }
-        Console.WriteLine("PASS: installed foundation, twenty-five guarded Root operations, XML and dependency isolation.");
+        Console.WriteLine("PASS: installed foundation, thirty guarded Root operations, XML and dependency isolation.");
     }
 }
 '@
@@ -289,6 +326,9 @@ if ([string]::IsNullOrWhiteSpace($lifecycleCode)) { throw 'Missing lifecycle gui
 $jobCode = [regex]::Match($jobWindowGuide, '(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
 if ([string]::IsNullOrWhiteSpace($jobCode)) { throw 'Missing job/window guide usage example.' }
 [IO.File]::WriteAllText((Join-Path $consumer 'RootJobWindowExample.cs'), 'using System; using StaadPro.Interop.Core.Models; internal static class RootJobWindowExample { static void Example() { using var wrapper = new OpenStaadWrapper(new NativeRoot());' + [Environment]::NewLine + $jobCode + [Environment]::NewLine + '}}')
+$coordinationCode = [regex]::Match($coordinationGuide, '(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if ([string]::IsNullOrWhiteSpace($coordinationCode)) { throw 'Missing model coordination guide example.' }
+[IO.File]::WriteAllText((Join-Path $consumer 'RootCoordinationExample.cs'), 'using System; using StaadPro.Interop.Core.Models; internal static class RootCoordinationExample { static void Example() { using var wrapper = new OpenStaadWrapper(new NativeRoot());' + [Environment]::NewLine + $coordinationCode + [Environment]::NewLine + '}}')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -309,4 +349,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all five Root guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all six Root guide examples compiled without executing native examples.')

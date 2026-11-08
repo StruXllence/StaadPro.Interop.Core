@@ -438,5 +438,92 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         ///     Console.WriteLine(result);
         /// }</code></example>
         IOSRoot ShowApplication();
+
+        /// <summary>Reads the current model's job name, client and originating engineer into a detached editable snapshot.</summary>
+        /// <returns>A fresh ShortJobInfo with exact native text, including empty strings, whitespace and Unicode. Edits raise managed property notifications and do not update STAAD.</returns>
+        /// <remarks><para>Invokes GetShortJobInfo once with three BSTR-shaped reference outputs. Unlike GetFullJobInfo, this reads no dates or extended job fields. Every output must be written and string-valued; unwritten, null, DBNull and other shapes throw instead of becoming empty text. Native void completion is not interpreted as a numeric or Boolean status. No filename, analysis, acquisition, setter, cache refresh or model mutation is requested.</para>
+        /// <para>Uses the current captured root and the wrapper's constructing COM thread under its shared operation lease. Reacquire wrapper.Root after RefreshComObjects. Disposed or replaced bindings, another thread and nested Root/refresh/disposal operations are rejected before dispatch. Raw callers and external UI/model edits bypass the guard. Reads are synchronous snapshots, not proof of native readiness or an atomic view across multiple calls. No worker dispatch, retries or alternate-instance fallback occurs.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">An output is unwritten/non-string, or the binding, thread or operation state is invalid.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required GetShortJobInfo reference-output contract.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// var info = wrapper.Root.GetShortJobInfo();
+        /// Console.WriteLine(info.Name + ": " + info.Client);
+        /// </code></example>
+        ShortJobInfo GetShortJobInfo();
+
+        /// <summary>Reads all thirteen current-model job fields into a detached editable full job snapshot.</summary>
+        /// <returns>A fresh FullJobInfo preserving native text and parsing the originated, checked and approved dates. Empty or whitespace-only dates map to DateTime.MinValue; other dates use CurrentCulture. No result is cached or written back.</returns>
+        /// <remarks><para>Unlike GetShortJobInfo, this reads name, client, originator, engineer date, number, revision, part, reference, checker, checked date, approver, approved date and comments, in that exact native order. One call initializes thirteen BSTR-shaped reference outputs and validates every value as written text before any date parsing. Null, DBNull, non-string and unwritten outputs throw. The existing factory retains DateTime properties and uses DateTime.Parse with CurrentCulture and DateTimeStyles.None; ambiguous dates are not retried under another culture. Raw non-date text, Unicode, whitespace and comment line breaks are preserved. Native void completion supplies no status flag. Edits affect managed storage only; no setter, cache refresh, acquisition, save or analysis occurs.</para>
+        /// <para>Uses the current captured root and the wrapper's constructing COM thread under its shared operation lease. Reacquire wrapper.Root after RefreshComObjects. Disposed or replaced bindings, another thread and nested Root/refresh/disposal operations are rejected before dispatch. Raw callers and external UI/model edits bypass the guard. Reads are synchronous snapshots, not proof of native readiness or an atomic view across multiple calls. No worker dispatch, retries or alternate-instance fallback occurs.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">An output is unwritten/non-string, or the binding, thread or operation state is invalid.</exception>
+        /// <exception cref="FormatException">A nonempty native date cannot be parsed using the current culture.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails; the original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks the required GetFullJobInfo reference-output contract.</exception>
+        /// <example>With a connected wrapper on its constructing STA thread:<code>
+        /// var info = wrapper.Root.GetFullJobInfo();
+        /// Console.WriteLine(info.Number);
+        /// if (info.Originated != DateTime.MinValue) Console.WriteLine(info.Originated);
+        /// </code></example>
+        FullJobInfo GetFullJobInfo();
+
+        /// <summary>Requests the minimized state for the main window reported by this bound STAAD root.</summary>
+        /// <remarks>
+        /// <para>Unlike cached GetMainWindowHandle, this reads the bound root's live window handle. After validating its pointer-sized shape, reads GetProcessId once and verifies the HWND with IsWindow and GetWindowThreadProcessId. Only a nonzero existing window owned by the reported positive native process ID receives ShowWindowAsync with command 6. This requests minimization; Windows may activate the next top-level window. No foreground-focus guarantee or completed-state read-back is provided.</para>
+        /// <para>This void request returns after Windows accepts the asynchronous show-state operation; acceptance does not certify that the state became visible. A zero/-1, malformed or out-of-range handle, invalid PID, missing/recycled window, ownership mismatch or rejected Windows request throws. Validation reduces cross-session mistakes but cannot eliminate handle recycling or external UI races after the checks. Unlike ShowApplication, this uses Windows show-state control rather than a native visibility request; it does not launch STAAD, change the active model, save, analyze, refresh cached metadata, poll or retry.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under the shared Root operation lease, using the captured session only. Reacquire wrapper.Root after RefreshComObjects. Disposal, stale binding, wrong-thread and nested Root/refresh/disposal work are rejected before native/Windows access. Raw-object calls and external UI changes bypass the guard. Native COM queries can block; no worker dispatch, automatic rollback or alternate-instance fallback occurs. A native/Windows exception can follow partial effects.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation state, live handle, PID or window ownership is invalid, or Windows rejects the request.</exception>
+        /// <exception cref="PlatformNotSupportedException">The default window transport is invoked outside Windows.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A live native handle or process query fails; its original HRESULT propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks GetMainWindowHandle or GetProcessId.</exception>
+        /// <exception cref="System.DllNotFoundException">The required Windows window-management library is unavailable.</exception>
+        /// <exception cref="EntryPointNotFoundException">A required Windows window-management function is unavailable.</exception>
+        /// <example>With an owned connected STAAD session on its constructing STA thread:<code>
+        /// bool changeWindowState = false; // Enable only when this window change is intended.
+        /// if (changeWindowState) wrapper.Root.MinimizeStaadMainWindow();
+        /// </code></example>
+        void MinimizeStaadMainWindow();
+
+        /// <summary>Requests the maximized state for the main window reported by this bound STAAD root.</summary>
+        /// <remarks>
+        /// <para>Unlike cached GetMainWindowHandle, this reads the bound root's live window handle. After validating its pointer-sized shape, reads GetProcessId once and verifies the HWND with IsWindow and GetWindowThreadProcessId. Only a nonzero existing window owned by the reported positive native process ID receives ShowWindowAsync with command 3. This requests the maximized state. No foreground-focus guarantee or completed-state read-back is provided.</para>
+        /// <para>This void request returns after Windows accepts the asynchronous show-state operation; acceptance does not certify that the state became visible. A zero/-1, malformed or out-of-range handle, invalid PID, missing/recycled window, ownership mismatch or rejected Windows request throws. Validation reduces cross-session mistakes but cannot eliminate handle recycling or external UI races after the checks. Unlike ShowApplication, this uses Windows show-state control rather than a native visibility request; it does not launch STAAD, change the active model, save, analyze, refresh cached metadata, poll or retry.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under the shared Root operation lease, using the captured session only. Reacquire wrapper.Root after RefreshComObjects. Disposal, stale binding, wrong-thread and nested Root/refresh/disposal work are rejected before native/Windows access. Raw-object calls and external UI changes bypass the guard. Native COM queries can block; no worker dispatch, automatic rollback or alternate-instance fallback occurs. A native/Windows exception can follow partial effects.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation state, live handle, PID or window ownership is invalid, or Windows rejects the request.</exception>
+        /// <exception cref="PlatformNotSupportedException">The default window transport is invoked outside Windows.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A live native handle or process query fails; its original HRESULT propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks GetMainWindowHandle or GetProcessId.</exception>
+        /// <exception cref="System.DllNotFoundException">The required Windows window-management library is unavailable.</exception>
+        /// <exception cref="EntryPointNotFoundException">A required Windows window-management function is unavailable.</exception>
+        /// <example>With an owned connected STAAD session on its constructing STA thread:<code>
+        /// bool changeWindowState = false; // Enable only when this window change is intended.
+        /// if (changeWindowState) wrapper.Root.MaximizeStaadMainWindow();
+        /// </code></example>
+        void MaximizeStaadMainWindow();
+
+        /// <summary>Requests the restored state for the main window reported by this bound STAAD root.</summary>
+        /// <remarks>
+        /// <para>Unlike cached GetMainWindowHandle, this reads the bound root's live window handle. After validating its pointer-sized shape, reads GetProcessId once and verifies the HWND with IsWindow and GetWindowThreadProcessId. Only a nonzero existing window owned by the reported positive native process ID receives ShowWindowAsync with command 9. This requests restoration from a minimized or maximized state. No foreground-focus guarantee or completed-state read-back is provided.</para>
+        /// <para>This void request returns after Windows accepts the asynchronous show-state operation; acceptance does not certify that the state became visible. A zero/-1, malformed or out-of-range handle, invalid PID, missing/recycled window, ownership mismatch or rejected Windows request throws. Validation reduces cross-session mistakes but cannot eliminate handle recycling or external UI races after the checks. Unlike ShowApplication, this uses Windows show-state control rather than a native visibility request; it does not launch STAAD, change the active model, save, analyze, refresh cached metadata, poll or retry.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under the shared Root operation lease, using the captured session only. Reacquire wrapper.Root after RefreshComObjects. Disposal, stale binding, wrong-thread and nested Root/refresh/disposal work are rejected before native/Windows access. Raw-object calls and external UI changes bypass the guard. Native COM queries can block; no worker dispatch, automatic rollback or alternate-instance fallback occurs. A native/Windows exception can follow partial effects.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation state, live handle, PID or window ownership is invalid, or Windows rejects the request.</exception>
+        /// <exception cref="PlatformNotSupportedException">The default window transport is invoked outside Windows.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A live native handle or process query fails; its original HRESULT propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks GetMainWindowHandle or GetProcessId.</exception>
+        /// <exception cref="System.DllNotFoundException">The required Windows window-management library is unavailable.</exception>
+        /// <exception cref="EntryPointNotFoundException">A required Windows window-management function is unavailable.</exception>
+        /// <example>With an owned connected STAAD session on its constructing STA thread:<code>
+        /// bool changeWindowState = false; // Enable only when this window change is intended.
+        /// if (changeWindowState) wrapper.Root.RestoreStaadMainWindow();
+        /// </code></example>
+        void RestoreStaadMainWindow();
     }
 }

@@ -1,5 +1,14 @@
 # Release notes
 
+## 1.0.0-preview.20261108 - 8 November 2026
+
+Ported `GetShortJobInfo()`, `GetFullJobInfo()`, `MinimizeStaadMainWindow()`, `MaximizeStaadMainWindow()` and `RestoreStaadMainWindow()`, preserving public names and signatures. Added detached editable `ShortJobInfo` and `FullJobInfo` models, factories and managed property-change notifications without a WPF dependency.
+
+Validated every native job-output string before constructing snapshots or parsing dates. Preserved empty text and culture-aware date parsing, with blank dates represented by `DateTime.MinValue`. Window operations read the live HWND and process ID, validate window ownership, and submit the documented asynchronous state commands. Reused the existing thread, binding, disposal and non-reentrancy guards without retries, polling or automatic cache refresh. See [job information and window contracts](Root-Job-Information-and-Windows.md).
+
+Passed a Release build with zero warnings/errors and **801 offline tests**, including **177 new cases**. The installed consumer checked all 25 Root signatures and compiled **54 XML examples**, README usage and all five Root guides. Live STAAD/COM/window qualification remains separate.
+
+
 ## 1.0.0-preview.20261107 - 7 November 2026
 
 Ported `SetSilentMode(SilentMode silentMode)`, `SaveModel(SilentMode silentMode)`, `OpenSTAADFile(string filePath)`, `CloseSTAADFile()` and `ShowApplication()` with complete matching interface/adapter XML IntelliSense. Added the 0/1 `SilentMode` enum and shared operation validation, preserving names, parameter contracts and fluent adapter returns.

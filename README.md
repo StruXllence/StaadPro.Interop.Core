@@ -19,9 +19,9 @@ dotnet add ./YourApp.csproj package StaadPro.Interop.Core --prerelease --source 
 ~~~
 In Visual Studio's NuGet Package Manager, enable **Include prerelease** and search for **StaadPro.Interop.Core**. Target `net9.0-windows` and use an STA entry point for native automation. The NuGet badge tracks the latest public preview; see the [installation guide](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Installation.md) for exact-version and local-feed instructions.
 
-## Version 1.0.0-preview.20261107
+## Version 1.0.0-preview.20261108
 
-This Core preview contains the wrapper/acquisition foundation and **twenty Root operations**. Fifteen observe metadata, model/process information and model paths. Five manage the bound model/application: `SetSilentMode(SilentMode silentMode)`, `SaveModel(SilentMode silentMode)`, `OpenSTAADFile(string filePath)`, `CloseSTAADFile()` and `ShowApplication()`. See [model and application contracts](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Root-Model-Lifecycle.md). Geometry, Load, Output, Property, Support, Design, Commands, Table, View and IDEA StatiCa remain binding-only placeholders.
+This Core preview contains wrapper/acquisition infrastructure and **twenty-five Root operations**: metadata, model/process and path observations, model/application requests, job-information snapshots and main-window controls. New functions are `GetShortJobInfo()`, `GetFullJobInfo()`, `MinimizeStaadMainWindow()`, `MaximizeStaadMainWindow()` and `RestoreStaadMainWindow()`. See [job information and window contracts](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Root-Job-Information-and-Windows.md) and [model lifecycle contracts](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Root-Model-Lifecycle.md). Geometry, Load, Output, Property, Support, Design, Commands, Table, View and IDEA StatiCa remain binding-only placeholders.
 
 The package targets **net9.0-windows**. It has no dependency on the Framework StaadPro.Interop package, WPF or Newtonsoft.Json. Live use requires a separately installed, licensed STAAD.Pro application with compatible OpenSTAAD members. Build/package checks do not certify every native build or licensing state.
 

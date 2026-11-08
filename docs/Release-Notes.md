@@ -1,5 +1,12 @@
 # Release notes
 
+## 1.0.0-preview.20261108.1 - 8 November 2026
+
+Provides the twenty-five documented Root operations, including detached job-information snapshots and ownership-checked asynchronous main-window controls. Retains the signatures, output/date validation, notifications, native error behavior and wrapper lifetime/thread guards described in [job information and window contracts](Root-Job-Information-and-Windows.md).
+
+Verified the Release package through an isolated consumer with **54 compiled XML examples**, README usage and all five Root guides. The unchanged implementation passed **801 offline tests**. Live STAAD/COM/window qualification remains separate.
+
+
 ## 1.0.0-preview.20261108 - 8 November 2026
 
 Ported `GetShortJobInfo()`, `GetFullJobInfo()`, `MinimizeStaadMainWindow()`, `MaximizeStaadMainWindow()` and `RestoreStaadMainWindow()`, preserving public names and signatures. Added detached editable `ShortJobInfo` and `FullJobInfo` models, factories and managed property-change notifications without a WPF dependency.

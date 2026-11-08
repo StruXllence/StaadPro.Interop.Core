@@ -1,6 +1,6 @@
 # Root job information and window controls
 
-Preview `1.0.0-preview.20261108` adds `GetShortJobInfo()`, `GetFullJobInfo()`, `MinimizeStaadMainWindow()`, `MaximizeStaadMainWindow()` and `RestoreStaadMainWindow()`. All five preserve their public names, return types and parameterless signatures on `IOSRoot` and `OSRootAdapter`, with matching expanded XML IntelliSense.
+Preview `1.0.0-preview.20261108.1` provides `GetShortJobInfo()`, `GetFullJobInfo()`, `MinimizeStaadMainWindow()`, `MaximizeStaadMainWindow()` and `RestoreStaadMainWindow()`. All five preserve their public names, return types and parameterless signatures on `IOSRoot` and `OSRootAdapter`, with matching expanded XML IntelliSense.
 
 ## Job-information snapshots
 

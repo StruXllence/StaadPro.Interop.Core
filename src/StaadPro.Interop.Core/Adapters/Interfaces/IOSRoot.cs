@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using StaadPro.Interop.Core.Enums;
 using StaadPro.Interop.Core.Models;
+using StaadPro.Interop.Core.Models.Root;
 
 namespace StaadPro.Interop.Core.Adapters.Interfaces
 {
@@ -712,5 +713,166 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(requested); // explicit file replacement; no reopen-readiness guarantee
         /// </code></example>
         bool CloseWriteReopenStaadFile(string filePath, List<string> fileContents, int sleepTimeMilliseconds = 200, int maxTimeMilliseconds = 5000);
+
+        /// <summary>Requests analysis of the currently opened STAAD model with explicit engine-dialog and waiting options.</summary>
+        /// <param name="silentMode">Defined SilentMode code 0/1 controlling supported engine warnings; no separate application SetSilentMode call is made.</param>
+        /// <param name="hiddenMode">Defined HiddenMode code 0/1 controlling the analysis-engine dialog.</param>
+        /// <param name="waitMode">Defined WaitAnalysisMode: Return=0 requests immediate return; Wait=1 requests native completion waiting.</param>
+        /// <returns>The native integer analysis status as AnalysisResult: -1 terminated, 0 general error, 1 in progress, 2 completed successfully, 3 warnings, 4 errors or 5 not performed. Unrecognized Int32 codes are preserved as undefined enum values.</returns>
+        /// <remarks>
+        /// <para>Validates all flags before one AnalyzeEx call with integer silent/hidden/wait codes
+        /// in that order. Accepts only supported CLR integer status values within Int32 range; null,
+        /// Boolean, floating-point, decimal and string responses throw rather than being coerced
+        /// into success. Defined native failure/in-progress codes are returned, not converted to exceptions.</para>
+        /// <para>This starts native analysis and may generate/change analysis output files and display
+        /// dialogs. No managed pre-save, target/readiness check, extra SetSilentMode call, result-file
+        /// retrieval, retry, cancellation, timeout or rollback is supplied. Return mode does not mean
+        /// completion; wait mode can block. After Return mode, the engine may continue running outside the managed lease.
+        /// Silent/hidden flags do not guarantee unattended execution.
+        /// Serialize calls on the correct COM thread and explicitly inspect the returned status.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one shared Root operation lease. Reacquire
+        /// wrapper.Root after RefreshComObjects. Disposed, replaced, wrong-thread and reentrant Root/refresh/disposal
+        /// access is rejected before native dispatch. The lease ends when this operation returns.
+        /// Cached units, metadata and domain bindings are not refreshed. Raw-object and external UI access bypass
+        /// this guard; it does not serialize a different wrapper or prevent later native state changes.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is active, or required native output is malformed or unavailable.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Any flag is undefined; rejected before analysis dispatch.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native analysis dispatch fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible AnalyzeEx signature.</exception>
+        /// <example><code>
+        /// bool runAnalysis = false; // Enable only when this model should be analyzed.
+        /// if (runAnalysis)
+        /// {
+        ///     var status = wrapper.Root.AnalyzeEx(StaadPro.Interop.Core.Enums.SilentMode.Enable,
+        ///         StaadPro.Interop.Core.Enums.HiddenMode.Enable, StaadPro.Interop.Core.Enums.WaitAnalysisMode.Return);
+        ///     Console.WriteLine(status); // Inspect status; Return does not mean completion.
+        /// }
+        /// </code></example>
+        AnalysisResult AnalyzeEx(SilentMode silentMode, HiddenMode hiddenMode, WaitAnalysisMode waitMode);
+
+        /// <summary>Requests analysis through the native Analyze entry point for the current model.</summary>
+        /// <remarks><para>Calls native Analyze once with no arguments. This is the documented UI-equivalent analysis request;
+        /// no analysis flags are supplied and no alternative entry point is substituted.
+        /// Application silent-mode, license and native dialog behavior still apply.</para>
+        /// <para>The native return is void. Normal return does not report analysis success, completion, result availability or persistence.
+        /// Use IsAnalyzing/GetAnalysisStatus explicitly to observe state, or AnalyzeEx when its documented controls are needed.
+        /// No save, polling, timeout, wrapper refresh, retry or rollback is added. The call may block or display UI.
+        /// Use the acquired session's COM thread and serialize analysis and edits; an exception may follow a started analysis.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one shared Root operation lease. Reacquire
+        /// wrapper.Root after RefreshComObjects. Disposed, replaced, wrong-thread and reentrant Root/refresh/disposal
+        /// access is rejected before native dispatch. The lease ends when this operation returns.
+        /// Cached units, metadata and domain bindings are not refreshed. Raw-object and external UI access bypass
+        /// this guard; it does not serialize a different wrapper or prevent later native state changes.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is active, or required native output is malformed or unavailable.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native analysis request fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible Analyze member.</exception>
+        /// <exception cref="System.Runtime.InteropServices.InvalidComObjectException">The captured COM wrapper is no longer associated with a usable native object.</exception>
+        /// <example><code>
+        /// bool runAnalysis = false; // enable only when analysis should actually be requested
+        /// if (runAnalysis) wrapper.Root.Analyze();
+        /// </code></example>
+        void Analyze();
+
+        /// <summary>Reads whether analysis is currently running in the bound STAAD application.</summary>
+        /// <returns>True for native Boolean true or integral one; false for Boolean false or integral zero.</returns>
+        /// <remarks><para>Calls native IsAnalyzing once. Other integers, null, strings, fractional numbers and unsupported shapes
+        /// are rejected rather than interpreted as flags. A false value does not mean an analysis completed or succeeded;
+        /// use GetAnalysisStatus to obtain the state of a particular model.</para>
+        /// <para>This live predicate is separate from the wrapper metadata cache. It does not start or wait for analysis,
+        /// query a filename, read result files, save, change silent mode or launch STAAD. Use the bound session's COM thread
+        /// and coordinate shared access. The returned value is a snapshot; a native call may block.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one shared Root operation lease. Reacquire
+        /// wrapper.Root after RefreshComObjects. Disposed, replaced, wrong-thread and reentrant Root/refresh/disposal
+        /// access is rejected before native dispatch. The lease ends when this operation returns.
+        /// Cached units, metadata and domain bindings are not refreshed. Raw-object and external UI access bypass
+        /// this guard; it does not serialize a different wrapper or prevent later native state changes.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is active, or required native output is malformed or unavailable.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native predicate fails; the original exception propagates without retry.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The captured root lacks a compatible IsAnalyzing member.</exception>
+        /// <example><code>
+        /// bool isRunning = wrapper.Root.IsAnalyzing();
+        /// Console.WriteLine(isRunning);
+        /// </code></example>
+        bool IsAnalyzing();
+
+        /// <summary>Reads native analysis state, diagnostic counts and CPU time for the specified model.</summary>
+        /// <param name="modelFilePath">Non-null, non-whitespace model path. Relative paths are resolved against the caller process's current directory before native access. No file existence or extension check is performed.</param>
+        /// <returns>An immutable result containing the absolute queried path, exact native status, nullable recognized status,
+        /// query success, completion state, and available warning count, error count and CPU time in seconds.</returns>
+        /// <remarks><para>Calls GetAnalysisStatus once on the captured root, using internal Int32 reference buffers for warning/error
+        /// counts and Double for CPU time. No reference parameters or native output buffers are exposed to callers.
+        /// Native codes are -2 invalid path, -1 terminated, 0 general error, 1 running, 2 completed cleanly,
+        /// 3 completed with warnings, 4 completed with errors and 5 not performed. Unknown signed Int32 codes remain inspectable.</para>
+        /// <para>IsSuccessful means a recognized analysis state was retrieved (-1 or 1 through 5), not that analysis succeeded.
+        /// Invalid-path, general-error and unknown-status results expose no output data. Counts and CPU time are required,
+        /// nonnegative and finite for completed states 2 through 4. In other recognized states, written valid fields are retained
+        /// independently; initial Int32.MinValue count buffers and a NaN time buffer represent unavailable fields. An unwritten
+        /// time and an explicitly written NaN cannot be distinguished for these noncompleted states. Other malformed outputs throw.
+        /// Numeric zero is valid data. Count/status consistency beyond these shape/range checks is not inferred.</para>
+        /// <para>The model need not be the currently open model. No filename read, file opening, analysis, polling, save,
+        /// result-file parsing or filesystem mutation occurs. Use the session's COM thread; serialize shared access.
+        /// This is a live, sequential native observation, not a transaction or proof of current result freshness. No automatic retry
+        /// or time limit is imposed; a native call may block.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one shared Root operation lease. Reacquire
+        /// wrapper.Root after RefreshComObjects. Disposed, replaced, wrong-thread and reentrant Root/refresh/disposal
+        /// access is rejected before native dispatch. The lease ends when this operation returns.
+        /// Cached units, metadata and domain bindings are not refreshed. Raw-object and external UI access bypass
+        /// this guard; it does not serialize a different wrapper or prevent later native state changes.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is active, or required native output is malformed or unavailable.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="modelFilePath"/> is null; rejected before native access.</exception>
+        /// <exception cref="ArgumentException"><paramref name="modelFilePath"/> is blank or contains invalid Windows path characters.</exception>
+        /// <exception cref="NotSupportedException">The requested path format is unsupported by the Windows Path API.</exception>
+        /// <exception cref="System.IO.PathTooLongException">The requested path exceeds the limits enforced by the runtime.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native query fails; the original exception propagates without retry.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible native signature, including the required reference argument types.</exception>
+        /// <example><code>
+        /// var status = wrapper.Root.GetAnalysisStatus(@"C:\Models\Frame.STD");
+        /// Console.WriteLine(status.NativeStatus);
+        /// if (status.IsCompleted) Console.WriteLine(status.ErrorCount);
+        /// </code></example>
+        AnalysisStatusResult GetAnalysisStatus(string modelFilePath);
+
+        /// <summary>Reads analysis status for the model path currently reported by this root session.</summary>
+        /// <returns>The same immutable status/data contract as GetAnalysisStatus(string), for the path captured by one native filename read.</returns>
+        /// <remarks><para>Reads the native full filename once, rejects an empty or whitespace-only filename, then queries
+        /// that normalized path under the same lease. An unnamed session throws before any analysis-status query; use the explicit-path overload
+        /// to query a known model without relying on an open filename. Relative native paths use the working directory captured before the filename read.</para>
+        /// <para>Uses live native reads rather than the wrapper metadata cache. The model can change between the filename and status
+        /// reads; the result identifies the path actually queried and does not guarantee that it remains the open model.
+        /// Does not start analysis, open/save/close models, poll or launch STAAD. Use the bound session's COM thread and serialize
+        /// shared access. No retries or bounded native-call completion are provided. IsSuccessful indicates state retrieval,
+        /// including terminated, running, completed-with-errors and not-performed states; inspect Status for the analysis outcome.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one shared Root operation lease. Reacquire
+        /// wrapper.Root after RefreshComObjects. Disposed, replaced, wrong-thread and reentrant Root/refresh/disposal
+        /// access is rejected before native dispatch. The lease ends when this operation returns.
+        /// Cached units, metadata and domain bindings are not refreshed. Raw-object and external UI access bypass
+        /// this guard; it does not serialize a different wrapper or prevent later native state changes.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// another Root/lifecycle operation is active, or required native output is malformed or unavailable.</exception>
+        /// <exception cref="ArgumentException">The reported model path contains invalid Windows path characters.</exception>
+        /// <exception cref="NotSupportedException">The reported model path format is unsupported by the Windows Path API.</exception>
+        /// <exception cref="System.IO.PathTooLongException">The reported path exceeds the limits enforced by the runtime.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A native filename or status query fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The captured root lacks a compatible filename or analysis-status member.</exception>
+        /// <example><code>
+        /// var status = wrapper.Root.GetAnalysisStatus();
+        /// Console.WriteLine(status.ModelFilePath);
+        /// Console.WriteLine(status.Status);
+        /// </code></example>
+        AnalysisStatusResult GetAnalysisStatus();
     }
 }

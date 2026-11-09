@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261109 - 9 November 2026
+
+Ported `AnalyzeEx(SilentMode silentMode, HiddenMode hiddenMode, WaitAnalysisMode waitMode)`, `Analyze()`, `IsAnalyzing()`, `GetAnalysisStatus()` and `GetAnalysisStatus(string modelFilePath)`. Preserved names, parameter types/order and return contracts with complete matching interface/adapter XML IntelliSense. Core now exposes thirty-five Root operations.
+
+Added `AnalysisResult`, `HiddenMode`, `WaitAnalysisMode`, `AnalysisStatus` and immutable `AnalysisStatusResult`. Validated analysis flags before a single native request, retained exact integer statuses and rejected malformed native values. Status queries distinguish retrieved state from successful analysis, retain nullable diagnostics and CPU seconds, and require valid outputs for completed states. The current-model overload captures one filename and its path base before querying status under the same wrapper lease.
+
+Retained constructing-thread, binding, disposal and reentrancy checks without implicit saving, retries, polling, timeout, result parsing or cache refresh. Native analysis requests can affect output files and display UI; `Return` mode does not certify completion. See [analysis contracts](Root-Analysis.md) for status meanings, validation policy and native limits.
+
+Passed a Release build with zero warnings/errors and **1,132 offline tests**, including **157 new analysis cases**. The installed package consumer checks thirty-five signatures, supporting models/enums, **74 compiled XML examples**, README usage and all seven Root guides, expanded/installed XML and exact archive equality. No live STAAD analysis or new native mutation/cross-version qualification was performed.
+
 ## 1.0.0-preview.20261108.2 - 8 November 2026
 
 Ported `SetInputUnitsEx`, `AwaitModelHandle`, `OpenStaadModel`, `CloseCurrentStaadModel` and `CloseWriteReopenStaadFile` with preserved signatures, optional defaults and complete matching interface/adapter XML IntelliSense. Core now exposes thirty Root operations.

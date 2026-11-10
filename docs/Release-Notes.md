@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261110 - 10 November 2026
+
+Ported `SetInputUnitForLength(LengthInputUnit lengthUnit)`, `SetInputUnitForForce(ForceInputUnit forceUnit)`, `SetShortJobInfo(string jobName, string jobClient, string engineerName)`, `SetShortJobInfo(ShortJobInfo jobInfo)` and `UpdateStructure()` with complete matching interface/adapter XML IntelliSense. Core now exposes forty Root operations.
+
+Individual unit setters validate and submit one Int32 code without changing the other unit or refreshing snapshots. The individual length setter accepts documented feet alias 1; combined `SetInputUnitsEx` retains its named-value validation. Job setters preserve exact non-null text and native argument order; the model overload captures each short field once and reuses the existing `ShortJobInfo` model. Structure updates invoke the native no-argument member without adding analysis, save or read-back.
+
+All five operations retain constructing-thread, current-binding, disposal and reentrancy guards under one wrapper lease. Native void completion does not certify persistence or read-back, and original failures can follow partial effects. See [unit, job-information and structure updates](Root-Model-Edits.md) for validation, cache ownership and native limits.
+
+Passed a Release build with zero warnings/errors and **1,206 offline tests**, including **74 new cases**. Installed-package verification checks forty Root contracts, **84 compiled XML examples**, README usage, all eight Root guides, expanded/installed XML and exact archive restoration. No live model mutation or new native cross-version qualification was performed.
+
 ## 1.0.0-preview.20261109 - 9 November 2026
 
 Ported `AnalyzeEx(SilentMode silentMode, HiddenMode hiddenMode, WaitAnalysisMode waitMode)`, `Analyze()`, `IsAnalyzing()`, `GetAnalysisStatus()` and `GetAnalysisStatus(string modelFilePath)`. Preserved names, parameter types/order and return contracts with complete matching interface/adapter XML IntelliSense. Core now exposes thirty-five Root operations.

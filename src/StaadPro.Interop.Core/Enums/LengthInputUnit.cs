@@ -2,8 +2,9 @@ namespace StaadPro.Interop.Core.Enums
 {
     /// <summary>Identifies a documented OpenSTAAD model input length unit.</summary>
     /// <remarks>Uses native numeric codes. Code 1 is an additional documented feet alias without a named enum member;
-    /// the wrapper normalizes this alias without exposing a new domain operation.
-    /// Wrapper unit reads normalize supported feet aliases to Feet. Changing a managed enum value alone does not update STAAD.</remarks>
+    /// wrapper unit reads normalize supported feet aliases to Feet. The individual SetInputUnitForLength setter
+    /// accepts code 1 unchanged; the combined SetInputUnitsEx setter continues to require named values.
+    /// Changing a managed enum value alone does not update STAAD.</remarks>
     public enum LengthInputUnit
     {
         /// <summary>Native code 0: inches.</summary>

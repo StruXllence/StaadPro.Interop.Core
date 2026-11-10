@@ -874,5 +874,143 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(status.Status);
         /// </code></example>
         AnalysisStatusResult GetAnalysisStatus();
+
+        /// <summary>Requests changing only the current model's input length unit.</summary>
+        /// <param name="lengthUnit">LengthInputUnit identifying native code 0 through 7. Named values are Inch=0, Feet=2, CentiMeter=3, Meter=4, MilliMeter=5, DeciMeter=6 and KiloMeter=7. The documented feet alias (LengthInputUnit)1 is also accepted and dispatched unchanged.</param>
+        /// <remarks><para>Validates the complete unit argument before one native SetInputUnitForLength call with an Int32 code.
+        /// Does not route through the combined unit setter, read or set force units, or change the managed unit cache.
+        /// Unlike this method, the existing SetInputUnitsEx retains its named-enum validation and still rejects unnamed code 1.</para>
+        /// <para>The native operation is void: normal return means dispatch completed, not verified read-back or persistence.
+        /// No save, analysis, structure update, value rescaling, base-system change or rollback is promised or added by this library.
+        /// On a wrapper-owned connection, explicitly call wrapper.RefreshUnits when fresh cached unit values are needed.
+        /// Use the session's COM thread and serialize native mutations and refresh. No automatic retry occurs after an uncertain failure;
+        /// the request may have taken effect before an exception. Native calls may block or display server UI.</para>
+        /// <para>Uses the wrapper's constructing COM thread and current Root binding under one operation lease,
+        /// including validation and any job-field reads. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposal, stale/manual-noncurrent bindings, another thread and reentrant Root/refresh/disposal calls
+        /// are rejected before native work. This guard does not coordinate another wrapper, raw-object access
+        /// or external UI. Units, domain bindings and other cached metadata are not automatically refreshed.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// or another Root/lifecycle operation is active.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="lengthUnit"/> is outside native codes 0 through 7; rejected before native access.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native unit request fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible SetInputUnitForLength member.</exception>
+        /// <example><code>
+        /// bool changeLengthUnit = false; // enable only when the model should be changed
+        /// if (changeLengthUnit) wrapper.Root.SetInputUnitForLength(StaadPro.Interop.Core.Enums.LengthInputUnit.Meter);
+        /// </code></example>
+        void SetInputUnitForLength(LengthInputUnit lengthUnit);
+
+        /// <summary>Requests changing only the current model's input force unit.</summary>
+        /// <param name="forceUnit">Defined ForceInputUnit: KiloPound=0, Pound=1, KiloGram=2, MetricTon=3, Newton=4, KiloNewton=5, MegaNewton=6 or DecaNewton=7.</param>
+        /// <remarks><para>Validates the enum before one native SetInputUnitForForce call with its Int32 code.
+        /// Does not read or set length units, invoke the combined unit setter or refresh cached wrapper properties.
+        /// Explicitly call wrapper.RefreshUnits after the request when fresh cached unit information is needed.</para>
+        /// <para>Native void completion does not verify the resulting unit or file persistence. The library adds no save,
+        /// analysis, structure update, value rescaling, base-system change or transaction. Native failures may follow partial effects;
+        /// no retry or rollback occurs. Use the session's COM thread and coordinate mutations and refresh.
+        /// Native calls may block or display server UI.</para>
+        /// <para>Uses the wrapper's constructing COM thread and current Root binding under one operation lease,
+        /// including validation and any job-field reads. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposal, stale/manual-noncurrent bindings, another thread and reentrant Root/refresh/disposal calls
+        /// are rejected before native work. This guard does not coordinate another wrapper, raw-object access
+        /// or external UI. Units, domain bindings and other cached metadata are not automatically refreshed.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// or another Root/lifecycle operation is active.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="forceUnit"/> is not defined; rejected before native access.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native unit request fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible SetInputUnitForForce member.</exception>
+        /// <example><code>
+        /// bool changeForceUnit = false; // enable only when the model should be changed
+        /// if (changeForceUnit) wrapper.Root.SetInputUnitForForce(StaadPro.Interop.Core.Enums.ForceInputUnit.KiloNewton);
+        /// </code></example>
+        void SetInputUnitForForce(ForceInputUnit forceUnit);
+
+        /// <summary>Requests updating the current model's job name, client and originating engineer.</summary>
+        /// <param name="jobName">Non-null job name text, sent unchanged. Empty or whitespace text is permitted.</param>
+        /// <param name="jobClient">Non-null client text, sent unchanged. Empty or whitespace text is permitted.</param>
+        /// <param name="engineerName">Non-null originating engineer name, sent unchanged in the native engineer position.</param>
+        /// <remarks><para>Validates all three inputs before one native SetShortJobInfo call in job-name, client, engineer order.
+        /// Preserves supplied Unicode, spaces and line breaks; native text limits and interpretation still apply.
+        /// Empty input is sent as supplied, not replaced with another value. This does not establish the server's clearing or storage behavior.</para>
+        /// <para>The native function is void: return indicates dispatch completion, not verified storage or persistence.
+        /// No full-job metadata update, save, model opening/closing, analysis or read-back is added. Use GetShortJobInfo explicitly
+        /// when read-back is required. Serialize shared model access on the session's COM thread.
+        /// Native calls may block or display UI. Exceptions propagate without retry or rollback; side effects may already have occurred.</para>
+        /// <para>Uses the wrapper's constructing COM thread and current Root binding under one operation lease,
+        /// including validation and any job-field reads. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposal, stale/manual-noncurrent bindings, another thread and reentrant Root/refresh/disposal calls
+        /// are rejected before native work. This guard does not coordinate another wrapper, raw-object access
+        /// or external UI. Units, domain bindings and other cached metadata are not automatically refreshed.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// or another Root/lifecycle operation is active.</exception>
+        /// <exception cref="ArgumentNullException">One of the three strings is null; all input validation precedes native access.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native metadata request fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible three-input SetShortJobInfo member.</exception>
+        /// <example><code>
+        /// bool updateJobMetadata = false; // enable only when the model should be changed
+        /// if (updateJobMetadata) wrapper.Root.SetShortJobInfo("Frame study", "Client", "Engineer");
+        /// </code></example>
+        void SetShortJobInfo(string jobName, string jobClient, string engineerName);
+
+        /// <summary>Requests updating short job metadata from an existing managed job-information object.</summary>
+        /// <param name="jobInfo">Non-null ShortJobInfo with non-null Name, Client and Originator. Empty strings are permitted. A FullJobInfo is accepted through its inherited short fields; its other fields are not submitted.</param>
+        /// <remarks><para>Reads each of the three mutable properties once into local string snapshots, validates them before native access,
+        /// then submits one native three-string call within the same wrapper operation lease. Reuses the existing model class without creating a parallel write-options type.
+        /// Editing the managed object alone does not update STAAD. Coordinate concurrent edits to obtain a coherent snapshot;
+        /// these property reads are not an atomic transaction.</para>
+        /// <para>Preserves text and native argument order. Normal void return indicates native dispatch completion only.
+        /// No full-job update, date conversion, save, read-back, structure update or analysis occurs. Use the appropriate session COM thread;
+        /// native failures propagate without automatic retry or rollback and may follow native side effects.</para>
+        /// <para>Uses the wrapper's constructing COM thread and current Root binding under one operation lease,
+        /// including validation and any job-field reads. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposal, stale/manual-noncurrent bindings, another thread and reentrant Root/refresh/disposal calls
+        /// are rejected before native work. This guard does not coordinate another wrapper, raw-object access
+        /// or external UI. Units, domain bindings and other cached metadata are not automatically refreshed.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// or another Root/lifecycle operation is active.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="jobInfo"/> is null; rejected before native access.</exception>
+        /// <exception cref="ArgumentException">Name, Client or Originator is null; the exception identifies jobInfo and no native call is made.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native metadata request fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible SetShortJobInfo member.</exception>
+        /// <example><code>
+        /// var jobInfo = ShortJobInfo.From("Frame study", "Client", "Engineer");
+        /// bool applyJobInfo = false; // enable only when the model should be changed
+        /// if (applyJobInfo) wrapper.Root.SetShortJobInfo(jobInfo);
+        /// </code></example>
+        void SetShortJobInfo(ShortJobInfo jobInfo);
+
+        /// <summary>Requests a native update of the current STAAD structure.</summary>
+        /// <remarks><para>Invokes native UpdateStructure once with no arguments. The vendor reference describes a structure update
+        /// but specifies no returned status, completion/readiness protocol, save behavior or detailed rebuild guarantees.
+        /// A normal void return establishes dispatch completion only; it does not certify that pending edits are persisted or results are current.</para>
+        /// <para>The library adds no analysis, save, model opening/closing, wrapper refresh, unit refresh, wait or read-back.
+        /// This explicit native mutation may affect the current model; use the connected session's COM thread and coordinate edits.
+        /// Native UI or a blocking call remains possible. Failures propagate without retry or rollback and can follow partial native effects.</para>
+        /// <para>Uses the wrapper's constructing COM thread and current Root binding under one operation lease,
+        /// including validation and any job-field reads. Reacquire wrapper.Root after RefreshComObjects.
+        /// Disposal, stale/manual-noncurrent bindings, another thread and reentrant Root/refresh/disposal calls
+        /// are rejected before native work. This guard does not coordinate another wrapper, raw-object access
+        /// or external UI. Units, domain bindings and other cached metadata are not automatically refreshed.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, the caller is on another thread,
+        /// or another Root/lifecycle operation is active.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native update request fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible UpdateStructure member.</exception>
+        /// <exception cref="System.Runtime.InteropServices.InvalidComObjectException">The captured COM wrapper is no longer associated with a usable native object.</exception>
+        /// <example><code>
+        /// bool updateCurrentStructure = false; // enable only when a native update should be requested
+        /// if (updateCurrentStructure) wrapper.Root.UpdateStructure();
+        /// </code></example>
+        void UpdateStructure();
     }
 }

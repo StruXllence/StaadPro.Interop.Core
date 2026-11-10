@@ -1,0 +1,44 @@
+using System;
+using StaadPro.Interop.Core.Enums;
+using StaadPro.Interop.Core.Models;
+
+namespace StaadPro.Interop.Core.Services.Root.Common
+{
+    // The adapter holds one wrapper lease across validation, snapshotting and native dispatch.
+    internal static class RootModelEditService
+    {
+        internal static void SetInputUnitForLength(object root, LengthInputUnit lengthUnit)
+        {
+            int code = (int)lengthUnit;
+            if (code < 0 || code > 7) throw new ArgumentOutOfRangeException(nameof(lengthUnit));
+            ((dynamic)root).SetInputUnitForLength(code);
+        }
+
+        internal static void SetInputUnitForForce(object root, ForceInputUnit forceUnit)
+        {
+            if (!Enum.IsDefined(forceUnit)) throw new ArgumentOutOfRangeException(nameof(forceUnit));
+            ((dynamic)root).SetInputUnitForForce((int)forceUnit);
+        }
+
+        internal static void SetShortJobInfo(object root, string jobName, string jobClient, string engineerName)
+        {
+            if (jobName == null) throw new ArgumentNullException(nameof(jobName));
+            if (jobClient == null) throw new ArgumentNullException(nameof(jobClient));
+            if (engineerName == null) throw new ArgumentNullException(nameof(engineerName));
+            ((dynamic)root).SetShortJobInfo(jobName, jobClient, engineerName);
+        }
+
+        internal static void SetShortJobInfo(object root, ShortJobInfo jobInfo)
+        {
+            if (jobInfo == null) throw new ArgumentNullException(nameof(jobInfo));
+            string jobName = jobInfo.Name;
+            string jobClient = jobInfo.Client;
+            string engineerName = jobInfo.Originator;
+            if (jobName == null || jobClient == null || engineerName == null)
+                throw new ArgumentException("Job name, client and originating engineer must all be initialized.", nameof(jobInfo));
+            SetShortJobInfo(root, jobName, jobClient, engineerName);
+        }
+
+        internal static void UpdateStructure(object root) => ((dynamic)root).UpdateStructure();
+    }
+}

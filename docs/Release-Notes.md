@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261111.2 - 11 November 2026
+
+Ported `RemoveNamedView(string viewName)`, `ModifyNamedView(string viewName, IEnumerable<int> entityIds, NamedViewEntityType entityType, int modificationFlag)`, `ExportModelToAdina(...)`, `GetAnalysisErrorMessages(string modelFilePath)` and `GetAnalysisWarningMessages(string modelFilePath)` with matching complete interface/concrete XML IntelliSense. Core exposes 52 common Root contracts and three optional Root operations.
+
+Named-view updates preserve literal names, snapshot positive identifiers once and retain inspected native arity without invented status outputs or mode meanings. Optional operations require independent `Root.Capabilities` acquisition with exact candidate build and actual member-signature checks. Uncovered builds grant no interface. Captured gateways/grants are invalidated by refresh or disposal, even when the reported version is unchanged.
+
+ADINA export returns immutable raw/recognized status and warning-success information without inventing output paths. Message retrieval retains native statuses, independent read-only text and count provenance. It rejects malformed/unwritten successful outputs, limits buffers to 100,000 messages and permits one fresh-count retry only after native insufficient capacity. Original failures propagate; no implicit analysis, save, thread migration or rollback is added.
+
+Passed a zero-warning Release build and **1,537 offline tests**, including **126 new cases**. The exact installed package checks 52 common contracts and three optional operations, acquisition boundaries, expanded matching XML, **122 compiled XML examples**, README and all eleven Root guide examples, dependency isolation and restored archive equality. No live view mutation, export, message retrieval or new native-build runtime acceptance was performed. See [named-view changes and optional operations](Root-View-Changes-and-Optional-Operations.md) for profiles, usage and limits.
+
 ## 1.0.0-preview.20261111.1 - 11 November 2026
 
 Ported `GetProcessHandle()`, `NewSTAADFile(string filePath, LengthInputUnit lengthUnit, ForceInputUnit forceUnit)`, `CreateNamedView(string viewName, int creationFlag)`, `SaveNamedView(string viewName)` and `Quit()` with complete matching interface/adapter XML IntelliSense. Core now exposes fifty Root operations.

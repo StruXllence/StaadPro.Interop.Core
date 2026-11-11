@@ -1,4 +1,7 @@
 using System;
+using StaadPro.Interop.Core.Services.Root.Capabilities;
+using StaadPro.Interop.Core.Adapters.Models.Capabilities;
+using StaadPro.Interop.Core.Adapters.Interfaces.Capabilities;
 using System.Collections.Generic;
 using StaadPro.Interop.Core.Adapters.Interfaces;
 using StaadPro.Interop.Core.Enums;
@@ -24,6 +27,7 @@ namespace StaadPro.Interop.Core.Adapters.Models
         public OSRootAdapter(OpenStaadWrapper wrapper) : base(wrapper)
         {
             ComObject = (object)wrapper.RawOpenStaad ?? throw new ArgumentException("The Root binding is unavailable.", nameof(wrapper));
+            capabilities = new OSRootCapabilitiesAdapter(this);
         }
         internal Func<IRootPollingClock> PollingClockFactory { get; set; } = () => new RootPollingClock();
         internal IRootModelFiles ModelFiles { get; set; } = new RootModelFiles();
@@ -1506,5 +1510,103 @@ namespace StaadPro.Interop.Core.Adapters.Models
             });
         }
 
+
+        /// <summary>Requests removal of a named view through the inspected native entry point.</summary>
+        /// <param name="viewName">Non-null, non-whitespace view name, preserved exactly without trimming.</param>
+        /// <remarks><para>Validates the name, then calls RemoveNamedView once with the name and an Int32 zero in the
+        /// required nError position. Installed 2025/2026 interop passes that parameter by value, unlike the help's reference
+        /// output. Zero initializes this native slot; it is not interpreted as success. No output error code is observable
+        /// through the inspected signature, so this managed method returns void rather than fabricating a result.</para>
+        /// <para>Normal return means dispatch completed, not verified removal or disk persistence. Missing-name, current-view,
+        /// prompts and native error behavior remain server decisions. No geometry deletion, SaveModel, read-back, alternate
+        /// signature, retry or rollback is added. Use the bound COM thread and coordinate changes; effects may precede exceptions.
+        /// The actual 2024 signature and native view behavior still require controlled verification.</para><para>Uses the wrapper's constructing COM thread and current Root operation lease throughout input
+        /// validation, enumeration, native dispatch and output qualification. Disposal, stale/manual-noncurrent
+        /// adapters, other threads and reentrant Root/refresh/disposal operations are rejected before native work.
+        /// Reacquire wrapper.Root and its capabilities after RefreshComObjects, even when the native version
+        /// is unchanged. No automatic unit or domain refresh occurs. Raw calls, other wrappers and external UI
+        /// are outside this guard.</para></remarks>
+        /// <exception cref="ArgumentNullException">viewName is null; rejected before dispatch.</exception>
+        /// <exception cref="ArgumentException">viewName is empty or whitespace-only; rejected before dispatch.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native request fails; the original failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible two-input RemoveNamedView member.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The Root binding is stale, another thread is calling,
+        /// or a Root/lifecycle operation is already in progress.</exception>
+        /// <example><code>
+        /// bool removeView = false; // enable only for an intended native view removal
+        /// if (removeView) wrapper.Root.RemoveNamedView("Frame view");
+        /// </code></example>
+        public void RemoveNamedView(string viewName)
+        {
+            Wrapper.UseRootBinding(this, wrapper =>
+            {
+                RootNamedViewService.RemoveNamedView(wrapper.RawOpenStaad, viewName);
+                return true;
+            });
+        }
+
+        /// <summary>Requests modifying named-view membership using an owned snapshot of entity identifiers.</summary>
+        /// <param name="viewName">Non-null, non-whitespace view name; text is preserved exactly.</param>
+        /// <param name="entityIds">Non-null sequence of positive Int32 entity identifiers, enumerated once into a private zero-based Int32 array before native mutation. Order and duplicates are preserved; an empty array is forwarded rather than silently treated as a no-op.</param>
+        /// <param name="entityType">Documented qualifier: Node=0, Beam=1, Plate=2, Solid=3 or Surface=4. Undefined values are rejected before enumeration/native access.</param>
+        /// <param name="modificationFlag">Required native Int32 mode established by the caller for this build. The reviewed help supplies no meanings or valid range; every Int32 is sent unchanged, without a guessed enum or default.</param>
+        /// <remarks><para>Validates name, sequence, qualifier and every identifier before one ModifyNamedView call.
+        /// The inspected 2025/2026 signature has four inputs: name, Int32 array, qualifier and flag. It has no separate count
+        /// or reference error output, unlike the help. The array carries its own length; no inconsistent caller count is accepted.
+        /// Native return is void and no error/success result is fabricated. Input enumerator failures propagate before dispatch.</para>
+        /// <para>The caller must establish mode and empty-array behavior on the actual build. Native entity existence,
+        /// duplicate handling, membership rules and persistence are not inferred. No geometry mutation is explicitly requested,
+        /// selection changes, SaveModel, read-back, rollback, signature fallback or retries are added. Native view effects may
+        /// precede exceptions. Use the session's COM thread and coordinate changes; calls may block or display UI.
+        /// Array marshaling, flag semantics and the 2024 signature still require controlled native validation.</para><para>Uses the wrapper's constructing COM thread and current Root operation lease throughout input
+        /// validation, enumeration, native dispatch and output qualification. Disposal, stale/manual-noncurrent
+        /// adapters, other threads and reentrant Root/refresh/disposal operations are rejected before native work.
+        /// Reacquire wrapper.Root and its capabilities after RefreshComObjects, even when the native version
+        /// is unchanged. No automatic unit or domain refresh occurs. Raw calls, other wrappers and external UI
+        /// are outside this guard.</para></remarks>
+        /// <exception cref="ArgumentNullException">viewName or entityIds is null.</exception>
+        /// <exception cref="ArgumentException">The name is blank or a supplied identifier is nonpositive; rejected before mutation.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">entityType is undefined; rejected before enumeration or native access.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The native request fails; its original exception propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The root lacks a compatible four-input ModifyNamedView member.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The Root binding is stale, another thread is calling,
+        /// or a Root/lifecycle operation is already in progress.</exception>
+        /// <example><code>
+        /// bool modifyView = false; // enable only after establishing mode and array semantics for the actual build
+        /// int confirmedMode = 0; // replace with a verified value; zero is not asserted to be a supported default
+        /// if (modifyView) wrapper.Root.ModifyNamedView("Frame view", new[] { 1, 2 },
+        ///     StaadPro.Interop.Core.Enums.Root.NamedViewEntityType.Beam, confirmedMode);
+        /// </code></example>
+        public void ModifyNamedView(string viewName, IEnumerable<int> entityIds, NamedViewEntityType entityType, int modificationFlag)
+        {
+            Wrapper.UseRootBinding(this, wrapper =>
+            {
+                RootNamedViewService.ModifyNamedView(wrapper.RawOpenStaad, viewName, entityIds, entityType, modificationFlag);
+                return true;
+            });
+        }
+
+        /// <summary>Gets the guarded gateway for acquiring optional Root operation interfaces.</summary>
+        /// <value>A gateway bound to this exact Root adapter; access itself executes no native inspection or operation.</value>
+        /// <remarks>Acquisition requires a reviewed exact native build and compatible member metadata.
+        /// A grant does not certify runtime compatibility, model readiness, licensing or operation success.
+        /// Gateway and granted interfaces are invalid after wrapper refresh or disposal; use the constructing
+        /// COM thread outside another Root/lifecycle operation. Optional operations cannot be obtained by
+        /// casting the common Root adapter. Raw access remains outside these managed guards.</remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The Root adapter is stale, another thread is calling,
+        /// or a Root/lifecycle operation is already active.</exception>
+        /// <example><code>
+        /// var grant = wrapper.Root.Capabilities.GetAdinaExport();
+        /// Console.WriteLine(grant.Availability);
+        /// </code></example>
+        public IOSRootCapabilities Capabilities => Wrapper.UseRootBinding(this, _ => capabilities);
+
+        private readonly IOSRootCapabilities capabilities;
+        internal IRootMemberInspector CapabilityInspector { get; set; } = new RootDispatchInspector();
+        internal T UseCapability<T>(Func<object, ApplicationVersion, T> operation) =>
+            Wrapper.UseRootBinding(this, wrapper => operation(wrapper.RawOpenStaad, wrapper.StaadVersion));
     }
 }

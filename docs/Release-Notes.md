@@ -1,5 +1,16 @@
 # Release notes
 
+## 1.0.0-preview.20261111.1 - 11 November 2026
+
+Ported `GetProcessHandle()`, `NewSTAADFile(string filePath, LengthInputUnit lengthUnit, ForceInputUnit forceUnit)`, `CreateNamedView(string viewName, int creationFlag)`, `SaveNamedView(string viewName)` and `Quit()` with complete matching interface/adapter XML IntelliSense. Core now exposes fifty Root operations.
+
+Process-handle queries return an immutable, non-owning diagnostic value without assuming handle width or OS usability. Model creation validates units, the destination and the unnamed-session response, then rechecks target absence before native dispatch; these checks are not an atomic no-overwrite guarantee. Named-view operations preserve literal names and inspected native arities without guessing flag meanings or retrying a different signature. Shutdown is explicit and does not dispose the wrapper, save the model or verify process exit.
+
+All five retain constructing-thread, current-binding, disposal and reentrancy guards. Original exceptions propagate, including after native effects; no implicit save, metadata refresh, retry or rollback is introduced. See [model creation, named views and shutdown](Root-Creation-Views-and-Shutdown.md) for exact contracts, examples and qualification limits.
+
+Passed a Release build with zero warnings/errors and **1,411 offline tests**, including **93 new cases**. Installed-package verification checks fifty Root contracts, **104 compiled XML examples**, README usage, all ten Root guides, immutable handle data, expanded/installed XML and exact restored archive equality. No live model creation, view mutation, shutdown or new cross-version native qualification was performed.
+
+
 ## 1.0.0-preview.20261111 - 11 November 2026
 
 Ported `SetFullJobInfo(...)`, `AnalyzeModel(AnalysisEngine engine = AnalysisEngine.StaadPro)`, `GetConnectedProjectInfo()`, `SetConnectedProjectInfo(string projectId, string projectName)` and `SetConnectedProjectInfo(ConnectedProjectInfo projectInfo)` with complete matching interface/adapter XML IntelliSense. Core now exposes forty-five Root operations.

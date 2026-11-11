@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261111 - 11 November 2026
+
+Ported `SetFullJobInfo(...)`, `AnalyzeModel(AnalysisEngine engine = AnalysisEngine.StaadPro)`, `GetConnectedProjectInfo()`, `SetConnectedProjectInfo(string projectId, string projectName)` and `SetConnectedProjectInfo(ConnectedProjectInfo projectInfo)` with complete matching interface/adapter XML IntelliSense. Core now exposes forty-five Root operations.
+
+Full job updates validate all thirteen strings and retain native field order and literal date text. Analysis explicitly submits documented engine code `-1` without inventing a status for the native void return. CONNECTED queries qualify zero/one flags and both string outputs, discard partial data on native false and return immutable named project snapshots. Both assignment overloads preserve nonblank text and report the qualified native flag through one shared internal implementation.
+
+All five contracts retain constructing-thread, current-binding, disposal and reentrancy guards under one wrapper lease. Native responses do not certify persistence, cloud synchronization or analysis completion. Original failures can follow partial effects. See [full job information, analysis engine and CONNECTED projects](Root-Job-Analysis-and-Projects.md) for validation, examples and native limits.
+
+Passed a Release build with zero warnings/errors and **1,318 offline tests**, including **112 new cases**. Installed-package verification checks forty-five Root contracts, **94 compiled XML examples**, README usage, all nine Root guides, expanded/installed XML and exact restored archive equality. Managed native stand-ins cover the new operations. No live model mutation, analysis, project assignment or new cross-version native qualification was performed.
+
 ## 1.0.0-preview.20261110 - 10 November 2026
 
 Ported `SetInputUnitForLength(LengthInputUnit lengthUnit)`, `SetInputUnitForForce(ForceInputUnit forceUnit)`, `SetShortJobInfo(string jobName, string jobClient, string engineerName)`, `SetShortJobInfo(ShortJobInfo jobInfo)` and `UpdateStructure()` with complete matching interface/adapter XML IntelliSense. Core now exposes forty Root operations.

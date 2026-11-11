@@ -1,5 +1,6 @@
 using System;
 using StaadPro.Interop.Core.Enums;
+using StaadPro.Interop.Core.Enums.Root;
 using StaadPro.Interop.Core.Services.Interop;
 
 namespace StaadPro.Interop.Core.Services.Root.Analysis
@@ -8,6 +9,12 @@ namespace StaadPro.Interop.Core.Services.Root.Analysis
     internal static class RootAnalysisRequestService
     {
         internal static void Analyze(object root) => ((dynamic)root).Analyze();
+
+        internal static void AnalyzeModel(object root, AnalysisEngine engine)
+        {
+            if (engine != AnalysisEngine.StaadPro) throw new ArgumentOutOfRangeException(nameof(engine));
+            ((dynamic)root).AnalyzeModel((int)engine);
+        }
 
         internal static AnalysisResult AnalyzeEx(object root, SilentMode silentMode, HiddenMode hiddenMode, WaitAnalysisMode waitMode)
         {

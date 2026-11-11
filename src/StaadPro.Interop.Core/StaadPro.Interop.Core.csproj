@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261110</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261111</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
-    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies forty Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; other domain adapters are binding-only placeholders.</Description>
-    <PackageReleaseNotes>Ported SetInputUnitForLength, SetInputUnitForForce, both SetShortJobInfo overloads and UpdateStructure with matching complete XML IntelliSense. Validated unit codes, retained the individual length setter feet alias and snapshotted short job fields before one native request. Preserved caller-thread, binding, lifetime and reentrancy guards with explicit cache refresh and native void-completion semantics. Forty Root operations are implemented; see the model edits guide for consumer contracts and native qualification limits.</PackageReleaseNotes>
+    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies forty-five Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; other domain adapters are binding-only placeholders.</Description>
+    <PackageReleaseNotes>Ported SetFullJobInfo, AnalyzeModel, GetConnectedProjectInfo and both SetConnectedProjectInfo overloads with complete matching XML IntelliSense. Preserved literal thirteen-field job text and explicit engine selection; validated project success flags and output buffers with immutable named results. Retained constructing-thread, current-binding, lifetime and reentrancy guards. Forty-five Root operations are implemented; see the job/analysis/projects guide for consumer contracts and native qualification limits.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -41,6 +41,7 @@
     <None Include="../../docs/Root-Metadata.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Observations.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Job-Information-and-Windows.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Root-Job-Analysis-and-Projects.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Model-Edits.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Analysis.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-Model-Coordination.md" Pack="true" PackagePath="docs/" />

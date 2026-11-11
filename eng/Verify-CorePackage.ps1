@@ -25,11 +25,12 @@ try {
     $coordinationGuide = Read-Entry 'docs/Root-Model-Coordination.md'
     $analysisGuide = Read-Entry 'docs/Root-Analysis.md'
     $editGuide = Read-Entry 'docs/Root-Model-Edits.md'
+    $projectGuide = Read-Entry 'docs/Root-Job-Analysis-and-Projects.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
     if ([string]$metadata.title -ne 'StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)') { throw 'Unexpected package title.' }
-    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','forty Root operations')) {
+    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','forty-five Root operations')) {
         if (([string]$metadata.description).IndexOf($term,[StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Incomplete package description: $term" }
     }
     $packageTags = @(([string]$metadata.tags) -split '\s+' | Where-Object { $_ })
@@ -38,9 +39,9 @@ try {
     }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
-    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch 'forty Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
+    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch 'forty-five Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
     if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
     foreach ($badge in @(
         'https://github.com/StruXllence/StaadPro.Interop.Core/actions/workflows/build-and-test.yml/badge.svg?branch=staadpro-interop-core',
@@ -60,12 +61,12 @@ try {
     $version = [string] $metadata.version
     if ($readme -notmatch ('(?m)^## Version ' + [regex]::Escape($version) + '\r?$') -or (Read-Entry 'docs/Release-Notes.md') -notmatch ('(?m)^## ' + [regex]::Escape($version) + ' - ')) { throw 'Package version and current documentation differ.' }
     if ($documentation.SelectNodes('//include|//inheritdoc').Count -ne 0) { throw 'Shipped IntelliSense must expand source documentation.' }
-    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen','SetSilentMode','SaveModel','OpenSTAADFile','CloseSTAADFile','ShowApplication','GetShortJobInfo','GetFullJobInfo','MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','SetInputUnitsEx','AwaitModelHandle','OpenStaadModel','CloseCurrentStaadModel','CloseWriteReopenStaadFile','AnalyzeEx','Analyze','IsAnalyzing','GetAnalysisStatus','GetAnalysisStatus(System.String)','SetInputUnitForLength','SetInputUnitForForce','SetShortJobInfo(System.String,System.String,System.String)','SetShortJobInfo(StaadPro.Interop.Core.Models.ShortJobInfo)','UpdateStructure')) {
+    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen','SetSilentMode','SaveModel','OpenSTAADFile','CloseSTAADFile','ShowApplication','GetShortJobInfo','GetFullJobInfo','MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','SetInputUnitsEx','AwaitModelHandle','OpenStaadModel','CloseCurrentStaadModel','CloseWriteReopenStaadFile','AnalyzeEx','Analyze','IsAnalyzing','GetAnalysisStatus','GetAnalysisStatus(System.String)','SetInputUnitForLength','SetInputUnitForForce','SetShortJobInfo(System.String,System.String,System.String)','SetShortJobInfo(StaadPro.Interop.Core.Models.ShortJobInfo)','UpdateStructure','SetFullJobInfo(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)','AnalyzeModel(StaadPro.Interop.Core.Enums.Root.AnalysisEngine)','GetConnectedProjectInfo','SetConnectedProjectInfo(System.String,System.String)','SetConnectedProjectInfo(StaadPro.Interop.Core.Models.Root.ConnectedProjectInfo)')) {
         $memberId = if ($operation -in @('IsTarget','ModelIsOpen','OpenSTAADFile')) { $operation + '(System.String)' } elseif ($operation -in @('SetSilentMode','SaveModel')) { $operation + '(StaadPro.Interop.Core.Enums.SilentMode)' } elseif ($operation -eq 'SetInputUnitsEx') { $operation + '(StaadPro.Interop.Core.Enums.LengthInputUnit,StaadPro.Interop.Core.Enums.ForceInputUnit)' } elseif ($operation -eq 'AwaitModelHandle') { $operation + '(System.String,System.Double,System.Double)' } elseif ($operation -eq 'OpenStaadModel') { $operation + '(System.String,System.Int32,System.Int32)' } elseif ($operation -eq 'CloseWriteReopenStaadFile') { $operation + '(System.String,System.Collections.Generic.List{System.String},System.Int32,System.Int32)' } elseif ($operation -eq 'AnalyzeEx') { $operation + '(StaadPro.Interop.Core.Enums.SilentMode,StaadPro.Interop.Core.Enums.HiddenMode,StaadPro.Interop.Core.Enums.WaitAnalysisMode)' } elseif ($operation -eq 'SetInputUnitForLength') { $operation + '(StaadPro.Interop.Core.Enums.LengthInputUnit)' } elseif ($operation -eq 'SetInputUnitForForce') { $operation + '(StaadPro.Interop.Core.Enums.ForceInputUnit)' } else { $operation }
         $contract = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Interfaces.IOSRoot.$memberId']")
         $implementation = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Models.OSRootAdapter.$memberId']")
         if ($null -eq $contract -or $null -eq $implementation -or $contract.InnerXml -cne $implementation.InnerXml) { throw "Missing/mismatched Root documentation: $operation" }
-        foreach ($section in @('summary','returns','remarks','exception','example/code')) { if ($section -eq 'returns' -and $operation -in @('MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','CloseCurrentStaadModel','Analyze','SetInputUnitForLength','SetInputUnitForForce','SetShortJobInfo(System.String,System.String,System.String)','SetShortJobInfo(StaadPro.Interop.Core.Models.ShortJobInfo)','UpdateStructure')) { continue }; if ($null -eq $contract.SelectSingleNode($section)) { throw "Incomplete Root documentation: $operation/$section" } }
+        foreach ($section in @('summary','returns','remarks','exception','example/code')) { if ($section -eq 'returns' -and $operation -in @('MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','CloseCurrentStaadModel','Analyze','SetInputUnitForLength','SetInputUnitForForce','SetShortJobInfo(System.String,System.String,System.String)','SetShortJobInfo(StaadPro.Interop.Core.Models.ShortJobInfo)','UpdateStructure','SetFullJobInfo(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)','AnalyzeModel(StaadPro.Interop.Core.Enums.Root.AnalysisEngine)')) { continue }; if ($null -eq $contract.SelectSingleNode($section)) { throw "Incomplete Root documentation: $operation/$section" } }
     }
     $examples = @($documentation.SelectNodes('//example/code'))
 }
@@ -138,6 +139,17 @@ public sealed class NativeRoot
     public void SetInputUnitForForce(object code) { if(code is not int n)throw new Exception("Force requires Int32.");ChangedForce=n;InputForceText="N";Mutation("SetInputUnitForForce"); }
     public void SetShortJobInfo(object name,object client,object engineer) { if(name is not string || client is not string || engineer is not string)throw new Exception("Short info requires strings.");BeforeShortWrite?.Invoke();WrittenShortInfo=new[]{(string)name,(string)client,(string)engineer};Mutation("SetShortJobInfo"); }
     public void UpdateStructure()=>Mutation("UpdateStructure");
+    public string[] WrittenFullInfo, AssignedProject;
+    public int? Engine;
+    public object ProjectFlag=true, ProjectSetFlag=true, ProjectId=" ID ", ProjectName=" Name ";
+    public bool WriteProjectId=true, WriteProjectName=true;
+    public void SetFullJobInfo(string a,string b,string c,string d,string e,string f,string g,string h,string i,string j,string k,string l,string m)
+    { WrittenFullInfo=new[]{a,b,c,d,e,f,g,h,i,j,k,l,m};Mutation("SetFullJobInfo"); }
+    public void AnalyzeModel(object engine) { if(engine is not int n)throw new Exception("Engine requires Int32.");Engine=n;Mutation("AnalyzeModel"); }
+    public object GetCONNECTEDProjectInfo(ref object id,ref object name)
+    { Calls++;if(id is not string||name is not string||Equals(id,name))throw new Exception("Distinct string output markers required.");if(WriteProjectId)id=ProjectId;if(WriteProjectName)name=ProjectName;return ProjectFlag; }
+    public object SetCONNECTEDProjectInfo(object id,object name)
+    { if(id is not string||name is not string)throw new Exception("Project inputs require strings.");AssignedProject=new[]{(string)id,(string)name};Mutation("SetCONNECTEDProjectInfo");return ProjectSetFlag; }
     public bool WriteOutput = true;
     public void GetSTAADFile(ref object value, object fullPath)
     { Calls++; if (value is not string || fullPath is not true) throw new Exception("Incorrect native filename arguments."); if (WriteOutput) value = PathValue; }
@@ -341,7 +353,36 @@ internal static class PackageSmoke
             var current=wrapper.Root;wrapper.Dispose();
             foreach(var operation in operations){bool rejected=false;try{operation(current);}catch(ObjectDisposedException){rejected=true;}if(!rejected||editNative.Calls!=before)throw new Exception("Disposed model-edit binding dispatched.");}
         }
-        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure" };
+        var projectNative=new NativeRoot();
+        using(var wrapper=new OpenStaadWrapper(projectNative))
+        {
+            var root=wrapper.Root;
+            root.SetFullJobInfo("n","c","e","literal-date","num","rev","part","ref","checker","","approver","native-date","notes\r\n");
+            if(!projectNative.WrittenFullInfo.SequenceEqual(new[]{"n","c","e","literal-date","num","rev","part","ref","checker","","approver","native-date","notes\r\n"}))throw new Exception("Full job mapping changed.");
+            root.AnalyzeModel();if(projectNative.Engine!=-1)throw new Exception("Default analysis engine changed.");
+            int before=projectNative.Calls;
+            bool invalid=false;try{root.AnalyzeModel((AnalysisEngine)0);}catch(ArgumentOutOfRangeException e){invalid=e.ParamName=="engine";}
+            if(!invalid||projectNative.Calls!=before)throw new Exception("Invalid engine dispatched.");
+            var result=root.GetConnectedProjectInfo();
+            if(!result.IsSuccessful||result.Project.ProjectId!=" ID "||result.Project.Name!=" Name ")throw new Exception("Project output changed.");
+            if(!root.SetConnectedProjectInfo(result.Project)||!projectNative.AssignedProject.SequenceEqual(new[]{" ID "," Name "}))throw new Exception("Project object assignment changed.");
+            projectNative.ProjectSetFlag=0;if(root.SetConnectedProjectInfo("i","n"))throw new Exception("Native false assignment lost.");
+            projectNative.ProjectFlag=false;projectNative.ProjectId=123;projectNative.WriteProjectName=false;
+            var failed=root.GetConnectedProjectInfo();if(failed.IsSuccessful||failed.Project!=null)throw new Exception("False query leaked outputs.");
+            projectNative.ProjectFlag=true;projectNative.ProjectId="id";
+            invalid=false;try{root.GetConnectedProjectInfo();}catch(InvalidOperationException){invalid=true;}
+            if(!invalid)throw new Exception("Unwritten successful output accepted.");
+            projectNative.WriteProjectName=true;projectNative.ProjectSetFlag=2;
+            invalid=false;try{root.SetConnectedProjectInfo("i","n");}catch(InvalidOperationException){invalid=true;}
+            if(!invalid)throw new Exception("Malformed assignment flag accepted.");
+            Action<IOSRoot>[] operations={r=>r.SetFullJobInfo("n","c","e","","num","rev","p","ref","ch","","ap","","comments"),r=>r.AnalyzeModel(),r=>r.GetConnectedProjectInfo(),r=>r.SetConnectedProjectInfo("i","n"),r=>r.SetConnectedProjectInfo(new ConnectedProjectInfo("i","n"))};
+            before=projectNative.Calls;wrapper.RefreshComObjects();
+            foreach(var action in operations){invalid=false;try{action(root);}catch(InvalidOperationException){invalid=true;}if(!invalid)throw new Exception("Stale project/edit binding dispatched.");}
+            if(projectNative.Calls==before)throw new Exception("Expected explicit refresh.");
+            var current=wrapper.Root;before=projectNative.Calls;wrapper.Dispose();
+            foreach(var action in operations){invalid=false;try{action(current);}catch(ObjectDisposedException){invalid=true;}if(!invalid||projectNative.Calls!=before)throw new Exception("Disposed project/edit binding dispatched.");}
+        }
+        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo" };
         foreach (var contract in assembly.GetTypes().Where(t=>t.IsInterface && t.Namespace=="StaadPro.Interop.Core.Adapters.Interfaces"))
         {
             var methods = contract.GetMethods().Where(m=>!m.IsSpecialName).ToArray();
@@ -373,6 +414,14 @@ internal static class PackageSmoke
                     { bool length=method.Name=="SetInputUnitForLength";if(parameters.Length!=1||parameters[0].ParameterType!=(length?typeof(LengthInputUnit):typeof(ForceInputUnit))||parameters[0].Name!=(length?"lengthUnit":"forceUnit")||parameters[0].IsOptional||method.ReturnType!=typeof(void))throw new Exception("Individual unit signature changed."); }
                     else if(method.Name=="SetShortJobInfo")
                     { if(method.ReturnType!=typeof(void)||parameters.Any(p=>p.IsOptional)||!(parameters.Select(p=>p.ParameterType).SequenceEqual(new[]{typeof(ShortJobInfo)})&&parameters[0].Name=="jobInfo"||parameters.Select(p=>p.ParameterType).SequenceEqual(new[]{typeof(string),typeof(string),typeof(string)})&&parameters.Select(p=>p.Name).SequenceEqual(new[]{"jobName","jobClient","engineerName"})))throw new Exception("Short job signature changed."); }
+                    else if(method.Name=="SetFullJobInfo")
+                    { if(method.ReturnType!=typeof(void)||parameters.Length!=13||parameters.Any(p=>p.ParameterType!=typeof(string)||p.IsOptional)||!parameters.Select(p=>p.Name).SequenceEqual(new[]{"jobName","jobClient","engineerName","engineerDate","jobNumber","revision","part","reference","checkerName","checkerDate","approverName","approverDate","comments"}))throw new Exception("Full job signature changed."); }
+                    else if(method.Name=="AnalyzeModel")
+                    { if(method.ReturnType!=typeof(void)||parameters.Length!=1||parameters[0].ParameterType!=typeof(AnalysisEngine)||parameters[0].Name!="engine"||!parameters[0].IsOptional||!Equals(parameters[0].DefaultValue,AnalysisEngine.StaadPro))throw new Exception("Analysis engine signature changed."); }
+                    else if(method.Name=="GetConnectedProjectInfo")
+                    { if(parameters.Length!=0||method.ReturnType!=typeof(ConnectedProjectResult))throw new Exception("Project query signature changed."); }
+                    else if(method.Name=="SetConnectedProjectInfo")
+                    { if(method.ReturnType!=typeof(bool)||parameters.Any(p=>p.IsOptional||p.IsOut||p.ParameterType.IsByRef)||!(parameters.Select(p=>p.ParameterType).SequenceEqual(new[]{typeof(ConnectedProjectInfo)})&&parameters[0].Name=="projectInfo"||parameters.Select(p=>p.ParameterType).SequenceEqual(new[]{typeof(string),typeof(string)})&&parameters.Select(p=>p.Name).SequenceEqual(new[]{"projectId","projectName"})))throw new Exception("Project assignment signature changed."); }
                     else if (parameters.Length != 0) throw new Exception("Unexpected Root parameters.");
                     if(method.Name=="UpdateStructure"&&method.ReturnType!=typeof(void))throw new Exception("Structure update must be void.");
                     if(method.Name=="Analyze"&&method.ReturnType!=typeof(void))throw new Exception("Analyze must be void.");
@@ -396,7 +445,7 @@ internal static class PackageSmoke
             var entry=docs.Descendants("member").Single(e=>(string)e.Attribute("name")==methodId);
             if (entry.Element("returns")==null || entry.Elements("param").Count()!=factory.GetParameters().Length) throw new Exception("Incomplete job factory IntelliSense.");
         }
-        foreach(var type in new[]{typeof(AnalysisResult),typeof(HiddenMode),typeof(WaitAnalysisMode),typeof(AnalysisStatus),typeof(AnalysisStatusResult)})
+        foreach(var type in new[]{typeof(AnalysisResult),typeof(HiddenMode),typeof(WaitAnalysisMode),typeof(AnalysisStatus),typeof(AnalysisStatusResult),typeof(AnalysisEngine),typeof(ConnectedProjectInfo),typeof(ConnectedProjectResult)})
         {
             var typeDoc=docs.Descendants("member").Single(e=>(string)e.Attribute("name")=="T:"+type.FullName);
             if(typeDoc.Element("summary")==null)throw new Exception("Missing analysis type IntelliSense.");
@@ -406,7 +455,10 @@ internal static class PackageSmoke
                 if(!docs.Descendants("member").Any(e=>(string)e.Attribute("name")=="P:"+type.FullName+"."+property.Name&&e.Element("summary")!=null&&e.Element("value")!=null))throw new Exception("Missing analysis result property IntelliSense.");
         }
         if(!typeof(AnalysisStatusResult).IsSealed||typeof(AnalysisStatusResult).GetConstructors().Length!=0||typeof(AnalysisStatusResult).GetProperties().Any(p=>p.GetSetMethod(true)!=null))throw new Exception("Status snapshot is not immutable.");
-        Console.WriteLine("PASS: installed foundation, forty guarded Root operations, XML and dependency isolation.");
+        foreach(var type in new[]{typeof(ConnectedProjectInfo),typeof(ConnectedProjectResult)})
+            if(!type.IsSealed||type.GetProperties().Any(p=>p.GetSetMethod(true)!=null))throw new Exception("Project models must be immutable.");
+        if(typeof(ConnectedProjectResult).GetConstructors().Length!=0)throw new Exception("Query result must not have a public constructor.");
+        Console.WriteLine("PASS: installed foundation, forty-five guarded Root operations, XML and dependency isolation.");
     }
 }
 '@
@@ -438,6 +490,9 @@ if ([string]::IsNullOrWhiteSpace($analysisCode)) { throw 'Missing analysis guide
 $editCode = [regex]::Match($editGuide, '(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
 if ([string]::IsNullOrWhiteSpace($editCode)) { throw 'Missing model edits guide example.' }
 [IO.File]::WriteAllText((Join-Path $consumer 'RootEditExample.cs'), 'using System; using StaadPro.Interop.Core.Models; internal static class RootEditExample { static void Example() { using var wrapper = new OpenStaadWrapper(new NativeRoot());' + [Environment]::NewLine + $editCode + [Environment]::NewLine + '}}')
+$projectCode = [regex]::Match($projectGuide, '(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if ([string]::IsNullOrWhiteSpace($projectCode)) { throw 'Missing job/analysis/projects guide example.' }
+[IO.File]::WriteAllText((Join-Path $consumer 'RootProjectExample.cs'), 'using System; using StaadPro.Interop.Core.Models; internal static class RootProjectExample { static void Example() { using var wrapper = new OpenStaadWrapper(new NativeRoot());' + [Environment]::NewLine + $projectCode + [Environment]::NewLine + '}}')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -458,4 +513,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all eight Root guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all nine Root guide examples compiled without executing native examples.')

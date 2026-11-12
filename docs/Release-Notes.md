@@ -1,5 +1,9 @@
 # Release notes
 
+## 1.0.0-preview.20261112.2 - 12 November 2026
+
+Provides the primary/reference load-case metadata queries, detached load-case models and expanded XML IntelliSense. See [load-case metadata](Load-Case-Metadata.md) for exact contracts and consumer examples.
+
 ## 1.0.0-preview.20261112.1 - 12 November 2026
 
 Ported `GetAllPrimaryLoadCases()`, `GetAllReferenceLoadCases()`, `GetPrimaryLoadCaseFromId(int lcId)`, `GetReferenceLoadCaseFromId(int lcId)` and `GetPrimaryLoadCasesFromIds(IEnumerable<int> loadCasesIds)` with full matching XML IntelliSense. Added `LoadCase`, `ILoadCase`, `IEntity` and documented load-family/engineering-type enums without JSON or UI dependencies.

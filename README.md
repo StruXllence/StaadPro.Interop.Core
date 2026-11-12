@@ -12,7 +12,7 @@ By **Srinivasa Rao Masanam**. Published by **StruXllence**.
 
 ## StruXllence themes for Visual Studio Code
 
-[![StruXllence VS Code theme installs](https://img.shields.io/visual-studio-marketplace/i/StruXllence.struxllence-themes?label=StruXllence%20Themes&style=flat-square)](https://marketplace.visualstudio.com/items?itemName=StruXllence.struxllence-themes)
+[![Install StruXllence Themes from Visual Studio Marketplace](https://img.shields.io/badge/StruXllence%20Themes-Install-007ACC?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=StruXllence.struxllence-themes)
 
 Code your C# and OpenSTAAD tools with **StruXllence Themes**, a dark and light Visual Studio Code theme suite with matching file and product icons by Srinivasa Rao Masanam.
 
@@ -35,7 +35,7 @@ dotnet add ./YourApp.csproj package StaadPro.Interop.Core --prerelease --source 
 ~~~
 In Visual Studio's NuGet Package Manager, enable **Include prerelease** and search for **StaadPro.Interop.Core**. Target `net9.0-windows` and use an STA entry point for native automation. The NuGet badge tracks the latest public preview; see the [installation guide](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Installation.md) for exact-version and local-feed instructions.
 
-## Version 1.0.0-preview.20261112.1
+## Version 1.0.0-preview.20261112.2
 
 This Core preview contains wrapper/acquisition infrastructure and **53 common Root contracts and three optional Root operations**: metadata, model/process and path observations, model/application requests, job-information snapshots and updates, window controls, input-unit changes, model coordination and analysis requests/status. New contracts are `GetAllPrimaryLoadCases()`, `GetAllReferenceLoadCases()`, `GetPrimaryLoadCaseFromId(...)`, `GetReferenceLoadCaseFromId(...)` and `GetPrimaryLoadCasesFromIds(...)`. See [load-case metadata](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Load-Case-Metadata.md) for Boolean/count separation, bounded inventories, family identity and detached records. Load provides title reads and five primary/reference metadata queries; Output provides availability/member-end force reads. Geometry, Property, Support, Design, Commands, Table, View and IDEA StatiCa remain binding-only placeholders.
 

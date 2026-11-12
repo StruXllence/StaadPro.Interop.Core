@@ -17,6 +17,7 @@ try {
     if ($null -eq $archive.GetEntry($asset) -or @($archive.Entries | Where-Object FullName -like 'lib/*/*.dll').Count -ne 1) { throw 'Expected one Windows .NET 9 Core asset.' }
     [xml] $documentation = Read-Entry ($asset.Replace('.dll','.xml'))
     $readme = Read-Entry 'README.md'
+    if (!$readme.Contains('https://img.shields.io/badge/StruXllence%20Themes-Install-007ACC?style=flat-square') -or $readme.Contains('img.shields.io/visual-studio-marketplace/')) { throw 'The packaged Marketplace installation badge is missing or uses a retired endpoint.' }
     $rootGuide = Read-Entry 'docs/Root-Metadata.md'
     $observationGuide = Read-Entry 'docs/Root-Observations.md'
     $pathGuide = Read-Entry 'docs/Root-Path-Helpers.md'

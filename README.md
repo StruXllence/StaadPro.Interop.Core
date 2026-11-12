@@ -10,6 +10,22 @@ By **Srinivasa Rao Masanam**. Published by **StruXllence**.
 
 [![YouTube](https://img.shields.io/badge/YouTube-%40StruXllence-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://www.youtube.com/@StruXllence) [![Website](https://img.shields.io/badge/Website-Live-16A34A?style=flat-square)](https://struxllence.com) [![Forum](https://img.shields.io/badge/Community-Forum-0866C6?style=flat-square)](https://forum.struxllence.com) [![Forum preview](https://img.shields.io/badge/Revamp%20forum-Preview-7657B5?style=flat-square)](https://new-forum.struxllence.com)
 
+## StruXllence themes for Visual Studio Code
+
+[![StruXllence VS Code theme installs](https://img.shields.io/visual-studio-marketplace/i/StruXllence.struxllence-themes?label=StruXllence%20Themes&style=flat-square)](https://marketplace.visualstudio.com/items?itemName=StruXllence.struxllence-themes)
+
+Code your C# and OpenSTAAD tools with **StruXllence Themes**, a dark and light Visual Studio Code theme suite with matching file and product icons by Srinivasa Rao Masanam.
+
+[Install StruXllence Themes from the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=StruXllence.struxllence-themes) or use the command line:
+
+~~~powershell
+code --install-extension StruXllence.struxllence-themes
+# For VS Code Insiders:
+code-insiders --install-extension StruXllence.struxllence-themes
+~~~
+
+After installation, run **Preferences: Color Theme** and select **StruXllence Dark** or **StruXllence Light**. See the [theme previews and icon setup](https://github.com/StruXllence/struxllence-themes). The editor theme is optional and is installed separately from the NuGet library.
+
 ## Install the OpenSTAAD C# package
 
 Install the latest published preview from NuGet.org:
@@ -19,9 +35,9 @@ dotnet add ./YourApp.csproj package StaadPro.Interop.Core --prerelease --source 
 ~~~
 In Visual Studio's NuGet Package Manager, enable **Include prerelease** and search for **StaadPro.Interop.Core**. Target `net9.0-windows` and use an STA entry point for native automation. The NuGet badge tracks the latest public preview; see the [installation guide](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Installation.md) for exact-version and local-feed instructions.
 
-## Version 1.0.0-preview.20261112
+## Version 1.0.0-preview.20261112.1
 
-This Core preview contains wrapper/acquisition infrastructure and **53 common Root contracts and three optional Root operations**: metadata, model/process and path observations, model/application requests, job-information snapshots and updates, window controls, input-unit changes, model coordination and analysis requests/status. New contracts are `Root.RetrieveMemberForces(...)`, `Load.GetLoadCaseTitle(...)`, `Output.AreResultsAvailable()` and both `Output.GetMemberEndForces(...)` overloads. See [member-force observations](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Member-Force-Queries.md) for exact signatures, axes, native-unit and status/data contracts. Load provides title reads and Output provides availability/member-end force reads. Geometry, Property, Support, Design, Commands, Table, View and IDEA StatiCa remain binding-only placeholders.
+This Core preview contains wrapper/acquisition infrastructure and **53 common Root contracts and three optional Root operations**: metadata, model/process and path observations, model/application requests, job-information snapshots and updates, window controls, input-unit changes, model coordination and analysis requests/status. New contracts are `GetAllPrimaryLoadCases()`, `GetAllReferenceLoadCases()`, `GetPrimaryLoadCaseFromId(...)`, `GetReferenceLoadCaseFromId(...)` and `GetPrimaryLoadCasesFromIds(...)`. See [load-case metadata](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Load-Case-Metadata.md) for Boolean/count separation, bounded inventories, family identity and detached records. Load provides title reads and five primary/reference metadata queries; Output provides availability/member-end force reads. Geometry, Property, Support, Design, Commands, Table, View and IDEA StatiCa remain binding-only placeholders.
 
 The package targets **net9.0-windows**. It has no dependency on the Framework StaadPro.Interop package, WPF or Newtonsoft.Json. Live use requires a separately installed, licensed STAAD.Pro application with compatible OpenSTAAD members. Build/package checks do not certify every native build or licensing state.
 
@@ -71,7 +87,7 @@ The five metadata methods reuse wrapper snapshots without COM dispatch. `GetAppl
 
 The five [live Root observations](https://github.com/StruXllence/StaadPro.Interop.Core/blob/staadpro-interop-core/docs/Root-Observations.md) each issue one native query. Path/folder/error text is preserved exactly; unwritten or malformed text is rejected rather than treated as a blank. Physical-model flags and process IDs are validated without coercing arbitrary values. All managed Root reads share binding, thread and reentrancy guards. A PID is a live identifier; the cached window handle is a different value. Error-message reads retain native state semantics.
 
-Passed **1,576 offline tests**. Installed-package verification compiles **133 XML examples**, README usage and all twelve Root/domain guides, checks all 53 common Root contracts and three optional operations and exercises explicit edits against a managed native stand-in. Earlier read-only named-session and same-process target-reuse checks succeeded on STAAD.Pro 26.00.01.491 without startup. This increment performs no live model mutation or new native qualification; cross-version/startup and engineering acceptance remain separate.
+Passed **1,639 offline tests**. Installed-package verification compiles **143 XML examples**, README usage and all thirteen Root/domain guides, checks all 53 common Root contracts and three optional operations and exercises explicit edits against a managed native stand-in. Earlier read-only named-session and same-process target-reuse checks succeeded on STAAD.Pro 26.00.01.491 without startup. This increment performs no live model mutation or new native qualification; cross-version/startup and engineering acceptance remain separate.
 
 ## Model paths and identity
 

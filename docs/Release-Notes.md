@@ -1,5 +1,13 @@
 # Release notes
 
+## 1.0.0-preview.20261112.1 - 12 November 2026
+
+Ported `GetAllPrimaryLoadCases()`, `GetAllReferenceLoadCases()`, `GetPrimaryLoadCaseFromId(int lcId)`, `GetReferenceLoadCaseFromId(int lcId)` and `GetPrimaryLoadCasesFromIds(IEnumerable<int> loadCasesIds)` with full matching XML IntelliSense. Added `LoadCase`, `ILoadCase`, `IEntity` and documented load-family/engineering-type enums without JSON or UI dependencies.
+
+Preserved exact native titles/types, independent editable metadata records and ordered duplicate requests. Qualified bounded Int32 inventories with explicit Boolean-primary versus integral-count semantics, positive unique IDs and count consistency. All validation and native access share the current Load thread/lifetime/reentrancy lease; no case activation, assignments, save or analysis is added. HashSet identity mutation rules and non-atomic native observations are documented.
+
+Passed a zero-warning Release build and 1,639 tests, including 63 new cases. The installed consumer checks signatures/defaults, expanded matching XML, 143 compiled XML examples, thirteen guide examples, independent metadata, native stand-ins, exact restored archive and dependency isolation. No live native metadata/build qualification was performed. See [load-case metadata](Load-Case-Metadata.md).
+
 ## 1.0.0-preview.20261112 - 12 November 2026
 
 Ported `Root.RetrieveMemberForces(IEnumerable<int> beams, IEnumerable<int> loadCases)`, `Load.GetLoadCaseTitle(int lcId)`, `Output.AreResultsAvailable()` and both `Output.GetMemberEndForces(...)` overloads with full matching XML IntelliSense. The package now implements all 53 common Root contracts, three optional Root operations and these four Load/Output foundation contracts.

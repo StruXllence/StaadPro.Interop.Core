@@ -29,6 +29,7 @@ try {
     $creationGuide = Read-Entry 'docs/Root-Creation-Views-and-Shutdown.md'
     $optionalGuide = Read-Entry 'docs/Root-View-Changes-and-Optional-Operations.md'
     $forceGuide = Read-Entry 'docs/Member-Force-Queries.md'
+    $loadGuide = Read-Entry 'docs/Load-Case-Metadata.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
@@ -42,7 +43,7 @@ try {
     }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Member-Force-Queries.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Member-Force-Queries.md','docs/Load-Case-Metadata.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
     if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch '53 common Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
     if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
@@ -61,6 +62,7 @@ try {
         $iconBitmap = [Drawing.Bitmap]::new($iconStream)
         if ($iconBitmap.Width -ne $iconBitmap.Height -or $iconBitmap.GetPixel(0,0).A -ne 0) { throw 'The Core icon must be square with a transparent background.' }
     } finally { if ($null -ne $iconBitmap) { $iconBitmap.Dispose() }; $iconStream.Dispose() }
+    if(!$readme.Contains('https://marketplace.visualstudio.com/items?itemName=StruXllence.struxllence-themes') -or !$readme.Contains('code --install-extension StruXllence.struxllence-themes')){throw 'Missing theme installation resource in packaged README.'}
     $version = [string] $metadata.version
     if ($readme -notmatch ('(?m)^## Version ' + [regex]::Escape($version) + '\r?$') -or (Read-Entry 'docs/Release-Notes.md') -notmatch ('(?m)^## ' + [regex]::Escape($version) + ' - ')) { throw 'Package version and current documentation differ.' }
     if ($documentation.SelectNodes('//include|//inheritdoc').Count -ne 0) { throw 'Shipped IntelliSense must expand source documentation.' }
@@ -95,7 +97,7 @@ try {
     foreach($domain in @('Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
-        if($contracts.Count -ne $(if($domain -eq 'Load'){1}else{3})){throw 'Unexpected force domain documentation count.'}
+        if($contracts.Count -ne $(if($domain -eq 'Load'){6}else{3})){throw 'Unexpected force domain documentation count.'}
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
     }
     $examples = @($documentation.SelectNodes('//example/code'))
@@ -116,6 +118,7 @@ using System.Xml.Linq;
 using StaadPro.Interop.Core.Adapters.Interfaces;
 using StaadPro.Interop.Core.Adapters.Interfaces.Capabilities;
 using StaadPro.Interop.Core.Enums;
+using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Enums.Root;
 using StaadPro.Interop.Core.Models.Root;
 using StaadPro.Interop.Core.Models;
@@ -232,6 +235,18 @@ public sealed class ForceLoad
 {public int Titles;public string GetLoadCaseTitle(int id){Titles++;return "Case "+id;}}
 public sealed class ForceRoot : NativeRoot
 {public ForceOutput Output {get;}=new ForceOutput();public new ForceLoad Load {get;}=new ForceLoad();}
+public sealed class MetadataLoad
+{
+    public int Count=2;public object PrimaryStatus=true;public int TitleCalls,NumberCalls;
+    public int GetPrimaryLoadCaseCount()=>Count;public int GetReferenceLoadCaseCount()=>Count;
+    public object GetPrimaryLoadCaseNumbers(ref object buffer){NumberCalls++;buffer=new[]{7,3};return PrimaryStatus;}
+    public int GetReferenceLoadCaseNumbers(ref object buffer){NumberCalls++;buffer=new[]{7,3};return 2;}
+    public string GetLoadCaseTitle(int id){TitleCalls++;return " Primary "+id;}
+    public int GetLoadType(int id)=>23;
+    public string GetReferenceLoadCaseTitle(int id){TitleCalls++;return " Reference "+id;}
+    public int GetReferenceLoadType(int id)=>0;
+}
+public sealed class MetadataRoot : NativeRoot {public new MetadataLoad Load {get;}=new MetadataLoad();}
 internal static class PackageSmoke
 {
     [STAThread] private static void Main(string[] arguments)
@@ -527,6 +542,24 @@ internal static class PackageSmoke
             wrapper.RefreshComObjects();bool rejected=false;try{output.AreResultsAvailable();}catch(InvalidOperationException){rejected=true;}if(!rejected)throw new Exception("Stale Output remained usable.");
             var current=wrapper.Load;wrapper.Dispose();rejected=false;try{current.GetLoadCaseTitle(1);}catch(ObjectDisposedException){rejected=true;}if(!rejected)throw new Exception("Disposed Load remained usable.");
         }
+        var metadataNative=new MetadataRoot();
+        using(var wrapper=new OpenStaadWrapper(metadataNative))
+        {
+            var load=wrapper.Load;var primary=load.GetAllPrimaryLoadCases();var reference=load.GetAllReferenceLoadCases();
+            if(primary.Count!=2||reference.Count!=2||primary.Any(x=>x.Type!=LoadType.None||x.CaseType!=LoadCaseType.PrimaryLoad)||reference.Any(x=>x.CaseType!=LoadCaseType.ReferenceLoad))throw new Exception("Load metadata family/type mapping changed.");
+            if(load.GetPrimaryLoadCaseFromId(7).Title!=" Primary 7"||load.GetReferenceLoadCaseFromId(7).Title!=" Reference 7")throw new Exception("Load metadata title changed.");
+            var cases=load.GetPrimaryLoadCasesFromIds(new[]{7,3,7});if(!cases.Select(x=>x.Id).SequenceEqual(new[]{7,3,7})||ReferenceEquals(cases[0],cases[2]))throw new Exception("Ordered duplicate case snapshots changed.");
+            metadataNative.Load.PrimaryStatus=1;bool rejected=false;try{load.GetAllPrimaryLoadCases();}catch(InvalidOperationException){rejected=true;}if(!rejected)throw new Exception("Boolean primary success was confused with integer one.");
+            metadataNative.Load.Count=0;int before=metadataNative.Load.NumberCalls;if(load.GetAllPrimaryLoadCases().Count!=0||metadataNative.Load.NumberCalls!=before)throw new Exception("Zero inventory made number queries.");
+        }
+        foreach(var name in new[]{"GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds"})
+        {
+            var method=typeof(IOSLoad).GetMethod(name);var ps=method.GetParameters();Type expectedLoadReturn=name.StartsWith("GetAll")?typeof(HashSet<ILoadCase>):name.EndsWith("FromIds")?typeof(List<ILoadCase>):typeof(ILoadCase);
+            if(method.ReturnType!=expectedLoadReturn||ps.Any(p=>p.IsOptional||p.ParameterType.IsByRef)||ps.Length!=(name.StartsWith("GetAll")?0:1))throw new Exception("Load metadata signature changed.");
+            if(ps.Length==1&&(ps[0].Name!=(name.EndsWith("FromIds")?"loadCasesIds":"lcId")||ps[0].ParameterType!=(name.EndsWith("FromIds")?typeof(IEnumerable<int>):typeof(int))))throw new Exception("Load metadata parameter changed.");
+        }
+        foreach(Type type in new[]{typeof(LoadCase),typeof(ILoadCase),typeof(LoadCaseType),typeof(LoadType)})
+        {if(!docs.Descendants("member").Any(e=>(string)e.Attribute("name")=="T:"+type.FullName&&e.Element("summary")!=null))throw new Exception("Missing load metadata type XML.");}
         var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo", "GetProcessHandle", "NewSTAADFile", "CreateNamedView", "SaveNamedView", "Quit", "RemoveNamedView", "ModifyNamedView", "RetrieveMemberForces" };
         foreach (var contract in assembly.GetTypes().Where(t=>t.IsInterface && t.Namespace=="StaadPro.Interop.Core.Adapters.Interfaces"))
         {
@@ -590,7 +623,7 @@ internal static class PackageSmoke
                     if ((method.Name == "CloseSTAADFile" || method.Name == "ShowApplication") && method.ReturnType != typeof(IOSRoot)) throw new Exception("Fluent return changed.");
                 }
             }
-            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).SequenceEqual(new[]{"GetLoadCaseTitle"}))throw new Exception("Unexpected Load operations.");}
+            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
             else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }
@@ -676,6 +709,9 @@ if ([string]::IsNullOrWhiteSpace($optionalCode)) { throw 'Missing view/optional 
 $forceCode=[regex]::Match($forceGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
 if([string]::IsNullOrWhiteSpace($forceCode)){throw 'Missing force guide example.'}
 [IO.File]::WriteAllText((Join-Path $consumer 'ForceExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class ForceExample { static void Example(){using var wrapper=new OpenStaadWrapper(new ForceRoot());'+$forceCode+'}}')
+$loadCode=[regex]::Match($loadGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if([string]::IsNullOrWhiteSpace($loadCode)){throw 'Missing load metadata guide example.'}
+[IO.File]::WriteAllText((Join-Path $consumer 'LoadMetadataExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class LoadMetadataExample{static void Example(){using var wrapper=new OpenStaadWrapper(new MetadataRoot());'+$loadCode+'}}')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -696,4 +732,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all twelve Root/domain guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all thirteen Root/domain guide examples compiled without executing native examples.')

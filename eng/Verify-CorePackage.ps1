@@ -28,11 +28,12 @@ try {
     $projectGuide = Read-Entry 'docs/Root-Job-Analysis-and-Projects.md'
     $creationGuide = Read-Entry 'docs/Root-Creation-Views-and-Shutdown.md'
     $optionalGuide = Read-Entry 'docs/Root-View-Changes-and-Optional-Operations.md'
+    $forceGuide = Read-Entry 'docs/Member-Force-Queries.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
     if ([string]$metadata.title -ne 'StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)') { throw 'Unexpected package title.' }
-    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','52 common Root contracts')) {
+    foreach ($term in @('C#','OpenSTAAD','STAAD.Pro','Windows .NET 9','53 common Root contracts')) {
         if (([string]$metadata.description).IndexOf($term,[StringComparison]::OrdinalIgnoreCase) -lt 0) { throw "Incomplete package description: $term" }
     }
     $packageTags = @(([string]$metadata.tags) -split '\s+' | Where-Object { $_ })
@@ -41,9 +42,9 @@ try {
     }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Member-Force-Queries.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
-    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch '52 common Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
+    if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch '53 common Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
     if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
     foreach ($badge in @(
         'https://github.com/StruXllence/StaadPro.Interop.Core/actions/workflows/build-and-test.yml/badge.svg?branch=staadpro-interop-core',
@@ -63,7 +64,7 @@ try {
     $version = [string] $metadata.version
     if ($readme -notmatch ('(?m)^## Version ' + [regex]::Escape($version) + '\r?$') -or (Read-Entry 'docs/Release-Notes.md') -notmatch ('(?m)^## ' + [regex]::Escape($version) + ' - ')) { throw 'Package version and current documentation differ.' }
     if ($documentation.SelectNodes('//include|//inheritdoc').Count -ne 0) { throw 'Shipped IntelliSense must expand source documentation.' }
-    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen','SetSilentMode','SaveModel','OpenSTAADFile','CloseSTAADFile','ShowApplication','GetShortJobInfo','GetFullJobInfo','MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','SetInputUnitsEx','AwaitModelHandle','OpenStaadModel','CloseCurrentStaadModel','CloseWriteReopenStaadFile','AnalyzeEx','Analyze','IsAnalyzing','GetAnalysisStatus','GetAnalysisStatus(System.String)','SetInputUnitForLength','SetInputUnitForForce','SetShortJobInfo(System.String,System.String,System.String)','SetShortJobInfo(StaadPro.Interop.Core.Models.ShortJobInfo)','UpdateStructure','SetFullJobInfo(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)','AnalyzeModel(StaadPro.Interop.Core.Enums.Root.AnalysisEngine)','GetConnectedProjectInfo','SetConnectedProjectInfo(System.String,System.String)','SetConnectedProjectInfo(StaadPro.Interop.Core.Models.Root.ConnectedProjectInfo)','GetProcessHandle','NewSTAADFile(System.String,StaadPro.Interop.Core.Enums.LengthInputUnit,StaadPro.Interop.Core.Enums.ForceInputUnit)','CreateNamedView(System.String,System.Int32)','SaveNamedView(System.String)','Quit','RemoveNamedView(System.String)','ModifyNamedView(System.String,System.Collections.Generic.IEnumerable{System.Int32},StaadPro.Interop.Core.Enums.Root.NamedViewEntityType,System.Int32)')) {
+    foreach ($operation in @('GetApplicationVersion','GetBaseUnit','GetInputUnitForForce','GetInputUnitForLength','GetMainWindowHandle','GetStaadFileFullPath','GetStaadFileFolder','IsPhysicalModel','GetErrorMessage','GetProcessId','GetStaadFileNameOnly','GetAnlFileFullPath','GetOpenedStaadFilename','IsTarget','ModelIsOpen','SetSilentMode','SaveModel','OpenSTAADFile','CloseSTAADFile','ShowApplication','GetShortJobInfo','GetFullJobInfo','MinimizeStaadMainWindow','MaximizeStaadMainWindow','RestoreStaadMainWindow','SetInputUnitsEx','AwaitModelHandle','OpenStaadModel','CloseCurrentStaadModel','CloseWriteReopenStaadFile','AnalyzeEx','Analyze','IsAnalyzing','GetAnalysisStatus','GetAnalysisStatus(System.String)','SetInputUnitForLength','SetInputUnitForForce','SetShortJobInfo(System.String,System.String,System.String)','SetShortJobInfo(StaadPro.Interop.Core.Models.ShortJobInfo)','UpdateStructure','SetFullJobInfo(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)','AnalyzeModel(StaadPro.Interop.Core.Enums.Root.AnalysisEngine)','GetConnectedProjectInfo','SetConnectedProjectInfo(System.String,System.String)','SetConnectedProjectInfo(StaadPro.Interop.Core.Models.Root.ConnectedProjectInfo)','GetProcessHandle','NewSTAADFile(System.String,StaadPro.Interop.Core.Enums.LengthInputUnit,StaadPro.Interop.Core.Enums.ForceInputUnit)','CreateNamedView(System.String,System.Int32)','SaveNamedView(System.String)','Quit','RemoveNamedView(System.String)','ModifyNamedView(System.String,System.Collections.Generic.IEnumerable{System.Int32},StaadPro.Interop.Core.Enums.Root.NamedViewEntityType,System.Int32)','RetrieveMemberForces(System.Collections.Generic.IEnumerable{System.Int32},System.Collections.Generic.IEnumerable{System.Int32})')) {
         $memberId = if ($operation -in @('IsTarget','ModelIsOpen','OpenSTAADFile')) { $operation + '(System.String)' } elseif ($operation -in @('SetSilentMode','SaveModel')) { $operation + '(StaadPro.Interop.Core.Enums.SilentMode)' } elseif ($operation -eq 'SetInputUnitsEx') { $operation + '(StaadPro.Interop.Core.Enums.LengthInputUnit,StaadPro.Interop.Core.Enums.ForceInputUnit)' } elseif ($operation -eq 'AwaitModelHandle') { $operation + '(System.String,System.Double,System.Double)' } elseif ($operation -eq 'OpenStaadModel') { $operation + '(System.String,System.Int32,System.Int32)' } elseif ($operation -eq 'CloseWriteReopenStaadFile') { $operation + '(System.String,System.Collections.Generic.List{System.String},System.Int32,System.Int32)' } elseif ($operation -eq 'AnalyzeEx') { $operation + '(StaadPro.Interop.Core.Enums.SilentMode,StaadPro.Interop.Core.Enums.HiddenMode,StaadPro.Interop.Core.Enums.WaitAnalysisMode)' } elseif ($operation -eq 'SetInputUnitForLength') { $operation + '(StaadPro.Interop.Core.Enums.LengthInputUnit)' } elseif ($operation -eq 'SetInputUnitForForce') { $operation + '(StaadPro.Interop.Core.Enums.ForceInputUnit)' } else { $operation }
         $contract = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Interfaces.IOSRoot.$memberId']")
         $implementation = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Models.OSRootAdapter.$memberId']")
@@ -91,6 +92,12 @@ try {
     $gatewayContract = $documentation.SelectSingleNode("//member[@name='P:StaadPro.Interop.Core.Adapters.Interfaces.IOSRoot.Capabilities']")
     $gatewayConcrete = $documentation.SelectSingleNode("//member[@name='P:StaadPro.Interop.Core.Adapters.Models.OSRootAdapter.Capabilities']")
     if ($null -eq $gatewayContract -or $null -eq $gatewayConcrete -or $gatewayContract.InnerXml -cne $gatewayConcrete.InnerXml) { throw 'Mismatched capability gateway IntelliSense.' }
+    foreach($domain in @('Load','Output')) {
+        $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
+        $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
+        if($contracts.Count -ne $(if($domain -eq 'Load'){1}else{3})){throw 'Unexpected force domain documentation count.'}
+        foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
+    }
     $examples = @($documentation.SelectNodes('//example/code'))
 }
 finally { $archive.Dispose() }
@@ -215,6 +222,16 @@ public sealed class OptionalNativeRoot : NativeRoot
     public int ExportModelToADINA(int axis,int loads)
     {if(axis!=0||loads!=0)throw new Exception("Export options changed.");ExportCalls++;return ExportCode;}
 }
+public sealed class ForceOutput
+{
+    public bool Available=true,Success=true;public readonly List<string> Calls=new();
+    public object AreResultsAvailable(){Calls.Add("available");return Available;}
+    public object GetMemberEndForces(int beam,int end,int load,ref object buffer,int axes){Calls.Add($"{beam}:{end}:{load}:{axes}");buffer=new double[]{1,2,3,4,5,6};return Success;}
+}
+public sealed class ForceLoad
+{public int Titles;public string GetLoadCaseTitle(int id){Titles++;return "Case "+id;}}
+public sealed class ForceRoot : NativeRoot
+{public ForceOutput Output {get;}=new ForceOutput();public new ForceLoad Load {get;}=new ForceLoad();}
 internal static class PackageSmoke
 {
     [STAThread] private static void Main(string[] arguments)
@@ -497,7 +514,20 @@ internal static class PackageSmoke
             var current=root=wrapper.Root;var newGrant=current.Capabilities.GetAdinaExport();wrapper.Dispose();
             rejected=false;try{newGrant.Capability.ExportModelToAdina(AdinaAxisSystem.Preserve,AdinaLoadCaseHandling.MultipleLoadCases);}catch(ObjectDisposedException){rejected=true;}if(!rejected)throw new Exception("Disposed export grant remained usable.");
         }
-        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo", "GetProcessHandle", "NewSTAADFile", "CreateNamedView", "SaveNamedView", "Quit", "RemoveNamedView", "ModifyNamedView" };
+        var forceNative=new ForceRoot();
+        using(var wrapper=new OpenStaadWrapper(forceNative))
+        {
+            var root=wrapper.Root;var load=wrapper.Load;var output=wrapper.Output;
+            if(!output.AreResultsAvailable()||load.GetLoadCaseTitle(2)!="Case 2")throw new Exception("Force foundation reads changed.");
+            var local=output.GetMemberEndForces("Caller",1,2,MemberEnd.Start);var global=output.GetMemberEndForces("Caller",1,2,MemberEnd.End,LocalOrGlobal.Global);
+            if(!local.IsSuccessful||local.Forces.Fx!=1||local.Forces.Mz!=6||local.CoordinateSystem!=LocalOrGlobal.Local||global.CoordinateSystem!=LocalOrGlobal.Global)throw new Exception("Force components/axes changed.");
+            var batch=root.RetrieveMemberForces(new[]{2,1,2},new[]{4,4});if(!batch.IsSuccessful||batch.Queries.Count!=4||batch.Forces.Count!=4)throw new Exception("Force batch identity/deduplication changed.");
+            forceNative.Output.Success=false;if(output.GetMemberEndForces("",1,1,MemberEnd.Start).Forces!=null)throw new Exception("Failed force query leaked data.");
+            var empty=root.RetrieveMemberForces(Array.Empty<int>(),new[]{1});if(empty.AreResultsAvailable!=null||!empty.IsSuccessful)throw new Exception("Empty force request asserted availability.");
+            wrapper.RefreshComObjects();bool rejected=false;try{output.AreResultsAvailable();}catch(InvalidOperationException){rejected=true;}if(!rejected)throw new Exception("Stale Output remained usable.");
+            var current=wrapper.Load;wrapper.Dispose();rejected=false;try{current.GetLoadCaseTitle(1);}catch(ObjectDisposedException){rejected=true;}if(!rejected)throw new Exception("Disposed Load remained usable.");
+        }
+        var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo", "GetProcessHandle", "NewSTAADFile", "CreateNamedView", "SaveNamedView", "Quit", "RemoveNamedView", "ModifyNamedView", "RetrieveMemberForces" };
         foreach (var contract in assembly.GetTypes().Where(t=>t.IsInterface && t.Namespace=="StaadPro.Interop.Core.Adapters.Interfaces"))
         {
             var methods = contract.GetMethods().Where(m=>!m.IsSpecialName).ToArray();
@@ -547,6 +577,8 @@ internal static class PackageSmoke
                     { if(method.ReturnType!=typeof(void)||parameters.Length!=1||parameters[0].ParameterType!=typeof(string)||parameters[0].Name!="viewName"||parameters[0].IsOptional)throw new Exception("Removal signature changed."); }
                     else if(method.Name=="ModifyNamedView")
                     { if(method.ReturnType!=typeof(void)||!parameters.Select(p=>p.ParameterType).SequenceEqual(new[]{typeof(string),typeof(IEnumerable<int>),typeof(NamedViewEntityType),typeof(int)})||!parameters.Select(p=>p.Name).SequenceEqual(new[]{"viewName","entityIds","entityType","modificationFlag"})||parameters.Any(p=>p.IsOptional))throw new Exception("Modification signature changed."); }
+                    else if(method.Name=="RetrieveMemberForces")
+                    {if(method.ReturnType!=typeof(MemberForcesResult)||!parameters.Select(p=>p.ParameterType).SequenceEqual(new[]{typeof(IEnumerable<int>),typeof(IEnumerable<int>)})||!parameters.Select(p=>p.Name).SequenceEqual(new[]{"beams","loadCases"})||parameters.Any(p=>p.IsOptional))throw new Exception("Member-force batch signature changed.");}
                     else if (parameters.Length != 0) throw new Exception("Unexpected Root parameters.");
                     if(method.Name=="UpdateStructure"&&method.ReturnType!=typeof(void))throw new Exception("Structure update must be void.");
                     if(method.Name=="Analyze"&&method.ReturnType!=typeof(void))throw new Exception("Analyze must be void.");
@@ -558,6 +590,8 @@ internal static class PackageSmoke
                     if ((method.Name == "CloseSTAADFile" || method.Name == "ShowApplication") && method.ReturnType != typeof(IOSRoot)) throw new Exception("Fluent return changed.");
                 }
             }
+            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).SequenceEqual(new[]{"GetLoadCaseTitle"}))throw new Exception("Unexpected Load operations.");}
+            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }
         foreach (Type model in new[] { typeof(ShortJobInfo), typeof(FullJobInfo) })
@@ -598,7 +632,7 @@ internal static class PackageSmoke
             foreach(var field in type.GetFields(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Static))
                 if(!docs.Descendants("member").Any(e=>(string)e.Attribute("name")=="F:"+name+"."+field.Name&&e.Element("summary")!=null))throw new Exception("Missing optional enum IntelliSense.");
         }
-        Console.WriteLine("PASS: installed foundation, 52 common and three optional guarded Root operations, XML and dependency isolation.");
+        Console.WriteLine("PASS: installed foundation, 53 common and three optional guarded Root operations, XML and dependency isolation.");
     }
 }
 '@
@@ -639,6 +673,9 @@ if ([string]::IsNullOrWhiteSpace($creationCode)) { throw 'Missing creation/views
 $optionalCode = [regex]::Match($optionalGuide, '(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
 if ([string]::IsNullOrWhiteSpace($optionalCode)) { throw 'Missing view/optional guide example.' }
 [IO.File]::WriteAllText((Join-Path $consumer 'RootOptionalExample.cs'), 'using System; using StaadPro.Interop.Core.Models; internal static class RootOptionalExample { static void Example() { using var wrapper = new OpenStaadWrapper(new NativeRoot());' + [Environment]::NewLine + $optionalCode + [Environment]::NewLine + '}}')
+$forceCode=[regex]::Match($forceGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if([string]::IsNullOrWhiteSpace($forceCode)){throw 'Missing force guide example.'}
+[IO.File]::WriteAllText((Join-Path $consumer 'ForceExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class ForceExample { static void Example(){using var wrapper=new OpenStaadWrapper(new ForceRoot());'+$forceCode+'}}')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -659,4 +696,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all eleven Root guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all twelve Root/domain guide examples compiled without executing native examples.')

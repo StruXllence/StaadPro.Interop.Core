@@ -77,7 +77,7 @@ namespace StaadPro.Interop.Core.Tests.Services
             Assert.That(OpenStaadInstallationLocator.FindConventional(new[] { programFolder }, _ => false), Is.Null);
         }
         [Test]
-        public void OnlyRootExposesTheFiftyTwoDocumentedOperations()
+        public void OnlyRootExposesTheDocumentedRootLoadAndOutputOperations()
         {
             var interfaces = typeof(IOSBase).Assembly.GetTypes().Where(t => t.IsInterface && t.Namespace == typeof(IOSBase).Namespace).ToArray();
             Assert.That(interfaces.Length, Is.EqualTo(12));
@@ -87,7 +87,9 @@ namespace StaadPro.Interop.Core.Tests.Services
                 if (contract == typeof(IOSRoot))
                     Assert.That(operations, Is.EquivalentTo(new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle",
                         "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId",
-                        "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo", "GetProcessHandle", "NewSTAADFile", "CreateNamedView", "SaveNamedView", "Quit", "RemoveNamedView", "ModifyNamedView" }));
+                        "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo", "GetProcessHandle", "NewSTAADFile", "CreateNamedView", "SaveNamedView", "Quit", "RemoveNamedView", "ModifyNamedView", "RetrieveMemberForces" }));
+                else if(contract.Name=="IOSLoad") Assert.That(operations,Is.EquivalentTo(new[]{"GetLoadCaseTitle"}));
+                else if(contract.Name=="IOSOutput") Assert.That(operations,Is.EquivalentTo(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces"}));
                 else Assert.That(operations, Is.Empty, contract.Name);
             }
         }

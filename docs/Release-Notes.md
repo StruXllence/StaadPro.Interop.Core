@@ -1,5 +1,13 @@
 # Release notes
 
+## 1.0.0-preview.20261112 - 12 November 2026
+
+Ported `Root.RetrieveMemberForces(IEnumerable<int> beams, IEnumerable<int> loadCases)`, `Load.GetLoadCaseTitle(int lcId)`, `Output.AreResultsAvailable()` and both `Output.GetMemberEndForces(...)` overloads with full matching XML IntelliSense. The package now implements all 53 common Root contracts, three optional Root operations and these four Load/Output foundation contracts.
+
+Named status/data results preserve native false without exposing partial data, validate six finite written Double components, retain native units and explicit local/global axes, and keep equal components attached to distinct member/load/end identities. The batch snapshots inputs once, limits requests to 100,000 ends, reads availability once and titles once per distinct case. Force records contain detached scalar data without a WPF/vector/conversion dependency.
+
+Root, Load and Output share constructing-thread, current-binding, disposal and nonreentrancy guards. No analysis, activation, save, conversion, offset transfer or retry is added. Passed a zero-warning Release build and 1,576 tests, including 39 new regressions. Installed-package verification compiles 133 XML examples and twelve guide examples and checks exact restored archive/expanded IntelliSense. No live native result/engineering qualification was performed. See [member-force observations](Member-Force-Queries.md).
+
 ## 1.0.0-preview.20261111.2 - 11 November 2026
 
 Ported `RemoveNamedView(string viewName)`, `ModifyNamedView(string viewName, IEnumerable<int> entityIds, NamedViewEntityType entityType, int modificationFlag)`, `ExportModelToAdina(...)`, `GetAnalysisErrorMessages(string modelFilePath)` and `GetAnalysisWarningMessages(string modelFilePath)` with matching complete interface/concrete XML IntelliSense. Core exposes 52 common Root contracts and three optional Root operations.

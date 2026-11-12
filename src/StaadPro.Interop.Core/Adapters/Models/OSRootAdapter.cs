@@ -1608,5 +1608,40 @@ namespace StaadPro.Interop.Core.Adapters.Models
         internal IRootMemberInspector CapabilityInspector { get; set; } = new RootDispatchInspector();
         internal T UseCapability<T>(Func<object, ApplicationVersion, T> operation) =>
             Wrapper.UseRootBinding(this, wrapper => operation(wrapper.RawOpenStaad, wrapper.StaadVersion));
+
+        /// <summary>Retrieves local forces at both ends of the requested member/load-case pairs.</summary>
+        /// <param name="beams">Non-null positive member IDs, enumerated once and deduplicated in first-seen order.</param>
+        /// <param name="loadCases">Non-null positive load-case IDs, enumerated once and deduplicated in first-seen order.</param>
+        /// <returns>A named batch containing nullable result availability, ordered per-end outcomes and qualified force records.
+        /// Native false retains query identity with null force data; distinct identities are never collapsed by component equality.</returns>
+        /// <remarks><para>Validates both inputs before native access and limits the Cartesian batch to 100,000 end queries.
+        /// An empty input returns a successful empty batch with null availability and performs no native work.
+        /// Otherwise reads the captured Output availability once; false returns an unsuccessful empty batch.
+        /// Reads each distinct case title once from the captured Load binding, then queries load-case/member/start/end
+        /// order with local-axis flag zero. Results are sequential observations, not a transaction.
+        /// Every successful force response must supply six written finite Double values in Fx,Fy,Fz,Mx,My,Mz order.
+        /// Values retain native result units; cached input units do not certify output units. No offset transfer is applied.
+        /// The returned force models are editable detached data. Exceptions return no partial batch; ordinary false
+        /// flags are represented per query and do not prevent later queries.</para><para>Runs on the wrapper's constructing COM thread under one current-binding operation lease, including
+        /// validation, enumeration, native dispatch and output qualification. RefreshComObjects invalidates captured
+        /// adapters; reacquire them. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output,
+        /// refresh or disposal calls are rejected before native access. The guard cannot coordinate raw calls,
+        /// other wrappers or external UI. No implicit analysis, case activation, selection, save, unit conversion,
+        /// background COM, retry or rollback is added. Native failures preserve original exceptions/HRESULTs.
+        /// Calls can block. Snapshots do not guarantee result freshness or engineering validity.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, another thread/reentrant operation is active,
+        /// a native flag/title is malformed or successful outputs are unwritten, nonfinite or incorrectly shaped.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A compatible native member is unavailable.</exception>
+
+        /// <exception cref="ArgumentNullException">Either sequence is null.</exception>
+        /// <exception cref="ArgumentException">An ID is nonpositive or the request exceeds the query budget.</exception>
+        /// <example><code>
+        /// var result = wrapper.Root.RetrieveMemberForces(new[] { 1, 2 }, new[] { 1 });
+        /// foreach (var query in result.Queries)
+        ///     if (query.IsSuccessful) Console.WriteLine(query.Forces);
+        /// </code></example>
+        public MemberForcesResult RetrieveMemberForces(IEnumerable<int> beams, IEnumerable<int> loadCases) => Wrapper.UseRootBinding(this, wrapper => RootMemberForcesService.Retrieve(wrapper.RawOutput, wrapper.RawLoad, beams, loadCases));
     }
 }

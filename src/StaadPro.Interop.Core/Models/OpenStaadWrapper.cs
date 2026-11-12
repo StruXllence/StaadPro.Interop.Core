@@ -258,6 +258,26 @@ namespace StaadPro.Interop.Core.Models
             }
         }
 
+        internal T UseLoadBinding<T>(OSLoadAdapter adapter, Func<OpenStaadWrapper,T> operation)
+        {
+            ThrowIfDisposed();
+            using(operationContext.Enter())
+            {
+                if(!ReferenceEquals(Load,adapter))throw new InvalidOperationException("This Load binding is not current; reacquire wrapper.Load.");
+                return operation(this);
+            }
+        }
+
+        internal T UseOutputBinding<T>(OSOutputAdapter adapter, Func<OpenStaadWrapper,T> operation)
+        {
+            ThrowIfDisposed();
+            using(operationContext.Enter())
+            {
+                if(!ReferenceEquals(Output,adapter))throw new InvalidOperationException("This Output binding is not current; reacquire wrapper.Output.");
+                return operation(this);
+            }
+        }
+
         /// <summary>Clears this wrapper's native and managed bindings without closing STAAD or a model.</summary>
         /// <remarks>Idempotent. Leaves cached metadata and injected host services available. Does not call FinalReleaseComObject
         /// or dispose caller-owned services. An undisposed wrapper must be disposed on its constructing thread, outside a refresh.

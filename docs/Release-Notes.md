@@ -1,5 +1,17 @@
 # Release notes
 
+## 1.0.0-preview.20261113 - 13 November 2026
+
+Ported `GetReferenceLoadCasesFromIds(...)`, `GetLoadCombinationCaseFromId(...)`, `GetLoadCombinationCasesFromIds(...)`, `GetAllLoadCombinationCases()` and `GetAllLoadCasesOfType(LoadCaseType loadCaseType = LoadCaseType.PrimaryLoad)` with comprehensive matching interface/adapter XML IntelliSense. Reused the detached LoadCase/ILoadCase models and existing family/type enums; Load now exposes eleven contracts.
+
+Reference lists retain request order and duplicate IDs as independent records. Combination requests deduplicate IDs, verify membership before any requested titles and return Type=None without engineering type calls. Family enumeration routes to exactly one supported family, with an optional PrimaryLoad default; repeat and undefined families fail explicitly. Shared bounded native inventory qualification preserves Boolean success versus integral counts, Int32 sentinel validation and nonzero array bounds.
+
+All validation and native reads run under one current-binding, constructing-thread and non-reentrant operation lease. Results are eager, with no case activation, factors, assignments, analysis, unit conversion, save or retry. See [load-case metadata](Load-Case-Metadata.md) for method-selection guidance, mutable record/hash semantics and native observation limits.
+
+Passed a Release build with zero warnings/errors and **1,726 offline tests**, including **87 new cases**. Installed-package verification checks eleven Load signatures, expanded matching XML, **153 XML examples**, README and all thirteen Root/domain guides, stand-in metadata behavior, dependency isolation and exact restored archive equality. No live native metadata retrieval or new native-build/engineering qualification was performed.
+
+
+
 ## 1.0.0-preview.20261112.2 - 12 November 2026
 
 Provides the primary/reference load-case metadata queries, detached load-case models and expanded XML IntelliSense. See [load-case metadata](Load-Case-Metadata.md) for exact contracts and consumer examples.

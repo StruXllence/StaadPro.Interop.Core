@@ -1,35 +1,82 @@
-# Primary and reference load-case metadata
+# Load-case metadata
 
-These five `IOSLoad` contracts read metadata without activating cases, loading assignments, saving or editing STAAD:
+The Load adapter returns detached metadata through the existing `ILoadCase`, `LoadCase`, `LoadCaseType` and `LoadType` contracts. These methods do not activate cases or read assignments, combination factors or analysis results.
 
-| Method | Result |
+| Method | Return and selection behavior |
 | --- | --- |
-| `GetAllPrimaryLoadCases()` | Fresh `HashSet<ILoadCase>` of qualified primary metadata. |
-| `GetAllReferenceLoadCases()` | Fresh `HashSet<ILoadCase>` of qualified reference metadata. |
-| `GetPrimaryLoadCaseFromId(int lcId)` | One new primary `LoadCase` record. |
-| `GetReferenceLoadCaseFromId(int lcId)` | One new reference `LoadCase` record. |
-| `GetPrimaryLoadCasesFromIds(IEnumerable<int> loadCasesIds)` | New list preserving input order and duplicate IDs as independent objects. |
+| `GetAllPrimaryLoadCases()` | Set of all primary metadata records. |
+| `GetAllReferenceLoadCases()` | Set of all reference metadata records. |
+| `GetPrimaryLoadCaseFromId(lcId)` | One primary record, read directly by positive ID. |
+| `GetReferenceLoadCaseFromId(lcId)` | One reference record, read directly by positive ID. |
+| `GetPrimaryLoadCasesFromIds(loadCasesIds)` | Ordered list with duplicate IDs preserved as independent records. |
+| `GetReferenceLoadCasesFromIds(loadCasesIds)` | Ordered reference list with the same duplicate semantics. |
+| `GetLoadCombinationCaseFromId(lcId)` | One combination record after verifying membership in the combination inventory. |
+| `GetLoadCombinationCasesFromIds(lcIds)` | Eager set of unique requested combinations; membership checked before reading any titles. |
+| `GetAllLoadCombinationCases()` | Set of all combination metadata records. |
+| `GetAllLoadCasesOfType(loadCaseType = PrimaryLoad)` | Eager enumeration of exactly one supported family. |
 
-Single IDs must be positive; zero does not select the active case. The list input is non-null, enumerated once and fully validated before metadata access. Empty input returns a fresh empty list with no native calls. Inputs and inventories are bounded to 100,000 cases. Errors propagate without a partial result.
+`GetLoadCaseTitle(lcId)` remains a separate literal-title query. A title alone does not prove whether an ID belongs to the primary, reference or combination family.
 
-All-case queries read the appropriate family's native count. Zero returns an empty set without number/title/type requests. Nonzero counts require a one-dimensional Int32 ID array of the same size with every ID positive, written and unique. Replaced arrays and nonzero lower bounds are accepted. For primary numbers, Boolean true is success and triggers a separate count recheck after buffer qualification; false throws. An integral return must equal the expected count. Reference numbers require the integral count and reject Boolean values. Neither native success nor malformed IDs are coerced into an empty inventory.
+## IDs, input enumeration and duplicates
 
-Each case is read as title then engineering type. Primary and reference IDs can overlap; their metadata comes from the corresponding family. Exact string titles, including empty, whitespace, Unicode and literal `NONE`, are preserved. Non-string titles, unsupported scalar shapes and undefined engineering types throw. `LoadType` supports the documented codes 0–23, including `None=23`. `CaseType` is PrimaryLoad or ReferenceLoad according to the requested method.
+IDs must be positive; the native zero/active-case shortcut is not accepted. List input must be non-null and is enumerated once under the Load operation lease. Every ID is validated and captured before native reads. A failing enumerator or invalid ID throws without returning partial data.
 
-`ILoadCase` extends the small `IEntity` identity contract. `LoadCase` uses the existing managed property store, raises change notifications and has no JSON or UI-framework dependency. Returned records contain metadata only. Constructor defaults match the data model, while manually constructed records do not assert native validity. Changing the object does not submit native updates. Equality and hashing use Id, CaseType and Type; remove a record from a HashSet before changing those fields, or rebuild the set. Title does not participate in equality. Set iteration order is unspecified.
+Each supplied sequence is limited to **100,000 entries**, including duplicates before deduplication. Empty requested lists return fresh empty collections without native calls.
+
+Primary and reference ID-list methods preserve order and repetitions. Repeated IDs produce distinct `LoadCase` instances. They call the relevant title API followed by the engineering type API, without enumerating the entire family.
+
+Combination-list requests have different semantics: duplicate IDs produce one record, set iteration order is unspecified, and a nonempty request reads the combination inventory once. **All requested IDs must be present before any titles are read.** Single-combination retrieval also verifies membership first and reads only the requested title. An ID present only in another family throws `InvalidOperationException` rather than becoming a falsely labeled combination or null result.
+
+Choose a family-specific ID-list method when the family and IDs are known. Use `GetAllLoadCasesOfType` when all metadata from one family is required. It defaults to PrimaryLoad and supports ReferenceLoad and LoadCombination; RepeatLoad and undefined enum values throw `NotSupportedException` before native access. It never merges families or silently substitutes a supported one.
+
+## Native inventory qualification
+
+All-case and combination-membership queries read a qualified count followed by native case numbers when the count is nonzero. Counts must be integral, nonnegative and at most 100,000. A zero count returns an empty inventory without requesting numbers or metadata; a requested single combination then fails membership.
+
+Number buffers start as unwritten Int32 sentinels. Native arrays must have one dimension, exactly the expected length and Int32 elements; every ID must be positive and unique. Replacement arrays and nonzero lower bounds are accepted. Null, unwritten, duplicate, nonpositive or wrongly shaped buffers throw.
+
+Primary and combination number retrieval accept **Boolean true or an integral count equal to the separate inventory count**. False fails; true is never coerced to one. Boolean success requires a count recheck after array qualification, before metadata retrieval. An integral zero is not success for a nonempty inventory. Reference number retrieval retains its integral-count contract and rejects Boolean values.
+
+Rechecks detect some concurrent changes but cannot make sequential COM observations atomic. Model edits can change membership or titles between reads even when the count stays the same.
+
+## Titles, types and detached records
+
+Primary records use `GetLoadCaseTitle` then `GetLoadType`. References use `GetReferenceLoadCaseTitle` then `GetReferenceLoadType`. Exact string titles—including empty text, whitespace, Unicode and literal `NONE`—are preserved. Null/non-string responses are errors. Primary/reference IDs may overlap; their metadata is read from the specified family. Engineering types must be defined `LoadType` codes 0–23.
+
+Combinations use `GetLoadCaseTitle` after membership qualification. Their `CaseType` is LoadCombination and `Type` is always **LoadType.None (23)**. No `GetLoadType` call is made, and no primary engineering classification is inferred. Factors, constituent cases, repeat-load definitions and result availability are not loaded.
+
+`ILoadCase` exposes read-only metadata properties. Returned objects are concrete, editable `LoadCase` records; modifying a concrete record does not submit native changes. Their existing managed property store supplies notifications without JSON or UI-framework dependencies. Records are independent of native buffers and previous calls.
+
+Equality and hashing use **Id, CaseType and Type**, not Title. Remove an object from a HashSet before changing those identity fields, or rebuild the set. Returned sets have unspecified iteration order. Re-enumerating a returned collection performs no COM work; call the method again for a new observation.
+
+## C# example
 
 ~~~csharp
 var load = wrapper.Load;
-foreach (var item in load.GetAllPrimaryLoadCases())
-    Console.WriteLine(item.Id + ": " + item.Title + " (" + item.Type + ")");
-var primary = load.GetPrimaryLoadCaseFromId(7);
-var reference = load.GetReferenceLoadCaseFromId(7);
-var ordered = load.GetPrimaryLoadCasesFromIds(new[] { 7, 3, 7 });
-Console.WriteLine(ordered.Count);
-foreach (var item in load.GetAllReferenceLoadCases())
-    Console.WriteLine(item.Title);
+var references = load.GetReferenceLoadCasesFromIds(new[] { 7, 3, 7 });
+Console.WriteLine(references.Count); // three independent records, including repeated ID 7
+
+var combination = load.GetLoadCombinationCaseFromId(201);
+Console.WriteLine(combination.Title + ": " + combination.Type); // None
+
+var requested = load.GetLoadCombinationCasesFromIds(new[] { 201, 301, 201 });
+foreach (var item in requested)
+    Console.WriteLine(item.Id + ": " + item.Title); // two unique combinations
+
+foreach (var item in load.GetAllLoadCombinationCases())
+    Console.WriteLine(item.Id);
+
+var primary = load.GetAllLoadCasesOfType(); // defaults to PrimaryLoad
+var referenceFamily = load.GetAllLoadCasesOfType(
+    StaadPro.Interop.Core.Enums.LoadCaseType.ReferenceLoad);
+Console.WriteLine(System.Linq.Enumerable.Count(primary) + " / " +
+    System.Linq.Enumerable.Count(referenceFamily));
 ~~~
 
-Each call runs on the constructing COM thread under one current Load lease, including list enumeration, validation, inventory qualification and metadata retrieval. Stale/manual-noncurrent adapters, other threads and reentrant Root/Load/Output/refresh/disposal work are rejected before native access. Refresh invalidates captured adapters; reacquire `wrapper.Load`. Disposed wrappers throw ObjectDisposedException. The guard cannot coordinate raw calls, other wrappers or external UI. Sequential reads are not an atomic model snapshot; count rechecking cannot detect every concurrent edit.
+## Lifetime, failures and validation limits
 
-The implementation performs no analysis, activation, assignment hydration, unit conversion, retry or native mutation. Original exceptions/HRESULTs propagate and calls can block. Offline tests and the installed-package consumer verify native stand-ins, all documented type codes, Boolean/count separation, invalid arrays/counts, independent records, notifications/equality, signatures/defaults, expanded matching XML and compiled examples. No live model metadata read or new native-build runtime qualification was performed.
+Each call runs on the constructing COM thread under one current Load lease spanning enumeration, input validation, inventory/membership checks, dispatch and output qualification. Disposed wrappers, stale adapters retained after refresh, manually constructed noncurrent adapters, other threads and reentrant Root/Load/Output/refresh/disposal calls are rejected before native work. Reacquire `wrapper.Load` after `RefreshComObjects()`.
+
+The guard cannot coordinate raw native access, other wrappers or the STAAD.Pro UI. Coordinate shared-session edits. Synchronous calls can block. Native errors retain their original exceptions/HRESULTs, with no retry or fallback instance. The methods do not analyze, activate, save, convert units, hydrate assignments or mutate STAAD.
+
+Offline tests and the installed-package consumer verify Boolean/count separation, malformed inventories, membership, ordered references versus deduplicated combinations, independent records, exact signatures/defaults, expanded matching XML and examples. The installed 2024/2025/2026 help declares matching combination count/number signatures, but this is not native runtime or engineering qualification. No live metadata retrieval or model mutation was performed for this increment.

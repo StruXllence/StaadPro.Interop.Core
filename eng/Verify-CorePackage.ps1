@@ -98,7 +98,7 @@ try {
     foreach($domain in @('Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
-        if($contracts.Count -ne $(if($domain -eq 'Load'){6}else{3})){throw 'Unexpected force domain documentation count.'}
+        if($contracts.Count -ne $(if($domain -eq 'Load'){11}else{3})){throw 'Unexpected force domain documentation count.'}
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
     }
     $examples = @($documentation.SelectNodes('//example/code'))
@@ -238,12 +238,14 @@ public sealed class ForceRoot : NativeRoot
 {public ForceOutput Output {get;}=new ForceOutput();public new ForceLoad Load {get;}=new ForceLoad();}
 public sealed class MetadataLoad
 {
-    public int Count=2;public object PrimaryStatus=true;public int TitleCalls,NumberCalls;
+    public int Count=2;public object PrimaryStatus=true,CombinationStatus=true;public int TitleCalls,NumberCalls,TypeCalls;
     public int GetPrimaryLoadCaseCount()=>Count;public int GetReferenceLoadCaseCount()=>Count;
+    public int GetLoadCombinationCaseCount()=>Count;
+    public object GetLoadCombinationCaseNumbers(ref object buffer){NumberCalls++;buffer=new[]{201,301};return CombinationStatus;}
     public object GetPrimaryLoadCaseNumbers(ref object buffer){NumberCalls++;buffer=new[]{7,3};return PrimaryStatus;}
     public int GetReferenceLoadCaseNumbers(ref object buffer){NumberCalls++;buffer=new[]{7,3};return 2;}
     public string GetLoadCaseTitle(int id){TitleCalls++;return " Primary "+id;}
-    public int GetLoadType(int id)=>23;
+    public int GetLoadType(int id){TypeCalls++;return 23;}
     public string GetReferenceLoadCaseTitle(int id){TitleCalls++;return " Reference "+id;}
     public int GetReferenceLoadType(int id)=>0;
 }
@@ -553,6 +555,50 @@ internal static class PackageSmoke
             metadataNative.Load.PrimaryStatus=1;bool rejected=false;try{load.GetAllPrimaryLoadCases();}catch(InvalidOperationException){rejected=true;}if(!rejected)throw new Exception("Boolean primary success was confused with integer one.");
             metadataNative.Load.Count=0;int before=metadataNative.Load.NumberCalls;if(load.GetAllPrimaryLoadCases().Count!=0||metadataNative.Load.NumberCalls!=before)throw new Exception("Zero inventory made number queries.");
         }
+        var combinationNative=new MetadataRoot();
+        using(var wrapper=new OpenStaadWrapper(combinationNative))
+        {
+            var load=wrapper.Load;
+            var references=load.GetReferenceLoadCasesFromIds(new[]{7,3,7});
+            if(!references.Select(x=>x.Id).SequenceEqual(new[]{7,3,7})||ReferenceEquals(references[0],references[2])||references.Any(x=>x.CaseType!=LoadCaseType.ReferenceLoad))throw new Exception("Reference-list duplicate/family contract changed.");
+            var single=load.GetLoadCombinationCaseFromId(201);
+            var requested=load.GetLoadCombinationCasesFromIds(new[]{301,201,301}).ToArray();
+            var combinations=load.GetAllLoadCombinationCases();
+            if(single.Id!=201||single.Type!=LoadType.None||single.CaseType!=LoadCaseType.LoadCombination||requested.Length!=2||combinations.Count!=2||combinations.Any(c=>c.CaseType!=LoadCaseType.LoadCombination||c.Type!=LoadType.None)||combinationNative.Load.TypeCalls!=0)throw new Exception("Combination metadata contract changed.");
+            int titleCalls=combinationNative.Load.TitleCalls;bool rejected=false;
+            try{load.GetLoadCombinationCasesFromIds(new[]{201,999});}catch(InvalidOperationException){rejected=true;}
+            if(!rejected||combinationNative.Load.TitleCalls!=titleCalls)throw new Exception("Missing combination membership was ignored or read partial titles.");
+            foreach(var family in new[]{LoadCaseType.PrimaryLoad,LoadCaseType.ReferenceLoad,LoadCaseType.LoadCombination})
+                if(load.GetAllLoadCasesOfType(family).Any(c=>c.CaseType!=family))throw new Exception("Load-family routing changed.");
+            if(load.GetAllLoadCasesOfType().Any(c=>c.CaseType!=LoadCaseType.PrimaryLoad))throw new Exception("Default load family changed.");
+            foreach(var family in new[]{LoadCaseType.RepeatLoad,(LoadCaseType)0})
+            {rejected=false;try{load.GetAllLoadCasesOfType(family);}catch(NotSupportedException){rejected=true;}if(!rejected)throw new Exception("Unsupported family accepted.");}
+            Action<IOSLoad>[] operations={l=>l.GetReferenceLoadCasesFromIds(new[]{7}),l=>l.GetLoadCombinationCaseFromId(201),l=>l.GetLoadCombinationCasesFromIds(new[]{201}),l=>l.GetAllLoadCombinationCases(),l=>l.GetAllLoadCasesOfType()};
+            wrapper.RefreshComObjects();int before=combinationNative.Load.TitleCalls;
+            foreach(var action in operations){rejected=false;try{action(load);}catch(InvalidOperationException){rejected=true;}if(!rejected||combinationNative.Load.TitleCalls!=before)throw new Exception("Stale new Load query dispatched.");}
+            var current=wrapper.Load;wrapper.Dispose();
+            foreach(var action in operations){rejected=false;try{action(current);}catch(ObjectDisposedException){rejected=true;}if(!rejected||combinationNative.Load.TitleCalls!=before)throw new Exception("Disposed new Load query dispatched.");}
+        }
+        foreach(var name in new[]{"GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType"})
+        {
+            bool reference=name=="GetReferenceLoadCasesFromIds",single=name=="GetLoadCombinationCaseFromId",family=name=="GetAllLoadCasesOfType",all=name=="GetAllLoadCombinationCases";
+            Type[] types=all?Array.Empty<Type>():new[]{family?typeof(LoadCaseType):single?typeof(int):typeof(IEnumerable<int>)};
+            string[] names=all?Array.Empty<string>():new[]{family?"loadCaseType":single?"lcId":reference?"loadCasesIds":"lcIds"};
+            Type result=reference?typeof(List<ILoadCase>):single?typeof(ILoadCase):all?typeof(HashSet<ILoadCase>):typeof(IEnumerable<ILoadCase>);
+            System.Xml.Linq.XElement previous=null;
+            foreach(Type owner in new[]{typeof(IOSLoad),typeof(StaadPro.Interop.Core.Adapters.Models.OSLoadAdapter)})
+            {
+                var method=owner.GetMethod(name,types);if(method==null||method.ReturnType!=result||!method.GetParameters().Select(p=>p.Name).SequenceEqual(names)||method.GetParameters().Any(p=>p.IsOut||p.ParameterType.IsByRef))throw new Exception("New Load signature changed.");
+                if(family){if(!method.GetParameters()[0].IsOptional||!Equals(method.GetParameters()[0].DefaultValue,LoadCaseType.PrimaryLoad))throw new Exception("Default load family changed.");}
+                else if(method.GetParameters().Any(p=>p.IsOptional))throw new Exception("Unexpected new Load default.");
+                string prefix="M:"+owner.FullName+"."+name;
+                var entry=docs.Descendants("member").Single(e=>((string)e.Attribute("name")).StartsWith(prefix+"(")||(string)e.Attribute("name")==prefix);
+                foreach(string tag in new[]{"summary","returns","remarks","exception","example"})if(entry.Element(tag)==null)throw new Exception("Missing new Load IntelliSense.");
+                if(previous!=null&&!entry.Elements().Select(e=>e.ToString()).SequenceEqual(previous.Elements().Select(e=>e.ToString())))throw new Exception("Load interface/adapter IntelliSense differ.");
+                if(!entry.Elements("param").Select(e=>(string)e.Attribute("name")).SequenceEqual(names))throw new Exception("New Load parameter docs differ.");
+                previous=entry;
+            }
+        }
         foreach(var name in new[]{"GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds"})
         {
             var method=typeof(IOSLoad).GetMethod(name);var ps=method.GetParameters();Type expectedLoadReturn=name.StartsWith("GetAll")?typeof(HashSet<ILoadCase>):name.EndsWith("FromIds")?typeof(List<ILoadCase>):typeof(ILoadCase);
@@ -624,7 +670,7 @@ internal static class PackageSmoke
                     if ((method.Name == "CloseSTAADFile" || method.Name == "ShowApplication") && method.ReturnType != typeof(IOSRoot)) throw new Exception("Fluent return changed.");
                 }
             }
-            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
+            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
             else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }

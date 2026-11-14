@@ -98,7 +98,7 @@ try {
     foreach($domain in @('Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
-        if($contracts.Count -ne $(if($domain -eq 'Load'){11}else{3})){throw 'Unexpected force domain documentation count.'}
+        if($contracts.Count -ne $(if($domain -eq 'Load'){16}else{3})){throw 'Unexpected force domain documentation count.'}
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
     }
     $examples = @($documentation.SelectNodes('//example/code'))
@@ -239,6 +239,9 @@ public sealed class ForceRoot : NativeRoot
 public sealed class MetadataLoad
 {
     public int Count=2;public object PrimaryStatus=true,CombinationStatus=true;public int TitleCalls,NumberCalls,TypeCalls;
+    public object EnvelopeStatus=1,EnvelopeIds=new[]{9,2};public int EnvelopeFetches,EnvelopeCounts;
+    public int GetEnvelopeCount(){EnvelopeCounts++;return Count;}
+    public object GetEnvelopeIDs(ref object buffer){EnvelopeFetches++;buffer=EnvelopeIds;return EnvelopeStatus;}
     public int GetPrimaryLoadCaseCount()=>Count;public int GetReferenceLoadCaseCount()=>Count;
     public int GetLoadCombinationCaseCount()=>Count;
     public object GetLoadCombinationCaseNumbers(ref object buffer){NumberCalls++;buffer=new[]{201,301};return CombinationStatus;}
@@ -607,6 +610,43 @@ internal static class PackageSmoke
         }
         foreach(Type type in new[]{typeof(LoadCase),typeof(ILoadCase),typeof(LoadCaseType),typeof(LoadType)})
         {if(!docs.Descendants("member").Any(e=>(string)e.Attribute("name")=="T:"+type.FullName&&e.Element("summary")!=null))throw new Exception("Missing load metadata type XML.");}
+        var lookupNative = new MetadataRoot();
+        using(var lookupWrapper = new OpenStaadWrapper(lookupNative))
+        {
+            var lookupLoad = lookupWrapper.Load;
+            if(lookupLoad.GetLoadCase(7,LoadCaseType.PrimaryLoad).Id!=7||lookupLoad.GetLoadCase(999,LoadCaseType.PrimaryLoad)!=null)throw new Exception("Generic family lookup changed.");
+            if(lookupLoad.GetLoadCases(7,7,LoadCaseType.PrimaryLoad).Single().Id!=7||lookupLoad.GetLoadCases(1,int.MaxValue,LoadCaseType.PrimaryLoad).Count()!=2)throw new Exception("Inclusive family range changed.");
+            var lookupFiltered = lookupLoad.GetLoadCasesFromIds(new[]{999,7,7},LoadCaseType.PrimaryLoad).ToList();
+            if(lookupFiltered.Count!=1||lookupFiltered[0].Id!=7)throw new Exception("Family filter missing/duplicate semantics changed.");
+            var lookupListed = lookupLoad.GetLoadCasesOfType(LoadCaseType.ReferenceLoad);
+            if(lookupListed.Count!=2||lookupListed.Any(item=>item.CaseType!=LoadCaseType.ReferenceLoad))throw new Exception("List family routing changed.");
+            var lookupEnvelopes = lookupLoad.GetEnvelopeIds();
+            if(!lookupEnvelopes.SetEquals(new[]{9,2})||lookupNative.Load.EnvelopeFetches!=1||lookupNative.Load.EnvelopeCounts!=2)throw new Exception("Envelope ID qualification or count recheck changed.");
+            lookupNative.Load.EnvelopeStatus=true;
+            bool lookupRejected=false;
+            try{lookupLoad.GetEnvelopeIds();}catch(InvalidOperationException){lookupRejected=true;}
+            if(!lookupRejected)throw new Exception("Boolean envelope status was accepted as integer one.");
+            lookupNative.Load.EnvelopeStatus=1;lookupNative.Load.EnvelopeIds=new[]{9,9};lookupRejected=false;
+            try{lookupLoad.GetEnvelopeIds();}catch(InvalidOperationException){lookupRejected=true;}
+            if(!lookupRejected)throw new Exception("Duplicate envelope IDs were accepted.");
+            lookupNative.Load.Count=0;int lookupFetches=lookupNative.Load.EnvelopeFetches;
+            if(lookupLoad.GetEnvelopeIds().Count!=0||lookupNative.Load.EnvelopeFetches!=lookupFetches)throw new Exception("Zero envelope inventory fetched numbers.");
+            foreach(var lookupFamily in new[]{LoadCaseType.RepeatLoad,(LoadCaseType)999})
+            {
+                lookupRejected=false;
+                try{lookupLoad.GetLoadCasesFromIds(Array.Empty<int>(),lookupFamily);}catch(NotSupportedException){lookupRejected=true;}
+                if(!lookupRejected)throw new Exception("Unsupported empty filter family accepted.");
+            }
+        }
+        foreach(string lookupName in new[]{"GetLoadCase","GetLoadCases","GetLoadCasesFromIds","GetLoadCasesOfType","GetEnvelopeIds"})
+        {
+            var lookupMethod=typeof(IOSLoad).GetMethod(lookupName);
+            Type lookupReturn=lookupName=="GetLoadCase"?typeof(ILoadCase):lookupName=="GetLoadCasesOfType"?typeof(List<ILoadCase>):lookupName=="GetEnvelopeIds"?typeof(HashSet<int>):typeof(IEnumerable<ILoadCase>);
+            string[] lookupNames=lookupName=="GetLoadCase"?new[]{"lcId","loadCaseType"}:lookupName=="GetLoadCases"?new[]{"fromId","toId","loadCaseType"}:lookupName=="GetLoadCasesFromIds"?new[]{"loadCasesIds","loadCaseType"}:lookupName=="GetLoadCasesOfType"?new[]{"loadCaseType"}:Array.Empty<string>();
+            Type[] lookupTypes=lookupName=="GetLoadCase"?new[]{typeof(int),typeof(LoadCaseType)}:lookupName=="GetLoadCases"?new[]{typeof(int),typeof(int),typeof(LoadCaseType)}:lookupName=="GetLoadCasesFromIds"?new[]{typeof(IEnumerable<int>),typeof(LoadCaseType)}:lookupName=="GetLoadCasesOfType"?new[]{typeof(LoadCaseType)}:Array.Empty<Type>();
+            var lookupParameters=lookupMethod.GetParameters();
+            if(lookupMethod.ReturnType!=lookupReturn||!lookupParameters.Select(item=>item.Name).SequenceEqual(lookupNames)||!lookupParameters.Select(item=>item.ParameterType).SequenceEqual(lookupTypes)||lookupParameters.Any(item=>item.IsOptional||item.ParameterType.IsByRef))throw new Exception("Load lookup/envelope public signature changed.");
+        }
         var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo", "GetProcessHandle", "NewSTAADFile", "CreateNamedView", "SaveNamedView", "Quit", "RemoveNamedView", "ModifyNamedView", "RetrieveMemberForces" };
         foreach (var contract in assembly.GetTypes().Where(t=>t.IsInterface && t.Namespace=="StaadPro.Interop.Core.Adapters.Interfaces"))
         {
@@ -670,7 +710,7 @@ internal static class PackageSmoke
                     if ((method.Name == "CloseSTAADFile" || method.Name == "ShowApplication") && method.ReturnType != typeof(IOSRoot)) throw new Exception("Fluent return changed.");
                 }
             }
-            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
+            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType","GetLoadCase","GetLoadCases","GetLoadCasesFromIds","GetLoadCasesOfType","GetEnvelopeIds"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
             else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }

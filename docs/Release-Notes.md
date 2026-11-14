@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261114 - 14 November 2026
+
+Ported `GetLoadCase(int lcId, LoadCaseType loadCaseType)`, `GetLoadCases(int fromId, int toId, LoadCaseType loadCaseType)`, `GetLoadCasesFromIds(IEnumerable<int> loadCasesIds, LoadCaseType loadCaseType)`, `GetLoadCasesOfType(LoadCaseType loadCaseType)` and `GetEnvelopeIds()` with expanded matching interface/concrete XML IntelliSense and [consumer examples](Load-Case-Metadata.md).
+
+Family conveniences eagerly read and validate the complete requested inventory. Missing single lookups return null. Inclusive range and requested-ID filters return owned lists, omit absent IDs and retain distinct existing cases. Requested filter IDs are captured and validated once, including duplicate entries toward the 100,000-entry bound. Empty valid filters skip native access. All family operations reject RepeatLoad and undefined values, and return independent metadata records. A malformed unselected case still fails the family read.
+
+Envelope discovery requires integral counts from zero to 100,000 and integer 1 success from `GetEnvelopeIDs`. Every returned ID must be written, positive and unique in an exact-length one-dimensional Int32 array. Replacement/nonzero-bound arrays are supported. Zero count returns a fresh empty set, and a post-fetch count recheck detects changing inventories. Errors propagate through the shared current-binding, constructing-thread and reentrancy lease without partial results or native mutation.
+
+Release build passed with zero warnings/errors. Passed 1,810 offline tests including 84 new lookup/filter/envelope cases. Installed-package verification checks sixteen Load contracts and expanded IntelliSense, compiles 163 XML examples and all thirteen guides, and exercises native stand-ins through an isolated consumer. No live model read or new native-build/engineering qualification was performed.
+
 ## 1.0.0-preview.20261113 - 13 November 2026
 
 Ported `GetReferenceLoadCasesFromIds(...)`, `GetLoadCombinationCaseFromId(...)`, `GetLoadCombinationCasesFromIds(...)`, `GetAllLoadCombinationCases()` and `GetAllLoadCasesOfType(LoadCaseType loadCaseType = LoadCaseType.PrimaryLoad)` with comprehensive matching interface/adapter XML IntelliSense. Reused the detached LoadCase/ILoadCase models and existing family/type enums; Load now exposes eleven contracts.

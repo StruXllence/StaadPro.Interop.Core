@@ -497,5 +497,98 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// </example>
         public IEnumerable<ILoadCase> GetAllLoadCasesOfType(LoadCaseType loadCaseType = LoadCaseType.PrimaryLoad) => Wrapper.UseLoadBinding(this, wrapper => LoadCaseMetadataReader.ReadAllOfType(wrapper.RawLoad, loadCaseType));
 
+        /// <summary>Finds one case by ID within a fully read load-case family.</summary>
+        /// <param name="lcId">Positive case number. A positive number may be absent from the selected family.</param>
+        /// <param name="loadCaseType">PrimaryLoad, ReferenceLoad or LoadCombination. RepeatLoad and undefined values throw NotSupportedException before native access. No optional default is supplied.</param>
+        /// <returns>A new LoadCase exposed as ILoadCase when the ID belongs to the selected family, otherwise null. An empty family returns null. Combination Type is None; primary/reference types are validated.</returns>
+        /// <remarks><para>Reads the entire selected family through the shared inventory/metadata reader before looking for the ID, preserving family-wide validation. Malformed metadata for another case still throws. Primary/reference IDs may overlap, so only the requested family is searched. Use the existing family-specific single-ID methods when their direct-request behavior fits the operation.</para>
+        /// <para>Runs eagerly on the wrapper's constructing COM thread under one current Load operation lease, including input enumeration, validation, native dispatch and result qualification. Reacquire wrapper.Load after RefreshComObjects. Disposed wrappers throw ObjectDisposedException; stale/manual-noncurrent bindings, other threads and reentrant Root/Load/Output/refresh/disposal calls are rejected before native access. Raw calls, other wrappers and external UI are not coordinated. Calls can block and native exceptions/HRESULTs propagate without a partial result. Sequential observations do not form an atomic model snapshot.</para>
+        /// <para>Reads metadata only. Editing returned objects does not update STAAD. No case activation, selection, assignment/factor hydration, analysis, save, conversion or retry occurs. Native inventories and supplied ID sequences are bounded to 100,000 entries. Results own their storage and contain independent detached metadata objects. Coordinate model edits with the owning COM thread.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">lcId is not positive.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid, native status/count/arrays/metadata are malformed, or a supported inventory exceeds the managed bound.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">An original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected native Load lacks a required signature.</exception>
+        /// <exception cref="NotSupportedException">loadCaseType is RepeatLoad or undefined.</exception>
+        /// <example><code>
+        /// var item = wrapper.Load.GetLoadCase(7, StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad);
+        /// if (item != null) Console.WriteLine(item.Title);
+        /// </code></example>
+        public ILoadCase GetLoadCase(int lcId, LoadCaseType loadCaseType) => Wrapper.UseLoadBinding(this, wrapper => LoadCaseMetadataReader.Find(wrapper.RawLoad, lcId, loadCaseType));
+
+        /// <summary>Reads existing cases within an inclusive ID range in one load-case family.</summary>
+        /// <param name="fromId">Positive lower case number, included in the range.</param>
+        /// <param name="toId">Positive upper case number, included in the range and at least fromId.</param>
+        /// <param name="loadCaseType">PrimaryLoad, ReferenceLoad or LoadCombination. RepeatLoad and undefined values throw NotSupportedException before native access. No optional default is supplied.</param>
+        /// <returns>A fresh List exposed as IEnumerable containing one new metadata record per matching existing ID. No matches returns an empty list. Result order is unspecified.</returns>
+        /// <remarks><para>Validates both bounds, reads the entire family eagerly and then filters. Equal bounds select at most one case. Reversed bounds throw. Does not enumerate the integers between bounds, synthesize absent IDs or sort records. Native/malformed metadata failures propagate even for cases outside the range. Re-enumerating the returned collection makes no native calls.</para>
+        /// <para>Runs eagerly on the wrapper's constructing COM thread under one current Load operation lease, including input enumeration, validation, native dispatch and result qualification. Reacquire wrapper.Load after RefreshComObjects. Disposed wrappers throw ObjectDisposedException; stale/manual-noncurrent bindings, other threads and reentrant Root/Load/Output/refresh/disposal calls are rejected before native access. Raw calls, other wrappers and external UI are not coordinated. Calls can block and native exceptions/HRESULTs propagate without a partial result. Sequential observations do not form an atomic model snapshot.</para>
+        /// <para>Reads metadata only. Editing returned objects does not update STAAD. No case activation, selection, assignment/factor hydration, analysis, save, conversion or retry occurs. Native inventories and supplied ID sequences are bounded to 100,000 entries. Results own their storage and contain independent detached metadata objects. Coordinate model edits with the owning COM thread.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">fromId or toId is not positive.</exception>
+        /// <exception cref="ArgumentException">toId is less than fromId.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid, native status/count/arrays/metadata are malformed, or a supported inventory exceeds the managed bound.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">An original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected native Load lacks a required signature.</exception>
+        /// <exception cref="NotSupportedException">loadCaseType is RepeatLoad or undefined.</exception>
+        /// <example><code>
+        /// var cases = wrapper.Load.GetLoadCases(1, int.MaxValue, StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad);
+        /// foreach (var item in cases) Console.WriteLine(item.Id);
+        /// </code></example>
+        public IEnumerable<ILoadCase> GetLoadCases(int fromId, int toId, LoadCaseType loadCaseType) => Wrapper.UseLoadBinding(this, wrapper => LoadCaseMetadataReader.ReadRange(wrapper.RawLoad, fromId, toId, loadCaseType));
+
+        /// <summary>Filters one family's complete metadata by a supplied set of requested IDs.</summary>
+        /// <param name="loadCasesIds">Non-null positive case numbers, enumerated once and fully validated before native access. At most 100,000 entries including duplicates. Repetitions collapse; input order does not determine result order. Missing IDs are omitted.</param>
+        /// <param name="loadCaseType">PrimaryLoad, ReferenceLoad or LoadCombination. RepeatLoad and undefined values throw NotSupportedException before native access. No optional default is supplied. The family is validated even for empty input.</param>
+        /// <returns>A fresh List exposed as IEnumerable containing one independent record for each existing matching ID in the selected family. Empty input or no matches returns an empty list. Iteration order is unspecified.</returns>
+        /// <remarks><para>Captures the ID sequence once under the operation lease. Empty valid input returns without native calls. Otherwise reads the entire family before filtering, including metadata for unrequested cases. Such metadata failures propagate. Input/enumerator failures occur before native access. Unlike primary/reference direct-request lists, repetitions do not produce multiple records. Unlike combination direct requests, missing IDs are omitted after a successful inventory read.</para>
+        /// <para>Runs eagerly on the wrapper's constructing COM thread under one current Load operation lease, including input enumeration, validation, native dispatch and result qualification. Reacquire wrapper.Load after RefreshComObjects. Disposed wrappers throw ObjectDisposedException; stale/manual-noncurrent bindings, other threads and reentrant Root/Load/Output/refresh/disposal calls are rejected before native access. Raw calls, other wrappers and external UI are not coordinated. Calls can block and native exceptions/HRESULTs propagate without a partial result. Sequential observations do not form an atomic model snapshot.</para>
+        /// <para>Reads metadata only. Editing returned objects does not update STAAD. No case activation, selection, assignment/factor hydration, analysis, save, conversion or retry occurs. Native inventories and supplied ID sequences are bounded to 100,000 entries. Results own their storage and contain independent detached metadata objects. Coordinate model edits with the owning COM thread.</para></remarks>
+        /// <exception cref="ArgumentNullException">loadCasesIds is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A requested ID is not positive.</exception>
+        /// <exception cref="ArgumentException">More than 100,000 input entries are supplied.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid, native status/count/arrays/metadata are malformed, or a supported inventory exceeds the managed bound.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">An original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected native Load lacks a required signature.</exception>
+        /// <exception cref="NotSupportedException">loadCaseType is RepeatLoad or undefined.</exception>
+        /// <example><code>
+        /// var cases = wrapper.Load.GetLoadCasesFromIds(new[] { 7, 3, 7 }, StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad);
+        /// foreach (var item in cases) Console.WriteLine(item.Id);
+        /// </code></example>
+        public IEnumerable<ILoadCase> GetLoadCasesFromIds(IEnumerable<int> loadCasesIds, LoadCaseType loadCaseType) => Wrapper.UseLoadBinding(this, wrapper => LoadCaseMetadataReader.Filter(wrapper.RawLoad, loadCasesIds, loadCaseType));
+
+        /// <summary>Reads all metadata for a supported family into an owned editable list.</summary>
+        /// <param name="loadCaseType">PrimaryLoad, ReferenceLoad or LoadCombination. RepeatLoad and undefined values throw NotSupportedException before native access. No optional default is supplied.</param>
+        /// <returns>A fresh non-null List of new metadata records from exactly the requested family. Zero inventory count returns an empty list. Order is unspecified. Combination Type is None.</returns>
+        /// <remarks><para>Uses the same qualified inventory and metadata path as GetAllLoadCasesOfType, then copies the set into a list. All reads finish before return; enumeration and subsequent list edits make no native calls. The list and records are independent of earlier queries. Primary/reference IDs and titles/types come from their own family APIs.</para>
+        /// <para>Runs eagerly on the wrapper's constructing COM thread under one current Load operation lease, including input enumeration, validation, native dispatch and result qualification. Reacquire wrapper.Load after RefreshComObjects. Disposed wrappers throw ObjectDisposedException; stale/manual-noncurrent bindings, other threads and reentrant Root/Load/Output/refresh/disposal calls are rejected before native access. Raw calls, other wrappers and external UI are not coordinated. Calls can block and native exceptions/HRESULTs propagate without a partial result. Sequential observations do not form an atomic model snapshot.</para>
+        /// <para>Reads metadata only. Editing returned objects does not update STAAD. No case activation, selection, assignment/factor hydration, analysis, save, conversion or retry occurs. Native inventories and supplied ID sequences are bounded to 100,000 entries. Results own their storage and contain independent detached metadata objects. Coordinate model edits with the owning COM thread.</para></remarks>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid, native status/count/arrays/metadata are malformed, or a supported inventory exceeds the managed bound.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">An original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected native Load lacks a required signature.</exception>
+        /// <exception cref="NotSupportedException">loadCaseType is RepeatLoad or undefined.</exception>
+        /// <example><code>
+        /// var cases = wrapper.Load.GetLoadCasesOfType(StaadPro.Interop.Core.Enums.LoadCaseType.ReferenceLoad);
+        /// Console.WriteLine(cases.Count);
+        /// </code></example>
+        public List<ILoadCase> GetLoadCasesOfType(LoadCaseType loadCaseType) => Wrapper.UseLoadBinding(this, wrapper => new List<ILoadCase>(LoadCaseMetadataReader.ReadAllOfType(wrapper.RawLoad, loadCaseType)));
+
+        /// <summary>Reads the positive identifiers of all load envelopes in the connected model.</summary>
+        /// <returns>A fresh HashSet of distinct positive envelope IDs. A successful zero count returns an empty set. Ordering is unspecified; these IDs identify envelopes, not load cases.</returns>
+        /// <remarks><para>Calls GetEnvelopeCount and validates an integral count between zero and 100,000. Zero skips ID retrieval. Otherwise allocates an unwritten Int32 sentinel buffer and calls GetEnvelopeIDs once. Its documented long return must be integer 1 for success. Boolean true, an array count, zero, negative and unsupported scalar values fail. Every ID must be written, positive and unique in an exact-length rank-one Int32 array; replacements and nonzero lower bounds are accepted. Rechecks GetEnvelopeCount after buffer qualification and throws if it changed.</para>
+        /// <para>The original source's empty-inventory null is represented by a fresh empty set. Native failures and malformed buffers throw. The returned set is independent of native buffers and earlier calls. Envelope types, member case IDs and factors are not retrieved. No new data model is required.</para>
+        /// <para>Runs eagerly on the wrapper's constructing COM thread under one current Load operation lease, including input enumeration, validation, native dispatch and result qualification. Reacquire wrapper.Load after RefreshComObjects. Disposed wrappers throw ObjectDisposedException; stale/manual-noncurrent bindings, other threads and reentrant Root/Load/Output/refresh/disposal calls are rejected before native access. Raw calls, other wrappers and external UI are not coordinated. Calls can block and native exceptions/HRESULTs propagate without a partial result. Sequential observations do not form an atomic model snapshot.</para>
+        /// <para>Reads metadata only. Editing returned objects does not update STAAD. No case activation, selection, assignment/factor hydration, analysis, save, conversion or retry occurs. Native inventories and supplied ID sequences are bounded to 100,000 entries. Results own their storage and contain independent detached metadata objects. Coordinate model edits with the owning COM thread.</para></remarks>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid, native status/count/arrays/metadata are malformed, or a supported inventory exceeds the managed bound.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">An original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected native Load lacks a required signature.</exception>
+        /// <example><code>
+        /// foreach (int id in wrapper.Load.GetEnvelopeIds()) Console.WriteLine("Envelope " + id);
+        /// </code></example>
+        public HashSet<int> GetEnvelopeIds() => Wrapper.UseLoadBinding(this, wrapper => LoadCaseMetadataReader.ReadEnvelopes(wrapper.RawLoad));
+
     }
 }

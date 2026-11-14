@@ -14,6 +14,11 @@ The Load adapter returns detached metadata through the existing `ILoadCase`, `Lo
 | `GetLoadCombinationCasesFromIds(lcIds)` | Eager set of unique requested combinations; membership checked before reading any titles. |
 | `GetAllLoadCombinationCases()` | Set of all combination metadata records. |
 | `GetAllLoadCasesOfType(loadCaseType = PrimaryLoad)` | Eager enumeration of exactly one supported family. |
+| `GetLoadCase(lcId, loadCaseType)` | Full-family lookup returning null for an absent positive ID. |
+| `GetLoadCases(fromId, toId, loadCaseType)` | Owned list of existing cases in an inclusive positive-ID range. |
+| `GetLoadCasesFromIds(loadCasesIds, loadCaseType)` | Owned list of existing matching IDs, with repetitions collapsed and absent IDs omitted. |
+| `GetLoadCasesOfType(loadCaseType)` | Owned list of all metadata from one supported family. |
+| `GetEnvelopeIds()` | Fresh set of qualified positive envelope IDs; empty for zero inventory count. |
 
 `GetLoadCaseTitle(lcId)` remains a separate literal-title query. A title alone does not prove whether an ID belongs to the primary, reference or combination family.
 
@@ -49,6 +54,22 @@ Combinations use `GetLoadCaseTitle` after membership qualification. Their `CaseT
 
 Equality and hashing use **Id, CaseType and Type**, not Title. Remove an object from a HashSet before changing those identity fields, or rebuild the set. Returned sets have unspecified iteration order. Re-enumerating a returned collection performs no COM work; call the method again for a new observation.
 
+## Family lookup, range and ID filters
+
+All four convenience methods require an explicit supported family and eagerly read its complete inventory and metadata. `GetLoadCase` requires a positive ID and returns null when that ID is absent. A malformed or failing metadata response for another case still propagates. `GetLoadCasesOfType` copies the family metadata set to a fresh editable list. It has no optional family default.
+
+`GetLoadCases` validates positive inclusive bounds and rejects a reversed range. It filters existing metadata without generating every integer between the bounds, so an upper bound of `int.MaxValue` does not create a huge range allocation. Equal bounds select at most one existing case. Empty matches return an empty list.
+
+`GetLoadCasesFromIds` is a family filter. It captures non-null positive IDs exactly once under the operation lease, validates every input and limits the sequence to 100,000 entries before deduplication. Duplicate IDs select one existing record and missing IDs are omitted. Input ordering does not determine output ordering. Empty valid input returns a fresh empty list without native calls. Unsupported families are rejected even for empty input. The direct primary/reference ID-list methods retain their request-order/repetition contracts, while combination requests retain their membership-error contract.
+
+Results are eager and independently owned. Re-enumeration makes no native calls, and later list/input edits do not recompute selection. Family iteration order is unspecified. Coordinate external model edits with the owning thread because the sequence of native reads is not atomic.
+
+## Envelope identifiers
+
+`GetEnvelopeIds` reads `GetEnvelopeCount` as an integral number between zero and 100,000. Zero returns a fresh empty set without fetching IDs. For a positive count it initializes an Int32 sentinel buffer and calls `GetEnvelopeIDs`. Bentley's documented long return requires **integer 1** for success. Boolean true, an ID count greater than one, zero, negative values and unsupported scalar shapes throw.
+
+A successful response must provide exactly the reported number of positive, distinct, written Int32 IDs in one array dimension. Replacement buffers and nonzero lower bounds are supported. The method rechecks the count after validating the buffer and throws if it changed. Count rechecking cannot detect every external model edit. The returned HashSet owns independent storage and has unspecified iteration order. Envelope identifiers have their own namespace; this method does not retrieve classifications, case membership or factors. A valid empty inventory returns an empty set, while malformed outputs and native failures throw.
+
 ## C# example
 
 ~~~csharp
@@ -71,6 +92,14 @@ var referenceFamily = load.GetAllLoadCasesOfType(
     StaadPro.Interop.Core.Enums.LoadCaseType.ReferenceLoad);
 Console.WriteLine(System.Linq.Enumerable.Count(primary) + " / " +
     System.Linq.Enumerable.Count(referenceFamily));
+
+var found = load.GetLoadCase(7, StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad);
+if (found != null) Console.WriteLine(found.Title);
+var ranged = load.GetLoadCases(1, int.MaxValue, StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad);
+var filtered = load.GetLoadCasesFromIds(new[] { 7, 3, 7 }, StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad);
+var listed = load.GetLoadCasesOfType(StaadPro.Interop.Core.Enums.LoadCaseType.ReferenceLoad);
+Console.WriteLine(System.Linq.Enumerable.Count(ranged) + System.Linq.Enumerable.Count(filtered) + listed.Count);
+foreach (int id in load.GetEnvelopeIds()) Console.WriteLine("Envelope " + id);
 ~~~
 
 ## Lifetime, failures and validation limits

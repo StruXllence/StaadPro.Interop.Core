@@ -87,6 +87,48 @@ namespace StaadPro.Interop.Core.Services.Load
                 _ => throw new NotSupportedException("Case discovery supports only PrimaryLoad, ReferenceLoad and LoadCombination.")
             };
 
+        internal static ILoadCase Find(object load, int lcId, LoadCaseType loadCaseType)
+        {
+            if (lcId <= 0) throw new ArgumentOutOfRangeException(nameof(lcId), "The load-case ID must be positive.");
+            return ReadAllOfType(load, loadCaseType).FirstOrDefault(loadCase => loadCase.Id == lcId);
+        }
+
+        internal static List<ILoadCase> ReadRange(object load, int fromId, int toId, LoadCaseType loadCaseType)
+        {
+            if (fromId <= 0) throw new ArgumentOutOfRangeException(nameof(fromId));
+            if (toId <= 0) throw new ArgumentOutOfRangeException(nameof(toId));
+            if (toId < fromId) throw new ArgumentException("The upper case ID must not be less than the lower case ID.", nameof(toId));
+            return ReadAllOfType(load, loadCaseType)
+                .Where(loadCase => loadCase.Id >= fromId && loadCase.Id <= toId).ToList();
+        }
+
+        internal static List<ILoadCase> Filter(object load, IEnumerable<int> loadCasesIds, LoadCaseType loadCaseType)
+        {
+            if (loadCaseType is not (LoadCaseType.PrimaryLoad or LoadCaseType.ReferenceLoad or LoadCaseType.LoadCombination))
+                throw new NotSupportedException("Case discovery supports only PrimaryLoad, ReferenceLoad and LoadCombination.");
+            List<int> ids = CaptureIds(loadCasesIds, nameof(loadCasesIds));
+            if (ids.Count == 0) return new List<ILoadCase>();
+            var requested = ids.ToHashSet();
+            return ReadAllOfType(load, loadCaseType).Where(loadCase => requested.Contains(loadCase.Id)).ToList();
+        }
+
+        internal static HashSet<int> ReadEnvelopes(object load)
+        {
+            int count = NativeValues.ReadInt32((object)((dynamic)load).GetEnvelopeCount(), "envelope count");
+            if (count < 0 || count > MaximumCases)
+                throw new InvalidOperationException("Envelope count is negative or exceeds 100,000.");
+            if (count == 0) return new HashSet<int>();
+            object buffer = Enumerable.Repeat(int.MinValue, count).ToArray();
+            object status = ((dynamic)load).GetEnvelopeIDs(ref buffer);
+            if (NativeValues.ReadInt32(status, "envelope ID success status") != 1)
+                throw new InvalidOperationException("OpenSTAAD GetEnvelopeIDs failed; expected integer success status 1.");
+            int[] ids = QualifyIds(buffer, count);
+            int observedCount = NativeValues.ReadInt32((object)((dynamic)load).GetEnvelopeCount(), "envelope count recheck");
+            if (observedCount != count)
+                throw new InvalidOperationException("Envelope inventory changed during ID retrieval.");
+            return ids.ToHashSet();
+        }
+
         private static LoadCase ReadCombinationMetadata(object load, int id)
         {
             string title = NativeValues.ReadText((object)((dynamic)load).GetLoadCaseTitle(id), "combination title");
@@ -125,6 +167,14 @@ namespace StaadPro.Interop.Core.Services.Load
             }
             else if (NativeValues.ReadInt32(status, "load-case number count") != count)
                 throw new InvalidOperationException("Case-number count changed or is inconsistent.");
+            int[] ids = QualifyIds(buffer, count);
+            if (acceptsFlag && status is bool && Count(load, family) != count)
+                throw new InvalidOperationException("Load-case inventory changed after Boolean number retrieval.");
+            return ids;
+        }
+
+        private static int[] QualifyIds(object buffer, int count)
+        {
             if (buffer is not Array array || array.Rank != 1 || array.Length != count ||
                 array.GetType().GetElementType() != typeof(int))
                 throw new InvalidOperationException("Case IDs require a one-dimensional Int32 array matching the count.");
@@ -138,8 +188,6 @@ namespace StaadPro.Interop.Core.Services.Load
                     throw new InvalidOperationException("Case IDs are unwritten, nonpositive or duplicated.");
                 ids[i] = id;
             }
-            if (acceptsFlag && status is bool && Count(load, family) != count)
-                throw new InvalidOperationException("Load-case inventory changed after Boolean number retrieval.");
             return ids;
         }
 

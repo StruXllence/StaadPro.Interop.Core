@@ -1,6 +1,6 @@
 # Member-force observations
 
-This preview completes the common Root workflow with `RetrieveMemberForces(IEnumerable<int> beams, IEnumerable<int> loadCases)` and introduces `Load.GetLoadCaseTitle(int lcId)`, `Output.AreResultsAvailable()` and two `Output.GetMemberEndForces(...)` overloads. Other Load/Output operations remain unimplemented. The library adds no WPF or third-party runtime dependency for these force records.
+This preview completes the common Root workflow with `RetrieveMemberForces(IEnumerable<int> beams, IEnumerable<int> loadCases)` and introduces `Load.GetLoadCaseTitle(int lcId)`, `Output.AreResultsAvailable()` and two `Output.GetMemberEndForces(...)` overloads. See the [load metadata](Load-Case-Metadata.md), [load definitions](Load-Definitions.md) and [buckling observations](Buckling-Results.md) guides for the additional implemented queries. The library adds no WPF or third-party runtime dependency for these force records.
 
 `AreResultsAvailable()` returns the validated native Boolean or integral zero/one. False is a valid observation; it does not indicate a transport exception. Availability does not certify freshness, matching model files or completed analysis. `GetLoadCaseTitle` requires a positive ID and preserves the exact native string, including an empty title; null/non-string output throws.
 

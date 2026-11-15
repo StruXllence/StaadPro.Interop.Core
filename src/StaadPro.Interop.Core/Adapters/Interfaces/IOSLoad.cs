@@ -1,3 +1,4 @@
+using StaadPro.Interop.Core.Models;
 using StaadPro.Interop.Core.Entities;
 using System;
 using System.Collections.Generic;
@@ -579,6 +580,63 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// foreach (int id in wrapper.Load.GetEnvelopeIds()) Console.WriteLine("Envelope " + id);
         /// </code></example>
         HashSet<int> GetEnvelopeIds();
+
+        /// <summary>Reads one load envelope's classification, reported membership count and member case IDs.</summary>
+        /// <param name="envId">Positive native envelope ID. It is distinct from a load-case ID; no envelope enumeration is performed by this direct query.</param>
+        /// <returns>A new editable LoadEnvelopeDetail with the requested identity, a validated LoadEnvelopType code 0 through 6, a bounded count and a newly owned non-null set of unique positive case IDs. A valid zero-member envelope returns an empty set.</returns>
+        /// <remarks><para>Calls GetLoadEnvelopeDetails with unwritten Int32 type/count sentinels and requires integer 1 success. Count must be between zero and 100,000. Positive counts trigger GetLoadListfromLoadEnvelope with a sentinel buffer and integer 1 success. Arrays must have one dimension, exact length and Int32 elements; every ID must be written, positive and unique. Replaced buffers and nonzero lower bounds are accepted. Rechecks type/count after a positive membership fetch and throws if either changed. Zero skips membership retrieval and the recheck.</para>
+        /// <para>Missing positive IDs and native failures throw. The method does not resolve case titles, factors, analysis results or envelope extrema. Editing returned metadata does not update STAAD. Set edits do not synchronize LoadCasesCount or raise notifications; membership order is unspecified.</para>
+        /// <para>Runs on the wrapper constructing COM thread under one current-binding lease covering input validation, every native call and output qualification. Reacquire the adapter after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal operations fail before native access. Calls may block and original native exceptions/HRESULTs propagate. Raw objects, other wrappers and external UI are outside the guard. Sequential observations are not atomic.</para>
+        /// <para>No analysis, case activation, selection, save, unit conversion, retry or native mutation is performed. Coordinate model edits and shared-session access on the owning thread.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">envId is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid or native data is malformed, unwritten, inconsistent or outside the documented bounds.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// var envelope = wrapper.Load.GetLoadEnvelopeDetail(9);
+        /// Console.WriteLine(envelope.EnvelopType + ": " + envelope.LoadCasesCount);
+        /// foreach (int id in envelope.LoadCaseIds) Console.WriteLine(id);
+        /// </code></example>
+        ILoadEnvelopeDetail GetLoadEnvelopeDetail(int envId);
+
+        /// <summary>Eagerly reads classification and membership metadata for all load envelopes.</summary>
+        /// <returns>A fresh non-null HashSet of independent LoadEnvelopeDetail records and independently owned membership sets. An envelope-free inventory returns an empty set. Set order is unspecified.</returns>
+        /// <remarks><para>Uses the qualified GetEnvelopeIds inventory path, then the same detail path as GetLoadEnvelopeDetail for every discovered ID. Zero envelope count skips details. Each count and the sum of memberships across this query are limited to 100,000. The remaining aggregate budget is checked after reading each detail count and before allocating or fetching its membership array. Empty envelopes are retained. Any invalid response or failure throws before a result is returned.</para>
+        /// <para>Records and their sets are independent of native buffers and earlier calls. No partial set is returned. Classification/count rechecks can detect some concurrent edits but cannot make the sequence an atomic model snapshot. Model property edits raise managed notifications; changes within membership sets do not update stored counts or STAAD.</para>
+        /// <para>Runs on the wrapper constructing COM thread under one current-binding lease covering input validation, every native call and output qualification. Reacquire the adapter after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal operations fail before native access. Calls may block and original native exceptions/HRESULTs propagate. Raw objects, other wrappers and external UI are outside the guard. Sequential observations are not atomic.</para>
+        /// <para>No analysis, case activation, selection, save, unit conversion, retry or native mutation is performed. Coordinate model edits and shared-session access on the owning thread.</para></remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid or native data is malformed, unwritten, inconsistent or outside the documented bounds.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// foreach (var envelope in wrapper.Load.GetAllLoadEnvelopeDetails())
+        ///     Console.WriteLine(envelope.Id + ": " + envelope.LoadCasesCount);
+        /// </code></example>
+        HashSet<ILoadEnvelopeDetail> GetAllLoadEnvelopeDetails();
+
+        /// <summary>Reads an ordinary load combination and its dimensionless primary-case coefficients.</summary>
+        /// <param name="id">Positive native combination ID. Positive pair counts also require membership in the qualified combination inventory.</param>
+        /// <returns>A fresh StaadLoadCombination with literal title and an independent dictionary of new primary-case metadata to finite signed coefficients. Returns null when the qualified pair count is zero, preserving the empty lookup behavior.</returns>
+        /// <remarks><para>Reads GetNoOfLoadAndFactorPairsForCombination first and requires an integral count from zero to 100,000. Zero skips title, inventories and factor retrieval. Positive counts qualify combination identity/title, initialize ID and Double factor buffers, then call GetLoadAndFactorForCombination once. Its Boolean or integral zero/one success must be true/one. IDs must be written, positive and unique. Factors must be written finite Double values; negative and zero coefficients are preserved. Replacement/nonzero-bound arrays are supported.</para>
+        /// <para>The factor buffer has one extra NaN sentinel slot because native SRSS retrieval may return an overall multiplier there. An exact pair-count replacement array is also accepted. A written overall slot throws NotSupportedException because StaadLoadCombination has no field for that multiplier. It is never silently discarded. This API returns ordinary coefficients and does not compute combinations or envelopes.</para>
+        /// <para>After validating arrays, rechecks the pair count, reads the complete primary metadata inventory once and resolves every source ID. Missing primary IDs or malformed metadata for any primary case throw. The query does not infer reference/repeat or nested-combination semantics. Dictionary keys use LoadCase equality; remove/reinsert a key before editing Id, CaseType or Type. Title is excluded from key equality. Managed edits do not write to STAAD.</para>
+        /// <para>Runs on the wrapper constructing COM thread under one current-binding lease covering input validation, every native call and output qualification. Reacquire the adapter after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal operations fail before native access. Calls may block and original native exceptions/HRESULTs propagate. Raw objects, other wrappers and external UI are outside the guard. Sequential observations are not atomic.</para>
+        /// <para>No analysis, case activation, selection, save, unit conversion, retry or native mutation is performed. Coordinate model edits and shared-session access on the owning thread.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">id is not positive.</exception>
+        /// <exception cref="NotSupportedException">The native factor array contains a written SRSS overall multiplier which the result model cannot represent.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/operation is invalid or native data is malformed, unwritten, inconsistent or outside the documented bounds.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// var combination = wrapper.Load.GetLoadCombination(201);
+        /// if (combination != null)
+        ///     foreach (var pair in combination.Factors)
+        ///         Console.WriteLine(pair.Key.Id + ": " + pair.Value);
+        /// </code></example>
+        StaadLoadCombination GetLoadCombination(int id);
 
     }
 }

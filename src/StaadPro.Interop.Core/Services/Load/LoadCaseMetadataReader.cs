@@ -173,7 +173,7 @@ namespace StaadPro.Interop.Core.Services.Load
             return ids;
         }
 
-        private static int[] QualifyIds(object buffer, int count)
+        internal static int[] QualifyIds(object buffer, int count)
         {
             if (buffer is not Array array || array.Rank != 1 || array.Length != count ||
                 array.GetType().GetElementType() != typeof(int))

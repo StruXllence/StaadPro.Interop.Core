@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261115 - 15 November 2026
+
+Ported `GetLoadEnvelopeDetail(int envId)`, `GetAllLoadEnvelopeDetails()`, `GetLoadCombination(int id)`, `AreBucklingAnalysisResultsAvailable()` and `GetNumberOfBucklingFactorsComputed()` with complete matching interface/concrete XML IntelliSense. Added detached envelope/combination contracts and [load-definition](Load-Definitions.md) and [buckling observation](Buckling-Results.md) examples.
+
+Envelope detail queries require written classification/count outputs, integer 1 statuses and unique positive Int32 membership arrays. Positive membership fetches recheck classification/count. The all-envelope query returns independent records and enforces a total 100,000-membership budget before excess allocation/fetch. Ordinary combinations verify bounded pair counts and identity, qualified ID/Double coefficient arrays, finite signed factors and matching primary metadata. Zero pair count returns null. An SRSS overall multiplier cannot be represented by `StaadLoadCombination` and raises `NotSupportedException` instead of being discarded.
+
+Buckling availability accepts native Boolean or integral zero/one flags. Computed-factor count accepts the nonnegative Int32 range without fetching factors or issuing availability/analysis requests. All five operations retain the existing current-binding, constructing-thread, lifetime and reentrancy lease with preserved native exceptions and independent managed data.
+
+Release build passed with zero warnings/errors. Passed 1,955 offline tests including 145 new cases. Installed-package checks cover nineteen Load and five Output contracts, matching expanded IntelliSense, 173 compiled XML examples, README and fifteen guide examples, native stand-ins and exact restored archive isolation. Native-build and engineering qualification remain pending.
+
 ## 1.0.0-preview.20261114 - 14 November 2026
 
 Ported `GetLoadCase(int lcId, LoadCaseType loadCaseType)`, `GetLoadCases(int fromId, int toId, LoadCaseType loadCaseType)`, `GetLoadCasesFromIds(IEnumerable<int> loadCasesIds, LoadCaseType loadCaseType)`, `GetLoadCasesOfType(LoadCaseType loadCaseType)` and `GetEnvelopeIds()` with expanded matching interface/concrete XML IntelliSense and [consumer examples](Load-Case-Metadata.md).

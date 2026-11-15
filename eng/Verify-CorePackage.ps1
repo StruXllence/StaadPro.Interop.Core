@@ -31,6 +31,8 @@ try {
     $optionalGuide = Read-Entry 'docs/Root-View-Changes-and-Optional-Operations.md'
     $forceGuide = Read-Entry 'docs/Member-Force-Queries.md'
     $loadGuide = Read-Entry 'docs/Load-Case-Metadata.md'
+    $definitionGuide = Read-Entry 'docs/Load-Definitions.md'
+    $bucklingGuide = Read-Entry 'docs/Buckling-Results.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
@@ -44,7 +46,7 @@ try {
     }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Member-Force-Queries.md','docs/Load-Case-Metadata.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Member-Force-Queries.md','docs/Load-Case-Metadata.md','docs/Load-Definitions.md','docs/Buckling-Results.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
     if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch '53 common Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
     if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
@@ -98,7 +100,7 @@ try {
     foreach($domain in @('Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
-        if($contracts.Count -ne $(if($domain -eq 'Load'){16}else{3})){throw 'Unexpected force domain documentation count.'}
+        if($contracts.Count -ne $(if($domain -eq 'Load'){19}else{5})){throw 'Unexpected force domain documentation count.'}
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
     }
     $examples = @($documentation.SelectNodes('//example/code'))
@@ -236,7 +238,7 @@ public sealed class ForceLoad
 {public int Titles;public string GetLoadCaseTitle(int id){Titles++;return "Case "+id;}}
 public sealed class ForceRoot : NativeRoot
 {public ForceOutput Output {get;}=new ForceOutput();public new ForceLoad Load {get;}=new ForceLoad();}
-public sealed class MetadataLoad
+public class MetadataLoad
 {
     public int Count=2;public object PrimaryStatus=true,CombinationStatus=true;public int TitleCalls,NumberCalls,TypeCalls;
     public object EnvelopeStatus=1,EnvelopeIds=new[]{9,2};public int EnvelopeFetches,EnvelopeCounts;
@@ -253,6 +255,29 @@ public sealed class MetadataLoad
     public int GetReferenceLoadType(int id)=>0;
 }
 public sealed class MetadataRoot : NativeRoot {public new MetadataLoad Load {get;}=new MetadataLoad();}
+public sealed class DefinitionLoad : MetadataLoad
+{
+    public object DetailStatus=1,MemberStatus=1,FactorStatus=true;
+    public object FactorValues=new[]{1.5,-.7};
+    public int GetNoOfLoadAndFactorPairsForCombination(int id)=>Count;
+    public object GetLoadEnvelopeDetails(int id,ref int type,ref int count)
+    {type=5;count=2;return DetailStatus;}
+    public object GetLoadListfromLoadEnvelope(int id,ref object ids)
+    {ids=new[]{7,3};return MemberStatus;}
+    public object GetLoadAndFactorForCombination(int id,ref object ids,ref object factors)
+    {ids=new[]{7,3};factors=FactorValues;return FactorStatus;}
+}
+public sealed class BucklingOutput
+{
+    public object Available=true,Computed=2;
+    public object IsBucklingAnalysisResultsAvailable()=>Available;
+    public object GetNoOfBucklingFactors()=>Computed;
+}
+public sealed class DefinitionRoot : NativeRoot
+{
+    public new DefinitionLoad Load {get;}=new DefinitionLoad();
+    public BucklingOutput Output {get;}=new BucklingOutput();
+}
 internal static class PackageSmoke
 {
     [STAThread] private static void Main(string[] arguments)
@@ -647,6 +672,43 @@ internal static class PackageSmoke
             var lookupParameters=lookupMethod.GetParameters();
             if(lookupMethod.ReturnType!=lookupReturn||!lookupParameters.Select(item=>item.Name).SequenceEqual(lookupNames)||!lookupParameters.Select(item=>item.ParameterType).SequenceEqual(lookupTypes)||lookupParameters.Any(item=>item.IsOptional||item.ParameterType.IsByRef))throw new Exception("Load lookup/envelope public signature changed.");
         }
+        var definitionNative = new DefinitionRoot();
+        using(var definitionWrapper = new OpenStaadWrapper(definitionNative))
+        {
+            var definitionDetail = definitionWrapper.Load.GetLoadEnvelopeDetail(9);
+            if(definitionDetail.Id!=9||definitionDetail.EnvelopType!=LoadEnvelopType.Strength||definitionDetail.LoadCasesCount!=2||!definitionDetail.LoadCaseIds.SetEquals(new[]{7,3}))throw new Exception("Envelope detail changed.");
+            var definitionAll = definitionWrapper.Load.GetAllLoadEnvelopeDetails().ToArray();
+            if(definitionAll.Length!=2||ReferenceEquals(definitionAll[0].LoadCaseIds,definitionAll[1].LoadCaseIds))throw new Exception("Envelope ownership changed.");
+            var definitionCombination = definitionWrapper.Load.GetLoadCombination(201);
+            if(definitionCombination.Id!=201||definitionCombination.Factors.Count!=2||definitionCombination.Factors.Single(item=>item.Key.Id==7).Value!=1.5||definitionCombination.Factors.Single(item=>item.Key.Id==3).Value!=-.7||definitionCombination.Factors.Keys.Any(item=>item.CaseType!=LoadCaseType.PrimaryLoad))throw new Exception("Combination coefficient or family mapping changed.");
+            definitionNative.Load.FactorValues=new[]{1.5,-.7,1d};bool definitionRejected=false;
+            try{definitionWrapper.Load.GetLoadCombination(201);}catch(NotSupportedException){definitionRejected=true;}
+            if(!definitionRejected)throw new Exception("SRSS overall multiplier was discarded.");
+            definitionNative.Load.DetailStatus=true;definitionRejected=false;
+            try{definitionWrapper.Load.GetLoadEnvelopeDetail(9);}catch(InvalidOperationException){definitionRejected=true;}
+            if(!definitionRejected)throw new Exception("Envelope status coerced Boolean to integer one.");
+            if(!definitionWrapper.Output.AreBucklingAnalysisResultsAvailable()||definitionWrapper.Output.GetNumberOfBucklingFactorsComputed()!=2)throw new Exception("Buckling observations changed.");
+            definitionNative.Output.Available=false;definitionNative.Output.Computed=int.MaxValue;
+            if(definitionWrapper.Output.AreBucklingAnalysisResultsAvailable()||definitionWrapper.Output.GetNumberOfBucklingFactorsComputed()!=int.MaxValue)throw new Exception("Valid buckling false/count boundary changed.");
+            definitionNative.Output.Computed=true;definitionRejected=false;
+            try{definitionWrapper.Output.GetNumberOfBucklingFactorsComputed();}catch(InvalidOperationException){definitionRejected=true;}
+            if(!definitionRejected)throw new Exception("Boolean accepted as buckling count.");
+        }
+        foreach(string definitionName in new[]{"GetLoadEnvelopeDetail","GetAllLoadEnvelopeDetails","GetLoadCombination","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed"})
+        {
+            bool definitionOutput=definitionName=="AreBucklingAnalysisResultsAvailable"||definitionName=="GetNumberOfBucklingFactorsComputed";
+            var definitionMethod=(definitionOutput?typeof(IOSOutput):typeof(IOSLoad)).GetMethod(definitionName);
+            Type definitionReturn=definitionName=="GetLoadEnvelopeDetail"?typeof(ILoadEnvelopeDetail):definitionName=="GetAllLoadEnvelopeDetails"?typeof(HashSet<ILoadEnvelopeDetail>):definitionName=="GetLoadCombination"?typeof(StaadLoadCombination):definitionName=="AreBucklingAnalysisResultsAvailable"?typeof(bool):typeof(int);
+            string[] definitionNames=definitionName=="GetLoadEnvelopeDetail"?new[]{"envId"}:definitionName=="GetLoadCombination"?new[]{"id"}:Array.Empty<string>();
+            var definitionParameters=definitionMethod.GetParameters();
+            if(definitionMethod.ReturnType!=definitionReturn||!definitionParameters.Select(item=>item.Name).SequenceEqual(definitionNames)||definitionParameters.Any(item=>item.IsOptional||item.ParameterType.IsByRef||item.ParameterType!=typeof(int)))throw new Exception("Definition/buckling signature changed.");
+        }
+        foreach(Type definitionType in new[]{typeof(LoadEnvelopeDetail),typeof(ILoadEnvelopeDetail),typeof(LoadEnvelopType),typeof(StaadLoadCombination),typeof(StaadPro.Interop.Core.Base.LoadCombination),typeof(StaadPro.Interop.Core.Interfaces.ILoadCombination)})
+        {
+            if(!docs.Descendants("member").Any(item=>(string)item.Attribute("name")=="T:"+definitionType.FullName&&item.Element("summary")!=null))throw new Exception("New definition type XML missing.");
+            foreach(var definitionProperty in definitionType.GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.DeclaredOnly))
+                if(!docs.Descendants("member").Any(item=>(string)item.Attribute("name")=="P:"+definitionType.FullName+"."+definitionProperty.Name&&item.Element("summary")!=null&&item.Element("value")!=null))throw new Exception("Definition property IntelliSense missing.");
+        }
         var expected = new[] { "GetApplicationVersion", "GetBaseUnit", "GetInputUnitForForce", "GetInputUnitForLength", "GetMainWindowHandle", "GetStaadFileFullPath", "GetStaadFileFolder", "IsPhysicalModel", "GetErrorMessage", "GetProcessId", "GetStaadFileNameOnly", "GetAnlFileFullPath", "GetOpenedStaadFilename", "IsTarget", "ModelIsOpen", "SetSilentMode", "SaveModel", "OpenSTAADFile", "CloseSTAADFile", "ShowApplication", "GetShortJobInfo", "GetFullJobInfo", "MinimizeStaadMainWindow", "MaximizeStaadMainWindow", "RestoreStaadMainWindow", "SetInputUnitsEx", "AwaitModelHandle", "OpenStaadModel", "CloseCurrentStaadModel", "CloseWriteReopenStaadFile", "AnalyzeEx", "Analyze", "IsAnalyzing", "GetAnalysisStatus", "GetAnalysisStatus", "SetInputUnitForLength", "SetInputUnitForForce", "SetShortJobInfo", "SetShortJobInfo", "UpdateStructure", "SetFullJobInfo", "AnalyzeModel", "GetConnectedProjectInfo", "SetConnectedProjectInfo", "SetConnectedProjectInfo", "GetProcessHandle", "NewSTAADFile", "CreateNamedView", "SaveNamedView", "Quit", "RemoveNamedView", "ModifyNamedView", "RetrieveMemberForces" };
         foreach (var contract in assembly.GetTypes().Where(t=>t.IsInterface && t.Namespace=="StaadPro.Interop.Core.Adapters.Interfaces"))
         {
@@ -710,8 +772,8 @@ internal static class PackageSmoke
                     if ((method.Name == "CloseSTAADFile" || method.Name == "ShowApplication") && method.ReturnType != typeof(IOSRoot)) throw new Exception("Fluent return changed.");
                 }
             }
-            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType","GetLoadCase","GetLoadCases","GetLoadCasesFromIds","GetLoadCasesOfType","GetEnvelopeIds"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
-            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
+            else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType","GetLoadCase","GetLoadCases","GetLoadCasesFromIds","GetLoadCasesOfType","GetEnvelopeIds","GetLoadEnvelopeDetail","GetAllLoadEnvelopeDetails","GetLoadCombination"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
+            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }
         foreach (Type model in new[] { typeof(ShortJobInfo), typeof(FullJobInfo) })
@@ -799,6 +861,11 @@ if([string]::IsNullOrWhiteSpace($forceCode)){throw 'Missing force guide example.
 $loadCode=[regex]::Match($loadGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
 if([string]::IsNullOrWhiteSpace($loadCode)){throw 'Missing load metadata guide example.'}
 [IO.File]::WriteAllText((Join-Path $consumer 'LoadMetadataExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class LoadMetadataExample{static void Example(){using var wrapper=new OpenStaadWrapper(new MetadataRoot());'+$loadCode+'}}')
+$definitionCode=[regex]::Match($definitionGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+$bucklingCode=[regex]::Match($bucklingGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if([string]::IsNullOrWhiteSpace($definitionCode) -or [string]::IsNullOrWhiteSpace($bucklingCode)){throw 'Missing definition/buckling guide example.'}
+[IO.File]::WriteAllText((Join-Path $consumer 'LoadDefinitionExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class LoadDefinitionExample{static void Example(){using var wrapper=new OpenStaadWrapper(new DefinitionRoot());'+$definitionCode+'}}')
+[IO.File]::WriteAllText((Join-Path $consumer 'BucklingExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class BucklingExample{static void Example(){using var wrapper=new OpenStaadWrapper(new DefinitionRoot());'+$bucklingCode+'}}')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -819,4 +886,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all thirteen Root/domain guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all fifteen Root/domain guide examples compiled without executing native examples.')

@@ -109,3 +109,5 @@ Each call runs on the constructing COM thread under one current Load lease spann
 The guard cannot coordinate raw native access, other wrappers or the STAAD.Pro UI. Coordinate shared-session edits. Synchronous calls can block. Native errors retain their original exceptions/HRESULTs, with no retry or fallback instance. The methods do not analyze, activate, save, convert units, hydrate assignments or mutate STAAD.
 
 Offline tests and the installed-package consumer verify Boolean/count separation, malformed inventories, membership, ordered references versus deduplicated combinations, independent records, exact signatures/defaults, expanded matching XML and examples. The installed 2024/2025/2026 help declares matching combination count/number signatures, but this is not native runtime or engineering qualification. No live metadata retrieval or model mutation was performed for this increment.
+
+Envelope classification/membership and ordinary combination coefficients are covered by the [load definitions guide](Load-Definitions.md).

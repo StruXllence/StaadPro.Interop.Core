@@ -33,6 +33,7 @@ try {
     $loadGuide = Read-Entry 'docs/Load-Case-Metadata.md'
     $definitionGuide = Read-Entry 'docs/Load-Definitions.md'
     $bucklingGuide = Read-Entry 'docs/Buckling-Results.md'
+    $steelGuide = Read-Entry 'docs/Steel-Design-Queries.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
@@ -100,7 +101,7 @@ try {
     foreach($domain in @('Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
-        if($contracts.Count -ne $(if($domain -eq 'Load'){19}else{5})){throw 'Unexpected force domain documentation count.'}
+        if($contracts.Count -ne $(if($domain -eq 'Load'){19}else{10})){throw 'Unexpected force domain documentation count.'}
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
     }
     $examples = @($documentation.SelectNodes('//example/code'))
@@ -703,6 +704,7 @@ internal static class PackageSmoke
             var definitionParameters=definitionMethod.GetParameters();
             if(definitionMethod.ReturnType!=definitionReturn||!definitionParameters.Select(item=>item.Name).SequenceEqual(definitionNames)||definitionParameters.Any(item=>item.IsOptional||item.ParameterType.IsByRef||item.ParameterType!=typeof(int)))throw new Exception("Definition/buckling signature changed.");
         }
+        BucklingDesignFixture.Verify(docs);
         foreach(Type definitionType in new[]{typeof(LoadEnvelopeDetail),typeof(ILoadEnvelopeDetail),typeof(LoadEnvelopType),typeof(StaadLoadCombination),typeof(StaadPro.Interop.Core.Base.LoadCombination),typeof(StaadPro.Interop.Core.Interfaces.ILoadCombination)})
         {
             if(!docs.Descendants("member").Any(item=>(string)item.Attribute("name")=="T:"+definitionType.FullName&&item.Element("summary")!=null))throw new Exception("New definition type XML missing.");
@@ -773,7 +775,7 @@ internal static class PackageSmoke
                 }
             }
             else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType","GetLoadCase","GetLoadCases","GetLoadCasesFromIds","GetLoadCasesOfType","GetEnvelopeIds","GetLoadEnvelopeDetail","GetAllLoadEnvelopeDetails","GetLoadCombination"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
-            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
+            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed","GetBucklingFactor","GetBucklingModeDisplacement","GetBucklingModeDisplacementAtNode","GetMemberSteelUtilizationRatio","GetMemberSteelUtilizationRatioAsync"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }
         foreach (Type model in new[] { typeof(ShortJobInfo), typeof(FullJobInfo) })
@@ -866,6 +868,10 @@ $bucklingCode=[regex]::Match($bucklingGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Gro
 if([string]::IsNullOrWhiteSpace($definitionCode) -or [string]::IsNullOrWhiteSpace($bucklingCode)){throw 'Missing definition/buckling guide example.'}
 [IO.File]::WriteAllText((Join-Path $consumer 'LoadDefinitionExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class LoadDefinitionExample{static void Example(){using var wrapper=new OpenStaadWrapper(new DefinitionRoot());'+$definitionCode+'}}')
 [IO.File]::WriteAllText((Join-Path $consumer 'BucklingExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class BucklingExample{static void Example(){using var wrapper=new OpenStaadWrapper(new DefinitionRoot());'+$bucklingCode+'}}')
+$steelCode=[regex]::Match($steelGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if([string]::IsNullOrWhiteSpace($steelCode)){throw 'Missing steel-design guide example.'}
+[IO.File]::WriteAllText((Join-Path $consumer 'SteelDesignExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class SteelDesignExample{static void Example(){using var wrapper=new OpenStaadWrapper(new BucklingDesignRoot());'+$steelCode+'}}')
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Fixtures/BucklingDesignFixture.cs') -Destination (Join-Path $consumer 'BucklingDesignFixture.cs')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -886,4 +892,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all fifteen Root/domain guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all sixteen Root/domain guide examples compiled without executing native examples.')

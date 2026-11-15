@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261115.1 - 15 November 2026
+
+Added `GetBucklingFactor(int bucklingMode)`, `GetBucklingModeDisplacement(int bucklingMode, Node atNode)`, `GetBucklingModeDisplacementAtNode(int bucklingMode, int nodeId)`, `GetMemberSteelUtilizationRatio(int beamId)` and `GetMemberSteelUtilizationRatioAsync(int beamId)` with complete matching interface/adapter XML IntelliSense. See [buckling results](Buckling-Results.md) and [steel-design queries](Steel-Design-Queries.md).
+
+Buckling factors now use a by-reference NaN output sentinel rather than an unwritten initialized zero. Both mode-displacement queries return an immutable `BucklingModeDisplacementResult`, correcting a scalar return for a six-component native array. All components retain native order/signs without inferred axis or normalization changes. Added detached `Node` identity/coordinate metadata without UI dependencies; the node overload reads only its captured positive ID. Successful reads require qualified status and written finite Double outputs. Arrays require six entries and support replacement/nonzero-bound buffers.
+
+Steel ratios preserve nonnegative dimensionless values and documented -1/-999 absence sentinels after successful status. Unknown negative values and failed/unwritten outputs throw. The native ratio belongs to the last parameter block used to design that member. The task API performs native work synchronously on the constructing COM thread and returns an already-completed or faulted task, preserving original failures without worker-thread COM.
+
+All five contracts retain shared current-binding/thread/lifetime/reentrancy guards. No analysis, design, activation, conversion, retry or native mutation is added. Release build passed with zero warnings/errors and 2,099 offline tests, including 144 new regression cases. Exact installed-package verification covers nineteen Load and ten Output contracts, 183 compiled XML examples, README and sixteen guide examples, native stand-ins, matching expanded XML and archive isolation. Native-build and engineering qualification remain pending.
+
 ## 1.0.0-preview.20261115 - 15 November 2026
 
 Ported `GetLoadEnvelopeDetail(int envId)`, `GetAllLoadEnvelopeDetails()`, `GetLoadCombination(int id)`, `AreBucklingAnalysisResultsAvailable()` and `GetNumberOfBucklingFactorsComputed()` with complete matching interface/concrete XML IntelliSense. Added detached envelope/combination contracts and [load-definition](Load-Definitions.md) and [buckling observation](Buckling-Results.md) examples.

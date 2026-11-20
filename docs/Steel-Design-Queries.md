@@ -19,3 +19,5 @@ Console.WriteLine(query.GetAwaiter().GetResult());
 ~~~
 
 Both methods use the current Output binding and shared constructing-thread/lifetime/reentrancy lease through qualification. Reacquire the adapter after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Calls can block. Raw objects, other wrappers and external UI remain uncoordinated. No model mutation, case activation, geometry hydration, save, conversion, analysis or design is performed. Managed fixtures and installed-package checks do not replace native-build or engineering acceptance.
+
+See [member batches and task APIs](Member-Batch-Queries.md) for the Beam task overload, qualified ratio dictionaries, detached population and local member-end force tasks. Native work remains on the constructing COM thread.

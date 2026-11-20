@@ -232,5 +232,123 @@ namespace StaadPro.Interop.Core.Adapters.Models
             try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => SteelDesignReader.Read(wrapper.RawOutput, beamId))); }
             catch (Exception error) { return Task.FromException<double>(error); }
         }
+
+        /// <summary>Returns a settled task for a local-axis member-end force observation queried on the owning COM thread.</summary>
+        /// <param name="lcTitle">Non-null caller display title retained literally, without a native title query.</param>
+        /// <param name="beamId">Positive analytical member number.</param>
+        /// <param name="loadCaseId">Positive native result load-case number.</param>
+        /// <param name="memberEnd">Start=0 or End=1; undefined values fail before native dispatch.</param>
+        /// <returns>An already-settled Task of MemberForceQueryResult, consistent with the synchronous Core force query. Native false produces IsSuccessful=false and null Forces with query identity retained. Native success supplies qualified editable force data. Validation/native failures fault the task.</returns>
+        /// <remarks><para>Calls GetMemberEndForces once with Int32 end/axis selectors and six Double NaN sentinels, explicitly selecting Local axes. Success requires a rank-one six-Double array with every component written and finite; replacements and nonzero lower bounds are supported. Native false discards partial output. Ordering is Fx,Fy,Fz,Mx,My,Mz in unchanged native result units/signs. Does not activate a case or query availability/title.</para>
+        /// <para>The named query result preserves native failure information that a bare MemberForces cannot represent; the return is Task of the same result model as the synchronous Core method. No unqualified initialized-zero record or invented force is returned.</para><para>Completes native work on the calling owning thread before returning an already-completed or already-faulted Task. Await rethrows the original validation/native exception without substituting defaults. This is a task-shaped API, not nonblocking dispatch. Task.Run/worker-thread use fails the thread guard. No synchronization-context dispatch, cancellation, parallel COM or retry is introduced.</para><para>Runs synchronously on the wrapper constructing COM thread under one current-binding Output operation lease covering input capture, every native read, qualification and managed population where applicable. Reacquire Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are uncoordinated. Calls can block; original native exceptions/HRESULTs propagate. Observations are not atomic model snapshots.</para>
+        /// <para>No analysis, design, load-case activation, selection, geometry hydration, unit conversion, save, native mutation or retry is added. Caller-supplied objects/collections must not be edited concurrently.</para></remarks>
+        /// <exception cref="ArgumentNullException">The task faults when lcTitle is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The task faults for a nonpositive ID or undefined memberEnd.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed; task-returning methods retain this exception in the faulted task.</exception>
+        /// <exception cref="InvalidOperationException">Binding/thread/reentrancy is invalid, native status/output is malformed or unsuccessful, a selected batch ID changes, or collection enumeration fails. Task methods return a faulted task.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, or is retained by a returned faulted task.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable, or the returned task retains this failure.</exception>
+        /// <example><code>
+        /// var query = wrapper.Output.GetMemberEndForcesAsync("Dead", 1, 1,
+        ///     StaadPro.Interop.Core.Enums.MemberEnd.Start).GetAwaiter().GetResult();
+        /// if (query.IsSuccessful) Console.WriteLine(query.Forces);
+        /// </code></example>
+        public Task<MemberForceQueryResult> GetMemberEndForcesAsync(string lcTitle, int beamId, int loadCaseId, MemberEnd memberEnd)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => MemberForceReader.Read(wrapper.RawOutput, lcTitle, beamId, loadCaseId, memberEnd, LocalOrGlobal.Local))); }
+            catch (Exception error) { return Task.FromException<MemberForceQueryResult>(error); }
+        }
+
+        /// <summary>Returns a settled steel-utilization task using a supplied member's captured identifier.</summary>
+        /// <param name="b">Non-null Beam with a positive analytical Id. Reads Id once; endpoints, geometry and existing ratio are unused.</param>
+        /// <returns>An already-completed task containing the qualified ratio for the captured ID, or an already-faulted task containing the original failure. Does not populate b.UtilizationRatio.</returns>
+        /// <remarks><para>Retains the original Beam reference parameter and captures its ID inside the operation lease. Later Beam edits do not recompute the scalar observation; the caller must coordinate identity changes.</para><para>Each native GetMemberSteelDesignRatio call uses a by-reference Double NaN sentinel. Requires Boolean true or integral one status and a written finite Double. False/zero status throws even if data was written. Preserves nonnegative dimensionless ratios and documented -1 (analysis not performed)/-999 (analyzed but member not designed) sentinels; other negative values throw. Results refer to the last parameter block used to design each analytical member. Sentinels and unpopulated zero values are not proof of passing design.</para><para>Completes native work on the calling owning thread before returning an already-completed or already-faulted Task. Await rethrows the original validation/native exception without substituting defaults. This is a task-shaped API, not nonblocking dispatch. Task.Run/worker-thread use fails the thread guard. No synchronization-context dispatch, cancellation, parallel COM or retry is introduced.</para><para>Runs synchronously on the wrapper constructing COM thread under one current-binding Output operation lease covering input capture, every native read, qualification and managed population where applicable. Reacquire Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are uncoordinated. Calls can block; original native exceptions/HRESULTs propagate. Observations are not atomic model snapshots.</para>
+        /// <para>No analysis, design, load-case activation, selection, geometry hydration, unit conversion, save, native mutation or retry is added. Caller-supplied objects/collections must not be edited concurrently.</para></remarks>
+        /// <exception cref="ArgumentNullException">The task faults when b is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The task faults when b.Id is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed; task-returning methods retain this exception in the faulted task.</exception>
+        /// <exception cref="InvalidOperationException">Binding/thread/reentrancy is invalid, native status/output is malformed or unsuccessful, a selected batch ID changes, or collection enumeration fails. Task methods return a faulted task.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, or is retained by a returned faulted task.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable, or the returned task retains this failure.</exception>
+        /// <example><code>
+        /// var beam = new StaadPro.Interop.Core.Entities.Beam { Id = 7 };
+        /// double ratio = wrapper.Output.GetMemberSteelUtilizationRatioAsync(beam).GetAwaiter().GetResult();
+        /// Console.WriteLine(ratio);
+        /// </code></example>
+        public Task<double> GetMemberSteelUtilizationRatioAsync(Beam b)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => SteelDesignBatchReader.ReadOne(wrapper.RawOutput, b))); }
+            catch (Exception error) { return Task.FromException<double>(error); }
+        }
+
+        /// <summary>Reads qualified steel-utilization ratios for a captured set of analytical members.</summary>
+        /// <param name="beams">Non-null HashSet of distinct non-null Beam references with unique positive current IDs. Empty input is valid; at most 100,000 entries are allowed.</param>
+        /// <returns>A fresh editable dictionary mapping the original Beam references to qualified ratios. The dictionary uses reference identity so later Beam.Id edits do not corrupt key lookup or merge entries. No Beam property is populated, and no partial dictionary is returned on failure.</returns>
+        /// <remarks><para>Enumerates the supplied HashSet once into a bounded snapshot of original Beam references and captured positive IDs before any native read. Accepts at most 100,000 entries; rejects null entries, repeated references and duplicate current IDs, including duplicates caused by mutable hash keys or a custom comparer. Input order is unspecified. Empty valid input issues no native calls. Geometry/endpoints and existing UtilizationRatio values are unused.</para>
+        /// <para>Queries sequentially once per captured member with no worker-thread COM. Checks each current ID before its query and all selected IDs after retrieval. An observed ID change throws; temporary changes restored before a check cannot be detected. Captured membership does not follow later HashSet additions/removals. Native/model edits outside this wrapper cannot make a series of reads atomic. Caller must coordinate edits.</para><para>Each native GetMemberSteelDesignRatio call uses a by-reference Double NaN sentinel. Requires Boolean true or integral one status and a written finite Double. False/zero status throws even if data was written. Preserves nonnegative dimensionless ratios and documented -1 (analysis not performed)/-999 (analyzed but member not designed) sentinels; other negative values throw. Results refer to the last parameter block used to design each analytical member. Sentinels and unpopulated zero values are not proof of passing design.</para><para>The input Beam type compares/hashes by mutable ID. Returned storage deliberately uses reference equality instead: a different Beam object with the same ID is not a dictionary key. Returned membership and values are detached; edits do not update STAAD or recompute ratios. Each call owns its dictionary.</para><para>Runs synchronously on the wrapper constructing COM thread under one current-binding Output operation lease covering input capture, every native read, qualification and managed population where applicable. Reacquire Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are uncoordinated. Calls can block; original native exceptions/HRESULTs propagate. Observations are not atomic model snapshots.</para>
+        /// <para>No analysis, design, load-case activation, selection, geometry hydration, unit conversion, save, native mutation or retry is added. Caller-supplied objects/collections must not be edited concurrently.</para></remarks>
+        /// <exception cref="ArgumentNullException">beams is null.</exception>
+        /// <exception cref="ArgumentException">An entry is null, has a nonpositive/duplicate ID or duplicate reference, or the 100,000-entry bound is exceeded.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed; task-returning methods retain this exception in the faulted task.</exception>
+        /// <exception cref="InvalidOperationException">Binding/thread/reentrancy is invalid, native status/output is malformed or unsuccessful, a selected batch ID changes, or collection enumeration fails. Task methods return a faulted task.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, or is retained by a returned faulted task.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable, or the returned task retains this failure.</exception>
+        /// <example><code>
+        /// var beams = new System.Collections.Generic.HashSet&lt;StaadPro.Interop.Core.Entities.Beam&gt;
+        ///     { new StaadPro.Interop.Core.Entities.Beam { Id = 7 } };
+        /// var ratios = wrapper.Output.GetMemberSteelUtilizationRatios(beams);
+        /// foreach (var pair in ratios) Console.WriteLine(pair.Key.Id + ": " + pair.Value);
+        /// </code></example>
+        public Dictionary<Beam, double> GetMemberSteelUtilizationRatios(HashSet<Beam> beams) => Wrapper.UseOutputBinding(this, wrapper => SteelDesignBatchReader.Read(wrapper.RawOutput, beams));
+
+        /// <summary>Reads a complete qualified ratio batch, then updates the supplied detached member records.</summary>
+        /// <param name="forBeams">Non-null HashSet of distinct non-null Beam references with unique positive current IDs, limited to 100,000 entries. Empty input performs no queries or writes.</param>
+        /// <returns>No value. After all reads qualify, assigns each captured Beam.UtilizationRatio sequentially on the owning thread.</returns>
+        /// <remarks><para>Enumerates the supplied HashSet once into a bounded snapshot of original Beam references and captured positive IDs before any native read. Accepts at most 100,000 entries; rejects null entries, repeated references and duplicate current IDs, including duplicates caused by mutable hash keys or a custom comparer. Input order is unspecified. Empty valid input issues no native calls. Geometry/endpoints and existing UtilizationRatio values are unused.</para>
+        /// <para>Queries sequentially once per captured member with no worker-thread COM. Checks each current ID before its query and all selected IDs after retrieval. An observed ID change throws; temporary changes restored before a check cannot be detected. Captured membership does not follow later HashSet additions/removals. Native/model edits outside this wrapper cannot make a series of reads atomic. Caller must coordinate edits.</para><para>Each native GetMemberSteelDesignRatio call uses a by-reference Double NaN sentinel. Requires Boolean true or integral one status and a written finite Double. False/zero status throws even if data was written. Preserves nonnegative dimensionless ratios and documented -1 (analysis not performed)/-999 (analyzed but member not designed) sentinels; other negative values throw. Results refer to the last parameter block used to design each analytical member. Sentinels and unpopulated zero values are not proof of passing design.</para><para>All native reads and full ID rechecks complete before any ratio assignment. Input-validation/native-retrieval/qualification failure therefore makes no ratio writes by this method. Rechecks each captured ID immediately before its assignment. Updates detached metadata only; it does not submit a native design change.</para>
+        /// <para>PropertyChanged handlers run synchronously after a stored value changes, while the operation lease is still held. Reentrant guarded work is rejected. A handler can throw or edit metadata after some values were applied; that failure propagates without rollback, and earlier/current assignments may remain. This is not an atomic transaction and arbitrary external callback edits cannot be undone or fully detected.</para><para>Runs synchronously on the wrapper constructing COM thread under one current-binding Output operation lease covering input capture, every native read, qualification and managed population where applicable. Reacquire Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are uncoordinated. Calls can block; original native exceptions/HRESULTs propagate. Observations are not atomic model snapshots.</para>
+        /// <para>No analysis, design, load-case activation, selection, geometry hydration, unit conversion, save, native mutation or retry is added. Caller-supplied objects/collections must not be edited concurrently.</para></remarks>
+        /// <exception cref="ArgumentNullException">forBeams is null.</exception>
+        /// <exception cref="ArgumentException">A selected entry/reference/ID is invalid, duplicated, or exceeds the batch bound.</exception>
+        /// <exception cref="Exception">A managed property notification handler throws after one or more assignments; the original handler exception propagates without rollback.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed; task-returning methods retain this exception in the faulted task.</exception>
+        /// <exception cref="InvalidOperationException">Binding/thread/reentrancy is invalid, native status/output is malformed or unsuccessful, a selected batch ID changes, or collection enumeration fails. Task methods return a faulted task.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, or is retained by a returned faulted task.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable, or the returned task retains this failure.</exception>
+        /// <example><code>
+        /// var beam = new StaadPro.Interop.Core.Entities.Beam { Id = 7 };
+        /// var beams = new System.Collections.Generic.HashSet&lt;StaadPro.Interop.Core.Entities.Beam&gt; { beam };
+        /// wrapper.Output.PopulateMemberSteelUtilizationRatios(beams);
+        /// Console.WriteLine(beam.UtilizationRatio);
+        /// </code></example>
+        public void PopulateMemberSteelUtilizationRatios(HashSet<Beam> forBeams) => Wrapper.UseOutputBinding(this, wrapper =>
+        {
+            SteelDesignBatchReader.Populate(wrapper.RawOutput, forBeams);
+            return 0;
+        });
+
+        /// <summary>Returns a settled task containing a qualified captured member-to-ratio dictionary.</summary>
+        /// <param name="beams">Non-null HashSet of distinct non-null Beam references with unique positive current IDs. Empty input is valid; at most 100,000 entries are allowed.</param>
+        /// <returns>An already-completed task containing fresh editable reference-identity dictionary storage, or an already-faulted task containing the original failure. No partial result escapes and no Beam property is populated.</returns>
+        /// <remarks><para>Enumerates the supplied HashSet once into a bounded snapshot of original Beam references and captured positive IDs before any native read. Accepts at most 100,000 entries; rejects null entries, repeated references and duplicate current IDs, including duplicates caused by mutable hash keys or a custom comparer. Input order is unspecified. Empty valid input issues no native calls. Geometry/endpoints and existing UtilizationRatio values are unused.</para>
+        /// <para>Queries sequentially once per captured member with no worker-thread COM. Checks each current ID before its query and all selected IDs after retrieval. An observed ID change throws; temporary changes restored before a check cannot be detected. Captured membership does not follow later HashSet additions/removals. Native/model edits outside this wrapper cannot make a series of reads atomic. Caller must coordinate edits.</para><para>Each native GetMemberSteelDesignRatio call uses a by-reference Double NaN sentinel. Requires Boolean true or integral one status and a written finite Double. False/zero status throws even if data was written. Preserves nonnegative dimensionless ratios and documented -1 (analysis not performed)/-999 (analyzed but member not designed) sentinels; other negative values throw. Results refer to the last parameter block used to design each analytical member. Sentinels and unpopulated zero values are not proof of passing design.</para><para>Retains original Beam references as keys with reference equality, allowing later ID edits without invalidating dictionary lookup. Another Beam with the same ID is not the same key. Native calls execute sequentially within one operation lease, replacing unsafe parallel COM calls and concurrent dictionary writes.</para><para>Completes native work on the calling owning thread before returning an already-completed or already-faulted Task. Await rethrows the original validation/native exception without substituting defaults. This is a task-shaped API, not nonblocking dispatch. Task.Run/worker-thread use fails the thread guard. No synchronization-context dispatch, cancellation, parallel COM or retry is introduced.</para><para>Runs synchronously on the wrapper constructing COM thread under one current-binding Output operation lease covering input capture, every native read, qualification and managed population where applicable. Reacquire Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are uncoordinated. Calls can block; original native exceptions/HRESULTs propagate. Observations are not atomic model snapshots.</para>
+        /// <para>No analysis, design, load-case activation, selection, geometry hydration, unit conversion, save, native mutation or retry is added. Caller-supplied objects/collections must not be edited concurrently.</para></remarks>
+        /// <exception cref="ArgumentNullException">The task faults when beams is null.</exception>
+        /// <exception cref="ArgumentException">The task faults for a null/duplicate entry, invalid/duplicate ID or exceeded batch bound.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed; task-returning methods retain this exception in the faulted task.</exception>
+        /// <exception cref="InvalidOperationException">Binding/thread/reentrancy is invalid, native status/output is malformed or unsuccessful, a selected batch ID changes, or collection enumeration fails. Task methods return a faulted task.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, or is retained by a returned faulted task.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable, or the returned task retains this failure.</exception>
+        /// <example><code>
+        /// var beams = new System.Collections.Generic.HashSet&lt;StaadPro.Interop.Core.Entities.Beam&gt;
+        ///     { new StaadPro.Interop.Core.Entities.Beam { Id = 7 } };
+        /// var ratios = wrapper.Output.GetMemberSteelUtilizationRatiosAsync(beams).GetAwaiter().GetResult();
+        /// Console.WriteLine(ratios.Count);
+        /// </code></example>
+        public Task<Dictionary<Beam, double>> GetMemberSteelUtilizationRatiosAsync(HashSet<Beam> beams)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => SteelDesignBatchReader.Read(wrapper.RawOutput, beams))); }
+            catch (Exception error) { return Task.FromException<Dictionary<Beam, double>>(error); }
+        }
     }
 }

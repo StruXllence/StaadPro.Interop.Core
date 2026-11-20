@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -46,7 +46,7 @@ internal static class BucklingDesignFixture
         string[] names={"GetBucklingFactor","GetBucklingModeDisplacement","GetBucklingModeDisplacementAtNode","GetMemberSteelUtilizationRatio","GetMemberSteelUtilizationRatioAsync"};
         foreach(string name in names)
         {
-            var method=typeof(IOSOutput).GetMethod(name);var p=method.GetParameters();
+            var method=name=="GetMemberSteelUtilizationRatioAsync"?typeof(IOSOutput).GetMethod(name,new[]{typeof(int)}):typeof(IOSOutput).GetMethod(name);var p=method.GetParameters();
             Type expected=name=="GetMemberSteelUtilizationRatioAsync"?typeof(Task<double>):name is "GetBucklingModeDisplacement" or "GetBucklingModeDisplacementAtNode"?typeof(BucklingModeDisplacementResult):typeof(double);
             string[] expectedNames=name=="GetBucklingFactor"?new[]{"bucklingMode"}:name=="GetBucklingModeDisplacement"?new[]{"bucklingMode","atNode"}:name=="GetBucklingModeDisplacementAtNode"?new[]{"bucklingMode","nodeId"}:new[]{"beamId"};
             if(method.ReturnType!=expected||!p.Select(x=>x.Name).SequenceEqual(expectedNames)||p.Any(x=>x.IsOptional||x.ParameterType.IsByRef)||p.Where(x=>x.Name!="atNode").Any(x=>x.ParameterType!=typeof(int))||p.Any(x=>x.Name=="atNode"&&x.ParameterType!=typeof(Node)))throw new Exception("Result query signature changed.");

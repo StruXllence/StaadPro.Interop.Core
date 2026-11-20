@@ -1,5 +1,17 @@
 # Release notes
 
+## 1.0.0-preview.20261120 - 20 November 2026
+
+Added `GetMemberEndForcesAsync(string lcTitle, int beamId, int loadCaseId, MemberEnd memberEnd)`, `GetMemberSteelUtilizationRatioAsync(Beam b)`, `GetMemberSteelUtilizationRatios(HashSet<Beam> beams)`, `PopulateMemberSteelUtilizationRatios(HashSet<Beam> forBeams)` and `GetMemberSteelUtilizationRatiosAsync(HashSet<Beam> beams)` with complete matching interface/adapter XML IntelliSense. See [member batch queries](Member-Batch-Queries.md).
+
+Task APIs complete native work on the constructing COM thread before returning a completed or faulted task. The force query returns `Task<MemberForceQueryResult>`, matching the synchronous Core success/failure model: native false retains query identity and null force data, while success requires six written finite Double values in local axes. The beam ratio overload captures its positive ID without hydrating endpoints or populating its ratio.
+
+Batch queries capture original member references and unique positive current IDs, qualify the entire input before dispatch and query sequentially under one operation lease. Inputs are limited to 100,000 entries; nulls and duplicate references/current IDs throw. Empty batches issue no native calls. Observed ID changes during retrieval throw. Returned editable dictionaries own their storage and use reference-identity keys, preserving lookup after member IDs change. A different Beam with the same ID is not the same returned key.
+
+Population retrieves and qualifies every ratio before assigning detached `Beam.UtilizationRatio` values. Native retrieval failures perform no ratio assignments by the method. Property handlers can fail or change metadata after assignment starts; such failures propagate with earlier/current assignments retained and no invented rollback. Added supporting Beam metadata with source ID equality, supplied endpoints and property notifications, without native connectivity or geometry operations.
+
+Release build passed with zero warnings/errors and 2,162 offline tests, including 63 new regression cases. Exact installed-package verification covers nineteen Load and fifteen Output contracts, matching expanded XML, 193 compiled XML examples, README and seventeen guide examples, member-batch/task native stand-ins and exact archive/dependency isolation. No new live native or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261115.1 - 15 November 2026
 
 Added `GetBucklingFactor(int bucklingMode)`, `GetBucklingModeDisplacement(int bucklingMode, Node atNode)`, `GetBucklingModeDisplacementAtNode(int bucklingMode, int nodeId)`, `GetMemberSteelUtilizationRatio(int beamId)` and `GetMemberSteelUtilizationRatioAsync(int beamId)` with complete matching interface/adapter XML IntelliSense. See [buckling results](Buckling-Results.md) and [steel-design queries](Steel-Design-Queries.md).

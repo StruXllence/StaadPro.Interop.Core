@@ -1,5 +1,17 @@
 # Release notes
 
+## 1.0.0-preview.20261121 - 21 November 2026
+
+Added both `GetSteelDesignResultsForBeam(...)` overloads, both `GetSteelDesignResultsForBeams(...)` overloads and `GetGoverningMember(PhysicalMemberIdentificationResult pmiResult, bool ratiosPopulated = false)` with complete matching XML IntelliSense. See [steel-design records and governing members](Steel-Design-Records.md).
+
+Steel records preserve original member references, literal code/clause/section text, independently captured critical-case metadata and all three reported Fx/My/Mz force components. `SteelDesignForces` represents exactly those components without manufacturing unreported force values or introducing UI dependencies. Query records require native success, written finite typed outputs, nonnegative ratio/location/slenderness values and explicit PASS/FAIL status text. Ambiguous numeric statuses throw rather than being guessed. Critical-case identity must resolve uniquely.
+
+Single/batch queries accept supplied case metadata or the same wrapper's current Load adapter. Load composition reads qualified primary/combination metadata within one shared operation lease. Input snapshots are bounded to 100,000 beam occurrences/case records; batches are eagerly materialized with order/duplicates retained and no partial result on failure. Beam identity changes observed during retrieval throw.
+
+Governing selection ranks the greatest constituent-beam utilization, retaining first-member order on ties. Cached mode performs no native reads; default mode queries each unique Beam reference once, validates all ratios before population and updates detached ratios. Unavailable -1/-999 or invalid cached ratios cannot choose a winner. Property-handler failures can retain partial managed writes without rollback. Supporting Member/grouping metadata does not perform physical-member identification or geometry automation.
+
+Release build passed with zero warnings/errors and 2,295 offline tests, including 133 new regression cases. Exact installed-package checks verify nineteen Load/twenty Output contracts, matching expanded XML, 203 compiled XML examples, README/eighteen guide examples, steel-record/governing native stand-ins and exact archive/dependency isolation. No new live native or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261120 - 20 November 2026
 
 Added `GetMemberEndForcesAsync(string lcTitle, int beamId, int loadCaseId, MemberEnd memberEnd)`, `GetMemberSteelUtilizationRatioAsync(Beam b)`, `GetMemberSteelUtilizationRatios(HashSet<Beam> beams)`, `PopulateMemberSteelUtilizationRatios(HashSet<Beam> forBeams)` and `GetMemberSteelUtilizationRatiosAsync(HashSet<Beam> beams)` with complete matching interface/adapter XML IntelliSense. See [member batch queries](Member-Batch-Queries.md).

@@ -36,6 +36,7 @@ try {
     $steelGuide = Read-Entry 'docs/Steel-Design-Queries.md'
     $batchGuide = Read-Entry 'docs/Member-Batch-Queries.md'
     $steelRecordGuide = Read-Entry 'docs/Steel-Design-Records.md'
+    $supportGuide = Read-Entry 'docs/Support-Reactions-and-Static-Checks.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
@@ -103,7 +104,7 @@ try {
     foreach($domain in @('Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
-        if($contracts.Count -ne $(if($domain -eq 'Load'){19}else{20})){throw 'Unexpected force domain documentation count.'}
+        if($contracts.Count -ne $(if($domain -eq 'Load'){19}else{25})){throw 'Unexpected force domain documentation count.'}
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
     }
     $examples = @($documentation.SelectNodes('//example/code'))
@@ -709,6 +710,7 @@ internal static class PackageSmoke
         BucklingDesignFixture.Verify(docs);
         MemberBatchFixture.Verify(docs);
         SteelRecordFixture.Verify(docs);
+        SupportResultFixture.Verify(docs);
         foreach(Type definitionType in new[]{typeof(LoadEnvelopeDetail),typeof(ILoadEnvelopeDetail),typeof(LoadEnvelopType),typeof(StaadLoadCombination),typeof(StaadPro.Interop.Core.Base.LoadCombination),typeof(StaadPro.Interop.Core.Interfaces.ILoadCombination)})
         {
             if(!docs.Descendants("member").Any(item=>(string)item.Attribute("name")=="T:"+definitionType.FullName&&item.Element("summary")!=null))throw new Exception("New definition type XML missing.");
@@ -779,7 +781,7 @@ internal static class PackageSmoke
                 }
             }
             else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType","GetLoadCase","GetLoadCases","GetLoadCasesFromIds","GetLoadCasesOfType","GetEnvelopeIds","GetLoadEnvelopeDetail","GetAllLoadEnvelopeDetails","GetLoadCombination"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
-            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed","GetBucklingFactor","GetBucklingModeDisplacement","GetBucklingModeDisplacementAtNode","GetMemberSteelUtilizationRatio","GetMemberSteelUtilizationRatioAsync","GetMemberEndForcesAsync","GetMemberSteelUtilizationRatioAsync","GetMemberSteelUtilizationRatios","PopulateMemberSteelUtilizationRatios","GetMemberSteelUtilizationRatiosAsync","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeams","GetSteelDesignResultsForBeams","GetGoverningMember"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
+            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed","GetBucklingFactor","GetBucklingModeDisplacement","GetBucklingModeDisplacementAtNode","GetMemberSteelUtilizationRatio","GetMemberSteelUtilizationRatioAsync","GetMemberEndForcesAsync","GetMemberSteelUtilizationRatioAsync","GetMemberSteelUtilizationRatios","PopulateMemberSteelUtilizationRatios","GetMemberSteelUtilizationRatiosAsync","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeams","GetSteelDesignResultsForBeams","GetGoverningMember","GetSupportReactions","GetSupportForces","GetSupportReactionsAsync","GetSupportForcesAsync","GetStaticCheckResultAsync"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }
         foreach (Type model in new[] { typeof(ShortJobInfo), typeof(FullJobInfo) })
@@ -884,6 +886,10 @@ $steelRecordCode=[regex]::Match($steelRecordGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~
 if([string]::IsNullOrWhiteSpace($steelRecordCode)){throw 'Missing steel-record guide example.'}
 [IO.File]::WriteAllText((Join-Path $consumer 'SteelRecordExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class SteelRecordExample{static void Example(){using var wrapper=new OpenStaadWrapper(new SteelRecordRoot());'+$steelRecordCode+'}}')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Fixtures/SteelRecordFixture.cs') -Destination (Join-Path $consumer 'SteelRecordFixture.cs')
+$supportCode=[regex]::Match($supportGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if([string]::IsNullOrWhiteSpace($supportCode)){throw 'Missing support/static-check guide example.'}
+[IO.File]::WriteAllText((Join-Path $consumer 'SupportResultExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class SupportResultExample{static void Example(){using var wrapper=new OpenStaadWrapper(new SupportResultRoot());'+$supportCode+'}}')
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Fixtures/SupportResultFixture.cs') -Destination (Join-Path $consumer 'SupportResultFixture.cs')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -904,4 +910,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all eighteen Root/domain guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all nineteen Root/domain guide examples compiled without executing native examples.')

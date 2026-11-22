@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261122 - 22 November 2026
+
+Added `GetSupportReactions(int supportId, int loadCaseId)`, `GetSupportForces(int supportId, int loadCaseId)`, `GetSupportReactionsAsync(...)`, `GetSupportForcesAsync(...)` and `GetStaticCheckResultAsync(int loadCaseId)` with complete matching interface/adapter XML IntelliSense. See [support reactions and static checks](Support-Reactions-and-Static-Checks.md).
+
+Support queries preserve native global reactions or negate all six components for the source support-force convention. Static checks copy native load and reaction totals independently and retain literal component-wise load-minus-reaction differences without a balance tolerance or acceptance inference. Added editable detached `Forces`, `LoadCaseForces` and `StaticCheckResult` scalar models without WPF or unit-converter dependencies.
+
+Both native queries require successful Boolean/integral flags and fully written finite six-Double arrays; initialized defaults, failed reads and malformed outputs cannot escape as valid results. Replacement/nonzero-bound arrays are copied, including aliased native buffers, with independent storage per result. All five APIs retain shared current-binding, constructing-thread, lifetime and reentrancy guards. Task variants perform native work synchronously before returning settled tasks; await observes original failures/HRESULTs.
+
+Release build passed with zero warnings/errors and 2,454 offline tests, including 159 new cases. Exact installed-package verification covers nineteen Load/twenty-five Output signatures, matching expanded XML, 213 compiled XML examples, README/nineteen guide examples, support/static-check native stand-ins and archive/dependency isolation. No new live native, cross-version or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261121 - 21 November 2026
 
 Added both `GetSteelDesignResultsForBeam(...)` overloads, both `GetSteelDesignResultsForBeams(...)` overloads and `GetGoverningMember(PhysicalMemberIdentificationResult pmiResult, bool ratiosPopulated = false)` with complete matching XML IntelliSense. See [steel-design records and governing members](Steel-Design-Records.md).

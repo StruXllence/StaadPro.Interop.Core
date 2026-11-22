@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261121</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261122</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
-    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling and steel-utilization queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
-    <PackageReleaseNotes>Ported four single/batch steel-design record overloads and GetGoverningMember with complete matching XML IntelliSense. Added editable detached steel/member grouping metadata and a named Fx/My/Mz force model preserving only reported components. Qualified native success, written outputs, explicit PASS/FAIL text, unique critical-case identity and bounded ordered input snapshots. Composed current same-wrapper Load reads under one operation lease. Added stable governing selection with unavailable-ratio rejection and qualified managed population, preserving callback failure limits. See the steel-design record guide for contracts and qualification limits.</PackageReleaseNotes>
+    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction and static-check queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
+    <PackageReleaseNotes>Ported GetSupportReactions, GetSupportForces, their task variants and GetStaticCheckResultAsync with complete matching XML IntelliSense. Qualified native success and fully written finite six-component arrays, copied result storage and preserved global reaction/opposite support-force signs. Added editable scalar Forces, LoadCaseForces and StaticCheckResult models with literal load-minus-reaction differences. Retained current-binding, constructing-thread and reentrancy guards; task variants perform native reads synchronously before returning settled tasks. See the support reactions and static checks guide for usage and qualification limits.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -43,6 +43,7 @@
     <None Include="../../docs/Steel-Design-Queries.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Member-Batch-Queries.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Steel-Design-Records.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Support-Reactions-and-Static-Checks.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Load-Case-Metadata.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Member-Force-Queries.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Root-View-Changes-and-Optional-Operations.md" Pack="true" PackagePath="docs/" />

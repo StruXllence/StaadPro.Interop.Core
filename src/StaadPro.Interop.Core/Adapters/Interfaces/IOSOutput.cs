@@ -8,7 +8,7 @@ using StaadPro.Interop.Core.Enums;
 using StaadPro.Interop.Core.Models.Root;
 namespace StaadPro.Interop.Core.Adapters.Interfaces
 {
-    /// <summary>Provides guarded Output queries for availability, member forces, buckling and steel-design observations.</summary>
+    /// <summary>Provides guarded Output queries for availability, member forces, buckling, steel-design, support and static-check observations.</summary>
     /// <remarks>Other Output operations are not yet implemented.</remarks>
     public interface IOSOutput : IOSBase
     {
@@ -429,5 +429,107 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(wrapper.Output.GetGoverningMember(groups, ratiosPopulated: true) == member);
         /// </code></example>
         Member GetGoverningMember(PhysicalMemberIdentificationResult pmiResult, bool ratiosPopulated = false);
+
+        /// <summary>Reads qualified global support reactions for one node and case.</summary>
+        /// <param name="supportId">Positive native support node number, not an ordinal in the support list. Existence/support suitability is determined by native retrieval.</param>
+        /// <param name="loadCaseId">Positive native load-case reference number. This method does not activate, analyze or independently resolve the case.</param>
+        /// <returns>A new detached LoadCaseForces with Id equal to loadCaseId and independently owned six-component Forces; supportId is not retained in this model. Unsuccessful native retrieval throws; no partial or initialized zero record is returned.</returns>
+        /// <remarks><para>Uses one native GetSupportReactions(supportId, loadCaseId, ref reactions) call under the current Output binding. Six-Double buffers start with NaN sentinels. Requires Boolean true or integral one success; false/zero throws and malformed status is rejected. Every successful output must be a rank-one array of exactly six finite written Doubles in Fx,Fy,Fz,Mx,My,Mz order. Replacement arrays and nonzero lower bounds are copied; native storage is never retained.</para>
+        /// <para>Native reactions are in global directions. Components retain native force/moment units and sign conventions without unit conversion or geometry hydration. Returns native reaction signs unchanged; GetSupportForces provides the opposite-sign convention. No existence, result freshness or engineering acceptance guarantee is inferred.</para>
+        /// <para>Returned records are editable detached metadata. Mutations never update STAAD; manual model construction/setters are unvalidated. Each call owns new result/component storage, even when native arrays are reused or aliased.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared Output binding/lifetime/reentrancy lease covering validation, dispatch and qualification. Reacquire adapters after refresh. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are outside this guard. Original exceptions and HRESULTs propagate; the lease is released on failure.</para>
+        /// <para>No analysis, case activation, selection, save, native mutation, unit conversion, retry or rollback is introduced.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">supportId or loadCaseId is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, native retrieval is unsuccessful, or a successful output/status is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, including its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetSupportReactions(2, 1);
+        /// Console.WriteLine(result.Id + ": " + result.Forces.Fy);
+        /// </code></example>
+        LoadCaseForces GetSupportReactions(int supportId, int loadCaseId);
+
+        /// <summary>Reads qualified global support forces opposite to native reactions.</summary>
+        /// <param name="supportId">Positive native support node number, not an ordinal in the support list. Existence/support suitability is determined by native retrieval.</param>
+        /// <param name="loadCaseId">Positive native load-case reference number. This method does not activate, analyze or independently resolve the case.</param>
+        /// <returns>A new detached LoadCaseForces with Id equal to loadCaseId and independently owned six-component Forces; supportId is not retained in this model. Unsuccessful native retrieval throws; no partial or initialized zero record is returned.</returns>
+        /// <remarks><para>Uses one native GetSupportReactions(supportId, loadCaseId, ref reactions) call under the current Output binding. Six-Double buffers start with NaN sentinels. Requires Boolean true or integral one success; false/zero throws and malformed status is rejected. Every successful output must be a rank-one array of exactly six finite written Doubles in Fx,Fy,Fz,Mx,My,Mz order. Replacement arrays and nonzero lower bounds are copied; native storage is never retained.</para>
+        /// <para>Native reactions are in global directions. Components retain native force/moment units and sign conventions without unit conversion or geometry hydration. Multiplies all six qualified reaction components by minus one, including moments, preserving the source support-force convention; does not make a second native call. No existence, result freshness or engineering acceptance guarantee is inferred.</para>
+        /// <para>Returned records are editable detached metadata. Mutations never update STAAD; manual model construction/setters are unvalidated. Each call owns new result/component storage, even when native arrays are reused or aliased.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared Output binding/lifetime/reentrancy lease covering validation, dispatch and qualification. Reacquire adapters after refresh. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are outside this guard. Original exceptions and HRESULTs propagate; the lease is released on failure.</para>
+        /// <para>No analysis, case activation, selection, save, native mutation, unit conversion, retry or rollback is introduced.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">supportId or loadCaseId is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, native retrieval is unsuccessful, or a successful output/status is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, including its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetSupportForces(2, 1);
+        /// Console.WriteLine(result.Id + ": " + result.Forces.Fy);
+        /// </code></example>
+        LoadCaseForces GetSupportForces(int supportId, int loadCaseId);
+
+        /// <summary>Reads qualified global support reactions for one node and case.</summary>
+        /// <param name="supportId">Positive native support node number, not an ordinal in the support list. Existence/support suitability is determined by native retrieval.</param>
+        /// <param name="loadCaseId">Positive native load-case reference number. This method does not activate, analyze or independently resolve the case.</param>
+        /// <returns>An already completed successful task containing a new detached LoadCaseForces with Id equal to loadCaseId and independently owned six-component Forces; supportId is not retained in this model. Validation, guard and native failures are returned as faulted tasks and rethrown when awaited. Unsuccessful native retrieval throws; no partial or initialized zero record is returned.</returns>
+        /// <remarks><para>Uses one native GetSupportReactions(supportId, loadCaseId, ref reactions) call under the current Output binding. Six-Double buffers start with NaN sentinels. Requires Boolean true or integral one success; false/zero throws and malformed status is rejected. Every successful output must be a rank-one array of exactly six finite written Doubles in Fx,Fy,Fz,Mx,My,Mz order. Replacement arrays and nonzero lower bounds are copied; native storage is never retained.</para>
+        /// <para>Native reactions are in global directions. Components retain native force/moment units and sign conventions without unit conversion or geometry hydration. Returns native reaction signs unchanged; GetSupportForces provides the opposite-sign convention. No existence, result freshness or engineering acceptance guarantee is inferred.</para>
+        /// <para>Returned records are editable detached metadata. Mutations never update STAAD; manual model construction/setters are unvalidated. Each call owns new result/component storage, even when native arrays are reused or aliased.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared Output binding/lifetime/reentrancy lease covering validation, dispatch and qualification. Reacquire adapters after refresh. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are outside this guard. Original exceptions and HRESULTs propagate; the lease is released on failure.</para>
+        /// <para>The task-shaped API performs all native work before returning its settled task; it can block the calling thread. It does not queue COM on Task.Run, change apartments, marshal to a UI dispatcher or add cancellation/parallelism. Call it on the owning thread and await to observe failures.</para>
+        /// <para>No analysis, case activation, selection, save, native mutation, unit conversion, retry or rollback is introduced.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">supportId or loadCaseId is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, native retrieval is unsuccessful, or a successful output/status is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, including its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetSupportReactionsAsync(2, 1).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Id + ": " + result.Forces.Fy);
+        /// </code></example>
+        Task<LoadCaseForces> GetSupportReactionsAsync(int supportId, int loadCaseId);
+
+        /// <summary>Reads qualified global support forces opposite to native reactions.</summary>
+        /// <param name="supportId">Positive native support node number, not an ordinal in the support list. Existence/support suitability is determined by native retrieval.</param>
+        /// <param name="loadCaseId">Positive native load-case reference number. This method does not activate, analyze or independently resolve the case.</param>
+        /// <returns>An already completed successful task containing a new detached LoadCaseForces with Id equal to loadCaseId and independently owned six-component Forces; supportId is not retained in this model. Validation, guard and native failures are returned as faulted tasks and rethrown when awaited. Unsuccessful native retrieval throws; no partial or initialized zero record is returned.</returns>
+        /// <remarks><para>Uses one native GetSupportReactions(supportId, loadCaseId, ref reactions) call under the current Output binding. Six-Double buffers start with NaN sentinels. Requires Boolean true or integral one success; false/zero throws and malformed status is rejected. Every successful output must be a rank-one array of exactly six finite written Doubles in Fx,Fy,Fz,Mx,My,Mz order. Replacement arrays and nonzero lower bounds are copied; native storage is never retained.</para>
+        /// <para>Native reactions are in global directions. Components retain native force/moment units and sign conventions without unit conversion or geometry hydration. Multiplies all six qualified reaction components by minus one, including moments, preserving the source support-force convention; does not make a second native call. No existence, result freshness or engineering acceptance guarantee is inferred.</para>
+        /// <para>Returned records are editable detached metadata. Mutations never update STAAD; manual model construction/setters are unvalidated. Each call owns new result/component storage, even when native arrays are reused or aliased.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared Output binding/lifetime/reentrancy lease covering validation, dispatch and qualification. Reacquire adapters after refresh. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are outside this guard. Original exceptions and HRESULTs propagate; the lease is released on failure.</para>
+        /// <para>The task-shaped API performs all native work before returning its settled task; it can block the calling thread. It does not queue COM on Task.Run, change apartments, marshal to a UI dispatcher or add cancellation/parallelism. Call it on the owning thread and await to observe failures.</para>
+        /// <para>No analysis, case activation, selection, save, native mutation, unit conversion, retry or rollback is introduced.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">supportId or loadCaseId is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, native retrieval is unsuccessful, or a successful output/status is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, including its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetSupportForcesAsync(2, 1).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Id + ": " + result.Forces.Fy);
+        /// </code></example>
+        Task<LoadCaseForces> GetSupportForcesAsync(int supportId, int loadCaseId);
+
+        /// <summary>Reads qualified native static-check load and reaction totals for one case.</summary>
+        /// <param name="loadCaseId">Positive native load-case reference number. This method does not activate, analyze or independently resolve the case.</param>
+        /// <returns>An already completed successful task containing a new detached StaticCheckResult with the requested LoadCaseId and independent six-component loads/reactions. Validation, guard and native failures are returned as faulted tasks and rethrown when awaited. Unsuccessful native retrieval throws; no partial or initialized zero record is returned.</returns>
+        /// <remarks><para>Uses one native GetStaticCheckResult(loadCaseId, ref loads, ref reactions) call under the current Output binding. Six-Double buffers start with NaN sentinels. Requires Boolean true or integral one success; false/zero throws and malformed status is rejected. Every successful output must be a rank-one array of exactly six finite written Doubles in Fx,Fy,Fz,Mx,My,Mz order. Replacement arrays and nonzero lower bounds are copied; native storage is never retained.</para>
+        /// <para>Copies loads and reactions independently only after both arrays qualify. Preserves native units, axes, moment reference point and signs without a managed transform or balance assumption. Differentials computes component-wise Forces minus Reactions from current editable data; it is not an equilibrium tolerance or engineering acceptance check. No live freshness or cross-version qualification is implied.</para>
+        /// <para>Returned records are editable detached metadata. Mutations never update STAAD; manual model construction/setters are unvalidated. Each call owns new result/component storage, even when native arrays are reused or aliased.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared Output binding/lifetime/reentrancy lease covering validation, dispatch and qualification. Reacquire adapters after refresh. Disposed, stale/manual-noncurrent, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw calls, other wrappers and external UI are outside this guard. Original exceptions and HRESULTs propagate; the lease is released on failure.</para>
+        /// <para>The task-shaped API performs all native work before returning its settled task; it can block the calling thread. It does not queue COM on Task.Run, change apartments, marshal to a UI dispatcher or add cancellation/parallelism. Call it on the owning thread and await to observe failures.</para>
+        /// <para>No analysis, case activation, selection, save, native mutation, unit conversion, retry or rollback is introduced.</para></remarks>
+        /// <exception cref="ArgumentOutOfRangeException">loadCaseId is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, native retrieval is unsuccessful, or a successful output/status is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates, including its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetStaticCheckResultAsync(1).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.LoadCaseId + ": " + result.Forces.Fy);
+        /// </code></example>
+        Task<StaticCheckResult> GetStaticCheckResultAsync(int loadCaseId);
     }
 }

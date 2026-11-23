@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261123</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261123.1</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
-    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction, static-check and plate-center stress queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
-    <PackageReleaseNotes>Ported static-check batch overloads and task query plus synchronous/task plate-center stress reads with complete matching XML IntelliSense. Preserved duplicate static observations, sequential owner-thread COM, strict native success/buffer qualification and copied result storage. Reused existing static results and added detached plate identity/scalar stress context without UI or unit-service dependencies. Thirty Output contracts are available; see the static-check batches and plate-center stresses guide for usage and native qualification limits.</PackageReleaseNotes>
+    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction, static-check and plate-center moment/surface-stress queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
+    <PackageReleaseNotes>Ported GetPlateCenterMoments and GetPlateCenterVonMises with their task variants, plus GetPlatePrincipalStresses, with complete matching XML IntelliSense. Added detached scalar/context models preserving local moments per width, native top/bottom von Mises and in-plane principal stress outputs. Qualified native success, every written finite Double and exact three-component moment arrays with independent copied values. Retained current-binding/constructing-thread guards and settled-task execution without worker COM. Thirty-five Output contracts are available; see the plate moments and surface stresses guide for usage and qualification limits.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -44,6 +44,7 @@
     <None Include="../../docs/Member-Batch-Queries.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Steel-Design-Records.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Static-Check-Batches-and-Plate-Center-Stresses.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Plate-Center-Moments-and-Surface-Stresses.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Support-Reactions-and-Static-Checks.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Load-Case-Metadata.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Member-Force-Queries.md" Pack="true" PackagePath="docs/" />

@@ -784,5 +784,130 @@ namespace StaadPro.Interop.Core.Adapters.Models
             catch (Exception error) { return Task.FromException<PlateCenterForces>(error); }
         }
 
+
+        /// <summary>Reads three qualified local plate-center bending and twisting moments per unit width.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive native reference ID. Only Id is read, once; Title/Type/CaseType are unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive native number. Only Id is read, once; no corners/geometry are required.</param>
+        /// <returns>A new detached PlateCenterMoments retaining the supplied context references with independently copied qualified components. Failed retrieval or malformed/unwritten data produces no result.</returns>
+        /// <remarks><para>Calls GetAllPlateCenterMoments once with plate ID, case ID and a by-reference three-Double buffer. Requires an exact rank-one length-three Double array; replacements and nonzero lower bounds are copied. Output order is MX,MY,MXY: moments per unit width about local X face, local Y face and twisting in the local X-Y plane. Units are native moment/width, for example kN-m/m, not nodal/member moments or membrane stresses.</para>
+        /// <para>Captures positive loadCase.Id and plate.Id once under the current Output lease. Other case metadata and plate geometry are unused. Retains the caller-owned LoadCase and Plate references without copying; later metadata edits may show different IDs without recomputing queried values. All result scalars are independently copied. Manual model construction/setters are unvalidated and do not update STAAD or raise notifications.</para>
+        /// <para>Requires Boolean true or integral one success. False/zero throws; malformed status codes/types are rejected. Each output starts as an unwritten NaN Double sentinel. All successful components must be fully written finite Doubles; no integer/string/decimal coercion, default-zero fallback, sign normalization or partial result is allowed. Fully written zero, signed and finite extreme values are retained literally.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared current Output binding/lifetime/reentrancy lease spanning ID capture, validation, dispatch and qualification. Reacquire adapters after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal fail before native access. The lease is released on failure and original exceptions/HRESULTs propagate. Raw native calls, other wrappers and external UI remain uncoordinated; sequential observations and mutable context references are not atomic.</para>
+        /// <para>No analysis, activation, geometry hydration, selection, save, unit conversion, coordinate transformation, Wood-Armer calculation, retry or native mutation is introduced. Native top/bottom/axis labels, sign conventions and current result units are preserved. Result freshness, cross-version qualification and engineering acceptance are not certified.</para></remarks>
+        /// <exception cref="ArgumentNullException">loadCase or plate is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A supplied case or plate ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval is unsuccessful, or native status/components have unsupported types, shape, unwritten or nonfinite values.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterMoments(loadCase, plate);
+        /// Console.WriteLine(result.Mx);
+        /// </code></example>
+        public PlateCenterMoments GetPlateCenterMoments(ILoadCase loadCase, Plate plate) => Wrapper.UseOutputBinding(this, wrapper => PlateSurfaceReader.Moments(wrapper.RawOutput, loadCase, plate));
+
+        /// <summary>Reads three qualified local plate-center bending and twisting moments per unit width.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive native reference ID. Only Id is read, once; Title/Type/CaseType are unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive native number. Only Id is read, once; no corners/geometry are required.</param>
+        /// <returns>An already settled successful task containing a new detached PlateCenterMoments retaining the supplied context references with independently copied qualified components. Failed retrieval or malformed/unwritten data produces no result. Validation, binding and native failures are returned as faulted tasks and rethrown when awaited.</returns>
+        /// <remarks><para>Calls GetAllPlateCenterMoments once with plate ID, case ID and a by-reference three-Double buffer. Requires an exact rank-one length-three Double array; replacements and nonzero lower bounds are copied. Output order is MX,MY,MXY: moments per unit width about local X face, local Y face and twisting in the local X-Y plane. Units are native moment/width, for example kN-m/m, not nodal/member moments or membrane stresses.</para>
+        /// <para>Captures positive loadCase.Id and plate.Id once under the current Output lease. Other case metadata and plate geometry are unused. Retains the caller-owned LoadCase and Plate references without copying; later metadata edits may show different IDs without recomputing queried values. All result scalars are independently copied. Manual model construction/setters are unvalidated and do not update STAAD or raise notifications.</para>
+        /// <para>Requires Boolean true or integral one success. False/zero throws; malformed status codes/types are rejected. Each output starts as an unwritten NaN Double sentinel. All successful components must be fully written finite Doubles; no integer/string/decimal coercion, default-zero fallback, sign normalization or partial result is allowed. Fully written zero, signed and finite extreme values are retained literally.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared current Output binding/lifetime/reentrancy lease spanning ID capture, validation, dispatch and qualification. Reacquire adapters after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal fail before native access. The lease is released on failure and original exceptions/HRESULTs propagate. Raw native calls, other wrappers and external UI remain uncoordinated; sequential observations and mutable context references are not atomic.</para>
+        /// <para>No analysis, activation, geometry hydration, selection, save, unit conversion, coordinate transformation, Wood-Armer calculation, retry or native mutation is introduced. Native top/bottom/axis labels, sign conventions and current result units are preserved. Result freshness, cross-version qualification and engineering acceptance are not certified.</para>
+        /// <para>The task-shaped API performs native work before returning its completed/faulted task and can block the caller. It does not queue Task.Run, marshal to a UI dispatcher, switch apartments or add cancellation/parallel COM work. Invoke on the owning thread and await to observe faults.</para></remarks>
+        /// <exception cref="ArgumentNullException">loadCase or plate is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A supplied case or plate ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval is unsuccessful, or native status/components have unsupported types, shape, unwritten or nonfinite values.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterMomentsAsync(loadCase, plate).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Mx);
+        /// </code></example>
+        public Task<PlateCenterMoments> GetPlateCenterMomentsAsync(ILoadCase loadCase, Plate plate)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateSurfaceReader.Moments(wrapper.RawOutput, loadCase, plate))); }
+            catch (Exception error) { return Task.FromException<PlateCenterMoments>(error); }
+        }
+
+        /// <summary>Reads qualified native top and bottom plate-center von Mises stresses.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive native reference ID. Only Id is read, once; Title/Type/CaseType are unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive native number. Only Id is read, once; no corners/geometry are required.</param>
+        /// <returns>A new detached PlateCenterVonMises retaining the supplied context references with independently copied qualified components. Failed retrieval or malformed/unwritten data produces no result.</returns>
+        /// <remarks><para>Calls GetPlateCenterVonMisesStresses once with plate ID, case ID and distinct by-reference Double outputs, ordered top then bottom. Components use native force/length-squared units and native surface labels, not global elevation labels. AbsoluteMaximum recomputes the larger current absolute component without changing data or comparing an allowable stress.</para>
+        /// <para>Captures positive loadCase.Id and plate.Id once under the current Output lease. Other case metadata and plate geometry are unused. Retains the caller-owned LoadCase and Plate references without copying; later metadata edits may show different IDs without recomputing queried values. All result scalars are independently copied. Manual model construction/setters are unvalidated and do not update STAAD or raise notifications.</para>
+        /// <para>Requires Boolean true or integral one success. False/zero throws; malformed status codes/types are rejected. Each output starts as an unwritten NaN Double sentinel. All successful components must be fully written finite Doubles; no integer/string/decimal coercion, default-zero fallback, sign normalization or partial result is allowed. Fully written zero, signed and finite extreme values are retained literally.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared current Output binding/lifetime/reentrancy lease spanning ID capture, validation, dispatch and qualification. Reacquire adapters after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal fail before native access. The lease is released on failure and original exceptions/HRESULTs propagate. Raw native calls, other wrappers and external UI remain uncoordinated; sequential observations and mutable context references are not atomic.</para>
+        /// <para>No analysis, activation, geometry hydration, selection, save, unit conversion, coordinate transformation, Wood-Armer calculation, retry or native mutation is introduced. Native top/bottom/axis labels, sign conventions and current result units are preserved. Result freshness, cross-version qualification and engineering acceptance are not certified.</para></remarks>
+        /// <exception cref="ArgumentNullException">loadCase or plate is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A supplied case or plate ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval is unsuccessful, or native status/components have unsupported types, shape, unwritten or nonfinite values.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterVonMises(loadCase, plate);
+        /// Console.WriteLine(result.Top);
+        /// </code></example>
+        public PlateCenterVonMises GetPlateCenterVonMises(ILoadCase loadCase, Plate plate) => Wrapper.UseOutputBinding(this, wrapper => PlateSurfaceReader.VonMises(wrapper.RawOutput, loadCase, plate));
+
+        /// <summary>Reads qualified native top and bottom plate-center von Mises stresses.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive native reference ID. Only Id is read, once; Title/Type/CaseType are unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive native number. Only Id is read, once; no corners/geometry are required.</param>
+        /// <returns>An already settled successful task containing a new detached PlateCenterVonMises retaining the supplied context references with independently copied qualified components. Failed retrieval or malformed/unwritten data produces no result. Validation, binding and native failures are returned as faulted tasks and rethrown when awaited.</returns>
+        /// <remarks><para>Calls GetPlateCenterVonMisesStresses once with plate ID, case ID and distinct by-reference Double outputs, ordered top then bottom. Components use native force/length-squared units and native surface labels, not global elevation labels. AbsoluteMaximum recomputes the larger current absolute component without changing data or comparing an allowable stress.</para>
+        /// <para>Captures positive loadCase.Id and plate.Id once under the current Output lease. Other case metadata and plate geometry are unused. Retains the caller-owned LoadCase and Plate references without copying; later metadata edits may show different IDs without recomputing queried values. All result scalars are independently copied. Manual model construction/setters are unvalidated and do not update STAAD or raise notifications.</para>
+        /// <para>Requires Boolean true or integral one success. False/zero throws; malformed status codes/types are rejected. Each output starts as an unwritten NaN Double sentinel. All successful components must be fully written finite Doubles; no integer/string/decimal coercion, default-zero fallback, sign normalization or partial result is allowed. Fully written zero, signed and finite extreme values are retained literally.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared current Output binding/lifetime/reentrancy lease spanning ID capture, validation, dispatch and qualification. Reacquire adapters after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal fail before native access. The lease is released on failure and original exceptions/HRESULTs propagate. Raw native calls, other wrappers and external UI remain uncoordinated; sequential observations and mutable context references are not atomic.</para>
+        /// <para>No analysis, activation, geometry hydration, selection, save, unit conversion, coordinate transformation, Wood-Armer calculation, retry or native mutation is introduced. Native top/bottom/axis labels, sign conventions and current result units are preserved. Result freshness, cross-version qualification and engineering acceptance are not certified.</para>
+        /// <para>The task-shaped API performs native work before returning its completed/faulted task and can block the caller. It does not queue Task.Run, marshal to a UI dispatcher, switch apartments or add cancellation/parallel COM work. Invoke on the owning thread and await to observe faults.</para></remarks>
+        /// <exception cref="ArgumentNullException">loadCase or plate is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A supplied case or plate ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval is unsuccessful, or native status/components have unsupported types, shape, unwritten or nonfinite values.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterVonMisesAsync(loadCase, plate).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Top);
+        /// </code></example>
+        public Task<PlateCenterVonMises> GetPlateCenterVonMisesAsync(ILoadCase loadCase, Plate plate)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateSurfaceReader.VonMises(wrapper.RawOutput, loadCase, plate))); }
+            catch (Exception error) { return Task.FromException<PlateCenterVonMises>(error); }
+        }
+
+        /// <summary>Reads four qualified native in-plane normal principal stresses at the plate center.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive native reference ID. Only Id is read, once; Title/Type/CaseType are unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive native number. Only Id is read, once; no corners/geometry are required.</param>
+        /// <returns>A new detached PlatePrincipalStresses retaining the supplied context references with independently copied qualified components. Failed retrieval or malformed/unwritten data produces no result.</returns>
+        /// <remarks><para>Calls GetPlateCenterNormalPrincipalStresses once with plate ID, case ID and four by-reference Double outputs, ordered maximum top, minimum top, maximum bottom, minimum bottom. Components use native force/length-squared units. Copies named outputs without sorting, recalculating principal stresses/directions/angles or imposing an acceptance criterion.</para>
+        /// <para>Captures positive loadCase.Id and plate.Id once under the current Output lease. Other case metadata and plate geometry are unused. Retains the caller-owned LoadCase and Plate references without copying; later metadata edits may show different IDs without recomputing queried values. All result scalars are independently copied. Manual model construction/setters are unvalidated and do not update STAAD or raise notifications.</para>
+        /// <para>Requires Boolean true or integral one success. False/zero throws; malformed status codes/types are rejected. Each output starts as an unwritten NaN Double sentinel. All successful components must be fully written finite Doubles; no integer/string/decimal coercion, default-zero fallback, sign normalization or partial result is allowed. Fully written zero, signed and finite extreme values are retained literally.</para>
+        /// <para>Runs synchronously on the wrapper constructing COM thread under one shared current Output binding/lifetime/reentrancy lease spanning ID capture, validation, dispatch and qualification. Reacquire adapters after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal fail before native access. The lease is released on failure and original exceptions/HRESULTs propagate. Raw native calls, other wrappers and external UI remain uncoordinated; sequential observations and mutable context references are not atomic.</para>
+        /// <para>No analysis, activation, geometry hydration, selection, save, unit conversion, coordinate transformation, Wood-Armer calculation, retry or native mutation is introduced. Native top/bottom/axis labels, sign conventions and current result units are preserved. Result freshness, cross-version qualification and engineering acceptance are not certified.</para></remarks>
+        /// <exception cref="ArgumentNullException">loadCase or plate is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A supplied case or plate ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval is unsuccessful, or native status/components have unsupported types, shape, unwritten or nonfinite values.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlatePrincipalStresses(loadCase, plate);
+        /// Console.WriteLine(result.SmaxTop);
+        /// </code></example>
+        public PlatePrincipalStresses GetPlatePrincipalStresses(ILoadCase loadCase, Plate plate) => Wrapper.UseOutputBinding(this, wrapper => PlateSurfaceReader.Principal(wrapper.RawOutput, loadCase, plate));
     }
 }

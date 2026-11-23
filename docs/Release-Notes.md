@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261123.1 - 23 November 2026
+
+Added `GetPlateCenterMoments(ILoadCase loadCase, Plate plate)`, `GetPlateCenterMomentsAsync(...)`, `GetPlateCenterVonMises(ILoadCase loadCase, Plate plate)`, `GetPlateCenterVonMisesAsync(...)` and `GetPlatePrincipalStresses(ILoadCase loadCase, Plate plate)` with complete matching interface/adapter XML IntelliSense. See [plate-center moments and surface stresses](Plate-Center-Moments-and-Surface-Stresses.md).
+
+Preserved native local MX/MY/MXY moment-per-width values, top/bottom von Mises stress and maximum/minimum top/bottom in-plane principal stress output order. Added the scalar/context portions of `PlateCenterMoments`, `PlateCenterVonMises` and `PlatePrincipalStresses`, retaining supplied case/plate references and copied editable scalar values. No units, signs, surface labels or principal values are transformed or inferred. Unit-service, transformation and Wood-Armer helpers remain outside this model subset.
+
+Qualified native Boolean/integral success and every written finite Double, with NaN sentinels preventing initialized-zero results. Moment arrays require exact rank/length/type and support copied replacements/nonzero bounds. All five APIs retain the shared current-binding, constructing-thread, lifetime and reentrancy lease. Async variants perform native reads synchronously before returning settled tasks and preserve original failures/HRESULTs.
+
+Release build passed with zero warnings/errors and 2,762 offline tests, including 215 new cases. Exact installed-package checks verify nineteen Load/thirty-five Output contracts, matching expanded IntelliSense, 233 compiled XML examples, README/twenty-one guide examples, surface-query native stand-ins and archive/dependency isolation. No new live native, cross-version or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261123 - 23 November 2026
 
 Ported both `GetStaticCheckResults` overloads, `GetStaticCheckResultsAsync`, `GetPlateCenterForces` and `GetPlateCenterForcesAsync` with comprehensive matching interface/adapter XML IntelliSense. Output now exposes thirty contracts. See [static-check batches and plate-center stresses](Static-Check-Batches-and-Plate-Center-Stresses.md) for method differences and examples.

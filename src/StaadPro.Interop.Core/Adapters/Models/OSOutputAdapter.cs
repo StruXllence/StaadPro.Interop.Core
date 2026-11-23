@@ -577,5 +577,212 @@ namespace StaadPro.Interop.Core.Adapters.Models
             try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => SupportResultReader.ReadStaticCheck(wrapper.RawOutput, loadCaseId))); }
             catch (Exception error) { return Task.FromException<StaticCheckResult>(error); }
         }
+        /// <summary>Reads qualified static-check totals for every supplied load-case occurrence.</summary>
+        /// <param name="loadCaseIds">Non-null sequence of positive native load-case IDs, enumerated once and fully validated
+        /// before native access. At most 100,000 occurrences, including duplicates. Empty input makes no native calls.</param>
+        /// <returns>A new, non-null HashSet of independent StaticCheckResult records; empty input returns a fresh empty set. Each input occurrence creates a distinct record, including repeated IDs; iteration order is unspecified. No partial set escapes on failure.</returns>
+        /// <remarks><para>Materializes the complete ID sequence before one native GetStaticCheckResult call per occurrence,
+        /// in captured input order. Duplicate IDs are deliberately not deduplicated: the HashSet uses result-object identity.
+        /// This differs from the single-case task query and from unique-ID inventory/filter methods. Input enumeration and
+        /// validation failures precede all native calls; later native failure stops remaining calls and discards the local result.</para>
+        /// <para>Reuses the same strict single-case reader: Boolean true/integral one success, two separate NaN-marked
+        /// six-Double by-reference arrays and fully written finite Fx,Fy,Fz,Mx,My,Mz outputs. Replacement arrays,
+        /// nonzero lower bounds and aliased native buffers are copied into independent records. Failed/unwritten data
+        /// never become apparent zero loads. Returned records retain native units, axes, moment reference and signs.</para>
+        /// <para>StaticCheckResult is editable detached metadata. Differentials is literal component-wise loads minus
+        /// reactions, not an equilibrium tolerance or engineering acceptance. Re-enumeration performs no COM reads.
+        /// Earlier successful read effects cannot be rolled back, and a batch is not an atomic model snapshot.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one shared current Output
+        /// operation lease spanning input capture, validation, native calls and output qualification.
+        /// Reacquire wrapper.Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread
+        /// and reentrant Root/Load/Output/refresh/disposal work is rejected before native access.
+        /// Raw objects, other wrappers and external UI are not coordinated. Observations are not atomic.
+        /// No analysis, activation, selection, save, unit conversion, retry, fallback or rollback is added.
+        /// Original native failures/HRESULTs propagate; the lease is released on failure. COM calls may block.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">loadCaseIds is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A case ID is not positive.</exception>
+        /// <exception cref="ArgumentException">The input contains more than 100,000 case occurrences.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval failed, or native status/output is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native member signature is unavailable.</exception>
+        /// <example><code>
+        /// var results = wrapper.Output.GetStaticCheckResults(new[] { 1, 2, 1 });
+        /// Console.WriteLine(results.Count); // three separate records, including both observations of case 1
+        /// </code></example>
+        public HashSet<StaticCheckResult> GetStaticCheckResults(IEnumerable<int> loadCaseIds)
+        {
+            return Wrapper.UseOutputBinding(this, wrapper => StaticCheckBatchReader.Read(wrapper.RawOutput, loadCaseIds));
+        }
+
+        /// <summary>Reads a static-check batch with a validated source-compatible thread-count argument.</summary>
+        /// <param name="loadCaseIds">Non-null sequence of positive native load-case IDs, enumerated once and fully validated
+        /// before native access. At most 100,000 occurrences, including duplicates. Empty input makes no native calls.</param>
+        /// <param name="nThreads">Compatibility thread-count hint in the source-supported range 1 through 512. Validated before input enumeration; native calls remain sequential on the owner COM thread for every value.</param>
+        /// <returns>A new, non-null HashSet of independent StaticCheckResult records; empty input returns a fresh empty set. Each input occurrence creates a distinct record, including repeated IDs; iteration order is unspecified. No partial set escapes on failure.</returns>
+        /// <remarks><para>Materializes the complete ID sequence before one native GetStaticCheckResult call per occurrence,
+        /// in captured input order. Duplicate IDs are deliberately not deduplicated: the HashSet uses result-object identity.
+        /// This differs from the single-case task query and from unique-ID inventory/filter methods. Input enumeration and
+        /// validation failures precede all native calls; later native failure stops remaining calls and discards the local result.</para>
+        /// <para>Reuses the same strict single-case reader: Boolean true/integral one success, two separate NaN-marked
+        /// six-Double by-reference arrays and fully written finite Fx,Fy,Fz,Mx,My,Mz outputs. Replacement arrays,
+        /// nonzero lower bounds and aliased native buffers are copied into independent records. Failed/unwritten data
+        /// never become apparent zero loads. Returned records retain native units, axes, moment reference and signs.</para>
+        /// <para>StaticCheckResult is editable detached metadata. Differentials is literal component-wise loads minus
+        /// reactions, not an equilibrium tolerance or engineering acceptance. Re-enumeration performs no COM reads.
+        /// Earlier successful read effects cannot be rolled back, and a batch is not an atomic model snapshot.</para>
+        /// <para>The nThreads overload retains source call compatibility but never invokes parallel COM or PLINQ. Use the overload without nThreads for new code; increasing this hint does not increase native concurrency or change results.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one shared current Output
+        /// operation lease spanning input capture, validation, native calls and output qualification.
+        /// Reacquire wrapper.Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread
+        /// and reentrant Root/Load/Output/refresh/disposal work is rejected before native access.
+        /// Raw objects, other wrappers and external UI are not coordinated. Observations are not atomic.
+        /// No analysis, activation, selection, save, unit conversion, retry, fallback or rollback is added.
+        /// Original native failures/HRESULTs propagate; the lease is released on failure. COM calls may block.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">loadCaseIds is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A case ID is not positive, or nThreads is outside 1 through 512.</exception>
+        /// <exception cref="ArgumentException">The input contains more than 100,000 case occurrences.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval failed, or native status/output is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native member signature is unavailable.</exception>
+        /// <example><code>
+        /// var results = wrapper.Output.GetStaticCheckResults(new[] { 1, 2 }, nThreads: 2);
+        /// Console.WriteLine(results.Count); // native calls still run sequentially on this thread
+        /// </code></example>
+        public HashSet<StaticCheckResult> GetStaticCheckResults(IEnumerable<int> loadCaseIds, int nThreads)
+        {
+            return Wrapper.UseOutputBinding(this, wrapper => StaticCheckBatchReader.Read(wrapper.RawOutput, loadCaseIds, nThreads));
+        }
+
+        /// <summary>Reads qualified static-check totals as an already settled task on the owning thread.</summary>
+        /// <param name="loadCaseIds">Non-null sequence of positive native load-case IDs, enumerated once and fully validated
+        /// before native access. At most 100,000 occurrences, including duplicates. Empty input makes no native calls.</param>
+        /// <returns>An already completed task containing a new HashSet of independent StaticCheckResult records, or an already faulted task for validation, lifetime or native failure. Await to observe the original exception. Each input occurrence creates a distinct record, including repeated IDs; iteration order is unspecified. No partial set escapes on failure.</returns>
+        /// <remarks><para>Materializes the complete ID sequence before one native GetStaticCheckResult call per occurrence,
+        /// in captured input order. Duplicate IDs are deliberately not deduplicated: the HashSet uses result-object identity.
+        /// This differs from the single-case task query and from unique-ID inventory/filter methods. Input enumeration and
+        /// validation failures precede all native calls; later native failure stops remaining calls and discards the local result.</para>
+        /// <para>Reuses the same strict single-case reader: Boolean true/integral one success, two separate NaN-marked
+        /// six-Double by-reference arrays and fully written finite Fx,Fy,Fz,Mx,My,Mz outputs. Replacement arrays,
+        /// nonzero lower bounds and aliased native buffers are copied into independent records. Failed/unwritten data
+        /// never become apparent zero loads. Returned records retain native units, axes, moment reference and signs.</para>
+        /// <para>StaticCheckResult is editable detached metadata. Differentials is literal component-wise loads minus
+        /// reactions, not an equilibrium tolerance or engineering acceptance. Re-enumeration performs no COM reads.
+        /// Earlier successful read effects cannot be rolled back, and a batch is not an atomic model snapshot.</para>
+        /// <para>Performs enumeration, validation and all COM reads before returning its settled task; invocation can block. Uses no Task.Run, apartment switch, UI dispatch, cancellation or worker parallelism. Calling from another thread returns a faulted task before input enumeration or native access.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one shared current Output
+        /// operation lease spanning input capture, validation, native calls and output qualification.
+        /// Reacquire wrapper.Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread
+        /// and reentrant Root/Load/Output/refresh/disposal work is rejected before native access.
+        /// Raw objects, other wrappers and external UI are not coordinated. Observations are not atomic.
+        /// No analysis, activation, selection, save, unit conversion, retry, fallback or rollback is added.
+        /// Original native failures/HRESULTs propagate; the lease is released on failure. COM calls may block.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">loadCaseIds is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A case ID is not positive.</exception>
+        /// <exception cref="ArgumentException">The input contains more than 100,000 case occurrences.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval failed, or native status/output is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native member signature is unavailable.</exception>
+        /// <example><code>
+        /// var results = wrapper.Output.GetStaticCheckResultsAsync(new[] { 1, 2 }).GetAwaiter().GetResult();
+        /// foreach (var result in results) Console.WriteLine(result.LoadCaseId);
+        /// </code></example>
+        public Task<HashSet<StaticCheckResult>> GetStaticCheckResultsAsync(IEnumerable<int> loadCaseIds)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => StaticCheckBatchReader.Read(wrapper.RawOutput, loadCaseIds))); }
+            catch (Exception error) { return Task.FromException<HashSet<StaticCheckResult>>(error); }
+        }
+
+        /// <summary>Reads five local plate-center shear and membrane stresses for one plate and case.</summary>
+        /// <param name="loadCase">Non-null metadata with positive Id, captured once before dispatch. Title, Type and CaseType are not read; this method does not activate the case, qualify its family or query metadata.</param>
+        /// <param name="plate">Non-null analytical plate metadata with positive Id, captured once. Geometry/corners are not required, read or hydrated. Native model membership and result readiness are caller responsibilities.</param>
+        /// <returns>A new PlateCenterForces containing fully qualified Sqx, Sqy, Sx, Sy and Sxy values. Components are independent of native storage; supplied LoadCase and Plate references are retained rather than cloned.</returns>
+        /// <remarks><para>Calls GetAllPlateCenterForces(plateId, loadCaseId, ref buffer) once using five Double NaN
+        /// sentinels. Requires Boolean true or integral one success, then an exactly length-five rank-one Double array
+        /// with every component written and finite. Replacement arrays/nonzero lower bounds are copied. False/zero,
+        /// unknown flags, malformed types/shapes, partial/unwritten values and native errors throw; no zero fallback.</para>
+        /// <para>The native order is SQX, SQY, SX, SY, SXY: local-X-face Z-direction shear, local-Y-face Z-direction shear,
+        /// normal X membrane stress, normal Y membrane stress and in-plane XY shear. Despite the inherited Forces name,
+        /// these are STRESSES in native force/length-squared units, not nodal/member forces, plate bending moments,
+        /// principal stresses or corner results. Native local axes/signs remain unchanged; no rotation or area scaling.</para>
+        /// <para>Uses captured positive IDs only. Result context references remain caller-owned mutable metadata;
+        /// later Id edits can differ from the identity actually queried, without changing captured components.
+        /// Retain requested IDs externally when immutable provenance is needed. Scalar setters/manual constructors
+        /// are unvalidated, have no result notifications and do not write to STAAD. This ports scalar/context support,
+        /// not the original conversion/WPF/full Plate geometry APIs. No solver or engineering acceptance is inferred.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one shared current Output
+        /// operation lease spanning input capture, validation, native calls and output qualification.
+        /// Reacquire wrapper.Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread
+        /// and reentrant Root/Load/Output/refresh/disposal work is rejected before native access.
+        /// Raw objects, other wrappers and external UI are not coordinated. Observations are not atomic.
+        /// No analysis, activation, selection, save, unit conversion, retry, fallback or rollback is added.
+        /// Original native failures/HRESULTs propagate; the lease is released on failure. COM calls may block.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">loadCase or plate is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The supplied loadCase.Id or plate.Id is not positive; the exception names that object parameter.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval failed, or native status/output is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native member signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 5 };
+        /// var stresses = wrapper.Output.GetPlateCenterForces(loadCase, plate);
+        /// Console.WriteLine(stresses.Sqx + ": " + stresses.Sxy); // local stresses, not resultant forces
+        /// </code></example>
+        public PlateCenterForces GetPlateCenterForces(ILoadCase loadCase, Plate plate)
+        {
+            return Wrapper.UseOutputBinding(this, wrapper => PlateCenterReader.Read(wrapper.RawOutput, loadCase, plate));
+        }
+
+        /// <summary>Reads local plate-center stresses as an already settled owner-thread task.</summary>
+        /// <param name="loadCase">Non-null metadata with positive Id, captured once before dispatch. Title, Type and CaseType are not read; this method does not activate the case, qualify its family or query metadata.</param>
+        /// <param name="plate">Non-null analytical plate metadata with positive Id, captured once. Geometry/corners are not required, read or hydrated. Native model membership and result readiness are caller responsibilities.</param>
+        /// <returns>An already completed task containing a new PlateCenterForces, or an already faulted task preserving validation, lifetime or native failure; await to observe exceptions. Components are independent of native storage; supplied LoadCase and Plate references are retained rather than cloned.</returns>
+        /// <remarks><para>Calls GetAllPlateCenterForces(plateId, loadCaseId, ref buffer) once using five Double NaN
+        /// sentinels. Requires Boolean true or integral one success, then an exactly length-five rank-one Double array
+        /// with every component written and finite. Replacement arrays/nonzero lower bounds are copied. False/zero,
+        /// unknown flags, malformed types/shapes, partial/unwritten values and native errors throw; no zero fallback.</para>
+        /// <para>The native order is SQX, SQY, SX, SY, SXY: local-X-face Z-direction shear, local-Y-face Z-direction shear,
+        /// normal X membrane stress, normal Y membrane stress and in-plane XY shear. Despite the inherited Forces name,
+        /// these are STRESSES in native force/length-squared units, not nodal/member forces, plate bending moments,
+        /// principal stresses or corner results. Native local axes/signs remain unchanged; no rotation or area scaling.</para>
+        /// <para>Uses captured positive IDs only. Result context references remain caller-owned mutable metadata;
+        /// later Id edits can differ from the identity actually queried, without changing captured components.
+        /// Retain requested IDs externally when immutable provenance is needed. Scalar setters/manual constructors
+        /// are unvalidated, have no result notifications and do not write to STAAD. This ports scalar/context support,
+        /// not the original conversion/WPF/full Plate geometry APIs. No solver or engineering acceptance is inferred.</para>
+        /// <para>Performs all validation/native reads before returning the settled task and can block. No Task.Run, apartment switch, UI dispatcher, cancellation or parallel COM is added; a wrong-thread call faults before native access.</para>
+        /// <para>Runs synchronously on the wrapper's constructing COM thread under one shared current Output
+        /// operation lease spanning input capture, validation, native calls and output qualification.
+        /// Reacquire wrapper.Output after RefreshComObjects. Disposed, stale/manual-noncurrent, other-thread
+        /// and reentrant Root/Load/Output/refresh/disposal work is rejected before native access.
+        /// Raw objects, other wrappers and external UI are not coordinated. Observations are not atomic.
+        /// No analysis, activation, selection, save, unit conversion, retry, fallback or rollback is added.
+        /// Original native failures/HRESULTs propagate; the lease is released on failure. COM calls may block.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">loadCase or plate is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The supplied loadCase.Id or plate.Id is not positive; the exception names that object parameter.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval failed, or native status/output is malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The required native member signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 5 };
+        /// var stresses = wrapper.Output.GetPlateCenterForcesAsync(loadCase, plate).GetAwaiter().GetResult();
+        /// Console.WriteLine(stresses.Sqx + ": " + stresses.Sxy); // local stresses, not resultant forces
+        /// </code></example>
+        public Task<PlateCenterForces> GetPlateCenterForcesAsync(ILoadCase loadCase, Plate plate)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCenterReader.Read(wrapper.RawOutput, loadCase, plate))); }
+            catch (Exception error) { return Task.FromException<PlateCenterForces>(error); }
+        }
+
     }
 }

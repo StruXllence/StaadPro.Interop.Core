@@ -1,5 +1,17 @@
 # Release notes
 
+## 1.0.0-preview.20261123 - 23 November 2026
+
+Ported both `GetStaticCheckResults` overloads, `GetStaticCheckResultsAsync`, `GetPlateCenterForces` and `GetPlateCenterForcesAsync` with comprehensive matching interface/adapter XML IntelliSense. Output now exposes thirty contracts. See [static-check batches and plate-center stresses](Static-Check-Batches-and-Plate-Center-Stresses.md) for method differences and examples.
+
+Static-check batches capture and validate the complete bounded ID sequence before native access, preserve repeated IDs as independent observations and return no partial set on failure. The thread-count compatibility overload validates 1–512 while keeping all COM work sequential on the constructing thread. Task variants complete native work before returning settled tasks.
+
+Plate-center queries qualify native success and fully written finite five-Double stress arrays, preserve local SQX/SQY/SX/SY/SXY order and copy components out of native storage. Reused existing result types and added detached Plate identity and scalar/context plate-stress support without unit-service or UI dependencies. Metadata references remain caller-owned and mutable; no stress-to-force conversion or full geometry hydration is implied.
+
+Passed a zero-warning Release build and **2,547 offline tests**, including **93 new cases**. The exact installed package verifies thirty Output signatures, matching expanded XML, **223 compiled XML examples**, README and **twenty Root/domain guides**, stand-in batch/stress behavior, model documentation and restored archive equality. No live native read, mutation or new runtime/engineering qualification was performed.
+
+
+
 ## 1.0.0-preview.20261122 - 22 November 2026
 
 Added `GetSupportReactions(int supportId, int loadCaseId)`, `GetSupportForces(int supportId, int loadCaseId)`, `GetSupportReactionsAsync(...)`, `GetSupportForcesAsync(...)` and `GetStaticCheckResultAsync(int loadCaseId)` with complete matching interface/adapter XML IntelliSense. See [support reactions and static checks](Support-Reactions-and-Static-Checks.md).

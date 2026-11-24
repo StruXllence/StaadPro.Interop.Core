@@ -41,7 +41,7 @@ namespace StaadPro.Interop.Core.Services.Output
                 throw new InvalidOperationException("OpenSTAAD could not retrieve " + operation + ".");
         }
 
-        private static Forces ReadForces(object buffer, string description)
+        internal static Forces ReadForces(object buffer, string description)
         {
             if (buffer is not Array array || array.Rank != 1 || array.Length != 6 ||
                 array.GetType().GetElementType() != typeof(double))

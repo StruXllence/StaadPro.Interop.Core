@@ -39,6 +39,12 @@ namespace StaadPro.Interop.Core.Services.Output
             return results.AsReadOnly();
         }
 
+        internal static IEnumerable<PlateCenterResults> ReadBatch(object output, IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates, int nThreads)
+        {
+            if (nThreads < 1 || nThreads > 512) throw new ArgumentOutOfRangeException(nameof(nThreads));
+            return ReadBatch(output, loadCases, plates);
+        }
+
         private static List<Entry<T>> Capture<T>(IEnumerable<T> input, Func<T, int> getId, string parameter) where T : class
         {
             var entries = new List<Entry<T>>();

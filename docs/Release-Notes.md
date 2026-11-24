@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261124.1 - 24 November 2026
+
+Ported the `GetPlateCenterResults(..., int nThreads)` compatibility overload and single/all-corners `GetPlateCornerForces` queries with their task variants, with complete matching interface/adapter XML IntelliSense. Output now provides forty-five contracts. See [plate-corner forces](Plate-Corner-Forces.md) for method choices, incidence resolution, native status conventions and execution behavior.
+
+Added source-based `PlateCornerForces`, immutable value key and indexed result-set models, reusing `Forces` and existing entity metadata. Extended `Plate` with optional A/B/C/D references without porting the complete Geometry API. Single-corner queries can hydrate incomplete incidence into new detached metadata; all-corners queries require supplied incidence and retain first A/B/C/D references per positive node ID. Queries and indexes use captured identities, and every six-component buffer is copied independently.
+
+Qualified Boolean/integral-one force success, integral-zero plate-incidence success and documented-void coordinate retrieval separately. NaN/invalid-ID sentinels reject unwritten or malformed outputs. Read-only result-set membership and captured-key filters remain stable after metadata edits; no partial set escapes a later failure. Task methods finish on the owning COM thread before returning settled success/fault tasks. The thread-count hint validates 1..512 while preserving sequential native work. No rotation, unit conversion, analysis, save or native mutation is introduced.
+
+Release build passed with zero warnings/errors and all 3,045 offline tests, including 128 new cases. Exact installed-package checks verify nineteen Load/forty-five Output contracts, matching expanded IntelliSense, named model/index semantics, 253 compiled XML examples, README/twenty-three guides, native stand-ins and isolated restore/build/runtime/archive equality. No new live native, cross-version runtime or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261124 - 24 November 2026
 
 Ported `GetPlatePrincipalStressesAsync`, single and batch `GetPlateCenterResults`, and their task variants with complete matching interface/adapter XML IntelliSense. Output now exposes forty contracts. See [plate-center composite results](Plate-Center-Composite-Results.md) for method choices, data meaning, bounds and execution behavior.

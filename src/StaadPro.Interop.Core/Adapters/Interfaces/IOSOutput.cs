@@ -965,5 +965,148 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(System.Linq.Enumerable.First(result).Moments.Mx);
         /// </code></example>
         Task<IEnumerable<PlateCenterResults>> GetPlateCenterResultsAsync(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates);
+
+        /// <summary>Reads complete plate-center result selections using the source-compatible thread-count hint.</summary>
+        /// <param name="loadCases">Non-null sequence of non-null positive-ID case metadata, captured once before plates; at most 100,000 occurrences.</param>
+        /// <param name="plates">Non-null sequence of non-null positive-ID plates, captured once; at most 100,000 occurrences and 100,000 Cartesian pairs.</param>
+        /// <param name="nThreads">Compatibility hint in the source PLINQ range 1 through 512. Validated before input enumeration. Native work remains sequential on the owning COM thread; prefer the overload without this hint.</param>
+        /// <returns>An eager read-only collection of independent plate-center composite records in case-major/plate-minor order. Failed validation/retrieval publishes no partial result collection.</returns>
+        /// <remarks>
+        /// <para>Reuses the non-thread-count composite query, including full once-only input validation before dispatch, 100,000 occurrence/pair bounds, preserved duplicates, four sequential native reads per pair, captured identities and read-only collection storage. The nThreads value does not create workers or concurrent COM, change values/order or relax native qualification. An invalid hint fails even for empty input. Both valid empty dimensions still require the other input to be valid.</para>
+        /// <para>Runs under one current Output binding/lifetime/constructing-thread/reentrancy lease spanning validation, enumeration, optional hydration, every native call and output qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent/disposed/other-thread and reentrant Root/Load/Output/refresh/disposal fail before native work. Raw access, other wrappers and external UI remain uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, retry, fallback or native mutation occurs. Successful reads do not certify result freshness, every native version or engineering validity.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference or sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An analytical ID or thread-count hint is outside its permitted range.</exception>
+        /// <exception cref="ArgumentException">A selection is invalid/oversized, supplied incidence is incomplete/invalid, or the requested node is not a plate corner.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid or native status, incidence, coordinates or components are malformed, unsuccessful, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(a,
+        ///     new StaadPro.Interop.Core.Entities.Node(12, 1, 0, 0),
+        ///     new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1)) { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterResults(new[] { loadCase }, new[] { plate }, 1);
+        /// Console.WriteLine(System.Linq.Enumerable.First(result).Moments.Mx);
+        /// </code></example>
+        IEnumerable<PlateCenterResults> GetPlateCenterResults(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates, int nThreads);
+
+        /// <summary>Reads six native force and moment components at one resolved plate incidence node.</summary>
+        /// <param name="loadCase">Non-null analyzed case/combination metadata. Its positive Id is captured once; other metadata is unused.</param>
+        /// <param name="plate">Non-null positive-ID plate. When A/B/C is incomplete, a new plate is hydrated from the acquired raw Geometry binding without changing the supplied object.</param>
+        /// <param name="cornerNode">Non-null positive incidence-node ID, not ordinal 1/2/3/4. Resolved to the first A/B/C/D node with that ID; the returned context may be a different reference.</param>
+        /// <returns>A new editable PlateCornerForces retaining the case and resolved plate/corner references with six independently copied values. Failed validation/retrieval publishes no partial result.</returns>
+        /// <remarks>
+        /// <para>Calls native GetPlateCornerForces with captured plate number, incidence-node number, case reference and a by-reference six-Double NaN-marked buffer. Requires Boolean true or integral one success; false/zero and malformed status types/codes throw. Every Fx,Fy,Fz,Mx,My,Mz component must be a written finite Double in an exact rank-one six-element Double array. In-place/replacement/nonzero-bound arrays are copied; zeros, signs and finite extremes are retained without fallback, coercion or partial values. These are native nodal force/moment components, not plate-center stresses or moment per width. Native axes and base units are preserved; no coordinate selector, extra rotation, averaging, equilibrium or acceptance calculation is introduced.</para>
+        /// <para>Captures positive requested IDs before any native call. If A/B/C is missing, reads GetPlateIncidence once and requires integral zero success (negative/nonzero/error/Boolean status is rejected). A/B/C must be written positive Int32-compatible IDs; D may be zero or a positive repeated ID. Hydrates each distinct positive node once through documented-void GetNodeCoordinates with NaN-marked XYZ outputs, requiring written finite Doubles. A new detached plate/nodes are returned without modifying supplied metadata. With supplied incidence, no geometry read or coordinate validation is required. All non-null supplied corner IDs must be positive. Resolves the requested ID to the first A/B/C/D incidence reference; non-members fail before force retrieval. This differs from ID-only hydration overloads, which are not included in this increment.</para>
+        /// <para>Retains editable metadata references and copied editable scalar values. Later ID changes can differ from queried IDs and do not rebuild result-set indexes; the result Key property reflects current metadata, whereas set lookups retain captured observation identity. Metadata captures and sequential observations are not atomic. Caller coordinates writers and result provenance. No full plate geometry, unit-service conversion, stress transformation, resultant integration or design helpers are supplied by these supporting models.</para>
+        /// <para>Runs under one current Output binding/lifetime/constructing-thread/reentrancy lease spanning validation, enumeration, optional hydration, every native call and output qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent/disposed/other-thread and reentrant Root/Load/Output/refresh/disposal fail before native work. Raw access, other wrappers and external UI remain uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, retry, fallback or native mutation occurs. Successful reads do not certify result freshness, every native version or engineering validity.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference or sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An analytical ID or thread-count hint is outside its permitted range.</exception>
+        /// <exception cref="ArgumentException">A selection is invalid/oversized, supplied incidence is incomplete/invalid, or the requested node is not a plate corner.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid or native status, incidence, coordinates or components are malformed, unsuccessful, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(a,
+        ///     new StaadPro.Interop.Core.Entities.Node(12, 1, 0, 0),
+        ///     new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1)) { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCornerForces(loadCase, plate, a);
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        PlateCornerForces GetPlateCornerForces(ILoadCase loadCase, Plate plate, Node cornerNode);
+
+        /// <summary>Reads six native force and moment components at one resolved plate incidence node.</summary>
+        /// <param name="loadCase">Non-null analyzed case/combination metadata. Its positive Id is captured once; other metadata is unused.</param>
+        /// <param name="plate">Non-null positive-ID plate. When A/B/C is incomplete, a new plate is hydrated from the acquired raw Geometry binding without changing the supplied object.</param>
+        /// <param name="cornerNode">Non-null positive incidence-node ID, not ordinal 1/2/3/4. Resolved to the first A/B/C/D node with that ID; the returned context may be a different reference.</param>
+        /// <returns>An already settled task containing A new editable PlateCornerForces retaining the case and resolved plate/corner references with six independently copied values. Validation, binding and native failures fault the task and are rethrown when awaited. Failed validation/retrieval publishes no partial result.</returns>
+        /// <remarks>
+        /// <para>Calls native GetPlateCornerForces with captured plate number, incidence-node number, case reference and a by-reference six-Double NaN-marked buffer. Requires Boolean true or integral one success; false/zero and malformed status types/codes throw. Every Fx,Fy,Fz,Mx,My,Mz component must be a written finite Double in an exact rank-one six-element Double array. In-place/replacement/nonzero-bound arrays are copied; zeros, signs and finite extremes are retained without fallback, coercion or partial values. These are native nodal force/moment components, not plate-center stresses or moment per width. Native axes and base units are preserved; no coordinate selector, extra rotation, averaging, equilibrium or acceptance calculation is introduced.</para>
+        /// <para>Captures positive requested IDs before any native call. If A/B/C is missing, reads GetPlateIncidence once and requires integral zero success (negative/nonzero/error/Boolean status is rejected). A/B/C must be written positive Int32-compatible IDs; D may be zero or a positive repeated ID. Hydrates each distinct positive node once through documented-void GetNodeCoordinates with NaN-marked XYZ outputs, requiring written finite Doubles. A new detached plate/nodes are returned without modifying supplied metadata. With supplied incidence, no geometry read or coordinate validation is required. All non-null supplied corner IDs must be positive. Resolves the requested ID to the first A/B/C/D incidence reference; non-members fail before force retrieval. This differs from ID-only hydration overloads, which are not included in this increment.</para>
+        /// <para>Retains editable metadata references and copied editable scalar values. Later ID changes can differ from queried IDs and do not rebuild result-set indexes; the result Key property reflects current metadata, whereas set lookups retain captured observation identity. Metadata captures and sequential observations are not atomic. Caller coordinates writers and result provenance. No full plate geometry, unit-service conversion, stress transformation, resultant integration or design helpers are supplied by these supporting models.</para>
+        /// <para>Runs under one current Output binding/lifetime/constructing-thread/reentrancy lease spanning validation, enumeration, optional hydration, every native call and output qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent/disposed/other-thread and reentrant Root/Load/Output/refresh/disposal fail before native work. Raw access, other wrappers and external UI remain uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, retry, fallback or native mutation occurs. Successful reads do not certify result freshness, every native version or engineering validity.</para>
+        /// <para>All work executes synchronously before returning a successful/faulted task; invocation can block. Awaiting does not dispatch COM. Source Task.Run behavior is replaced with settled owning-thread tasks; no worker concurrency, apartment switch, cancellation or UI dispatcher is used. Prefer the synchronous counterpart when a task shape is unnecessary.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference or sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An analytical ID or thread-count hint is outside its permitted range.</exception>
+        /// <exception cref="ArgumentException">A selection is invalid/oversized, supplied incidence is incomplete/invalid, or the requested node is not a plate corner.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid or native status, incidence, coordinates or components are malformed, unsuccessful, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(a,
+        ///     new StaadPro.Interop.Core.Entities.Node(12, 1, 0, 0),
+        ///     new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1)) { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCornerForcesAsync(loadCase, plate, a).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        Task<PlateCornerForces> GetPlateCornerForcesAsync(ILoadCase loadCase, Plate plate, Node cornerNode);
+
+        /// <summary>Reads one qualified six-component observation for each distinct supplied plate corner.</summary>
+        /// <param name="loadCase">Non-null analyzed case/combination metadata. Its positive Id is captured once; other metadata is unused.</param>
+        /// <param name="plate">Non-null positive-ID plate. Requires supplied A/B/C references; D is optional. Does not hydrate missing incidence.</param>
+        /// <returns>A new read-only indexed result set in first A/B/C/D encounter order, deduplicated by captured positive node ID. Failed validation/retrieval publishes no partial result collection.</returns>
+        /// <remarks>
+        /// <para>Calls native GetPlateCornerForces with captured plate number, incidence-node number, case reference and a by-reference six-Double NaN-marked buffer. Requires Boolean true or integral one success; false/zero and malformed status types/codes throw. Every Fx,Fy,Fz,Mx,My,Mz component must be a written finite Double in an exact rank-one six-element Double array. In-place/replacement/nonzero-bound arrays are copied; zeros, signs and finite extremes are retained without fallback, coercion or partial values. These are native nodal force/moment components, not plate-center stresses or moment per width. Native axes and base units are preserved; no coordinate selector, extra rotation, averaging, equilibrium or acceptance calculation is introduced.</para>
+        /// <para>Captures load/plate IDs, corner references and positive corner IDs before force retrieval. A/B/C must be supplied; D may be null, or repeat another ID for a triangle. Repeated IDs retain the first supplied node reference; coordinates/equality are unused, and degeneracy/planarity is not certified. Reads each distinct corner sequentially, stopping on failure with no partial set. Unlike the single-corner query, this all-corners query requires supplied incidence and does not hydrate it. Indexed membership and identifier lists use immutable keys captured for the native requests, not later editable metadata.</para>
+        /// <para>Retains editable metadata references and copied editable scalar values. Later ID changes can differ from queried IDs and do not rebuild result-set indexes; the result Key property reflects current metadata, whereas set lookups retain captured observation identity. Metadata captures and sequential observations are not atomic. Caller coordinates writers and result provenance. No full plate geometry, unit-service conversion, stress transformation, resultant integration or design helpers are supplied by these supporting models.</para>
+        /// <para>Runs under one current Output binding/lifetime/constructing-thread/reentrancy lease spanning validation, enumeration, optional hydration, every native call and output qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent/disposed/other-thread and reentrant Root/Load/Output/refresh/disposal fail before native work. Raw access, other wrappers and external UI remain uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, retry, fallback or native mutation occurs. Successful reads do not certify result freshness, every native version or engineering validity.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference or sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An analytical ID or thread-count hint is outside its permitted range.</exception>
+        /// <exception cref="ArgumentException">A selection is invalid/oversized, supplied incidence is incomplete/invalid, or the requested node is not a plate corner.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid or native status, incidence, coordinates or components are malformed, unsuccessful, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(a,
+        ///     new StaadPro.Interop.Core.Entities.Node(12, 1, 0, 0),
+        ///     new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1)) { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCornerForces(loadCase, plate);
+        /// Console.WriteLine(result.Count);
+        /// </code></example>
+        PlateCornerForcesResultSet GetPlateCornerForces(ILoadCase loadCase, Plate plate);
+
+        /// <summary>Reads one qualified six-component observation for each distinct supplied plate corner.</summary>
+        /// <param name="loadCase">Non-null analyzed case/combination metadata. Its positive Id is captured once; other metadata is unused.</param>
+        /// <param name="plate">Non-null positive-ID plate. Requires supplied A/B/C references; D is optional. Does not hydrate missing incidence.</param>
+        /// <returns>An already settled task containing A new read-only indexed result set in first A/B/C/D encounter order, deduplicated by captured positive node ID. Validation, binding and native failures fault the task and are rethrown when awaited. Failed validation/retrieval publishes no partial result collection.</returns>
+        /// <remarks>
+        /// <para>Calls native GetPlateCornerForces with captured plate number, incidence-node number, case reference and a by-reference six-Double NaN-marked buffer. Requires Boolean true or integral one success; false/zero and malformed status types/codes throw. Every Fx,Fy,Fz,Mx,My,Mz component must be a written finite Double in an exact rank-one six-element Double array. In-place/replacement/nonzero-bound arrays are copied; zeros, signs and finite extremes are retained without fallback, coercion or partial values. These are native nodal force/moment components, not plate-center stresses or moment per width. Native axes and base units are preserved; no coordinate selector, extra rotation, averaging, equilibrium or acceptance calculation is introduced.</para>
+        /// <para>Captures load/plate IDs, corner references and positive corner IDs before force retrieval. A/B/C must be supplied; D may be null, or repeat another ID for a triangle. Repeated IDs retain the first supplied node reference; coordinates/equality are unused, and degeneracy/planarity is not certified. Reads each distinct corner sequentially, stopping on failure with no partial set. Unlike the single-corner query, this all-corners query requires supplied incidence and does not hydrate it. Indexed membership and identifier lists use immutable keys captured for the native requests, not later editable metadata.</para>
+        /// <para>Retains editable metadata references and copied editable scalar values. Later ID changes can differ from queried IDs and do not rebuild result-set indexes; the result Key property reflects current metadata, whereas set lookups retain captured observation identity. Metadata captures and sequential observations are not atomic. Caller coordinates writers and result provenance. No full plate geometry, unit-service conversion, stress transformation, resultant integration or design helpers are supplied by these supporting models.</para>
+        /// <para>Runs under one current Output binding/lifetime/constructing-thread/reentrancy lease spanning validation, enumeration, optional hydration, every native call and output qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent/disposed/other-thread and reentrant Root/Load/Output/refresh/disposal fail before native work. Raw access, other wrappers and external UI remain uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, retry, fallback or native mutation occurs. Successful reads do not certify result freshness, every native version or engineering validity.</para>
+        /// <para>All work executes synchronously before returning a successful/faulted task; invocation can block. Awaiting does not dispatch COM. Source Task.Run behavior is replaced with settled owning-thread tasks; no worker concurrency, apartment switch, cancellation or UI dispatcher is used. Prefer the synchronous counterpart when a task shape is unnecessary.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference or sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An analytical ID or thread-count hint is outside its permitted range.</exception>
+        /// <exception cref="ArgumentException">A selection is invalid/oversized, supplied incidence is incomplete/invalid, or the requested node is not a plate corner.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid or native status, incidence, coordinates or components are malformed, unsuccessful, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(a,
+        ///     new StaadPro.Interop.Core.Entities.Node(12, 1, 0, 0),
+        ///     new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1)) { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCornerForcesAsync(loadCase, plate).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Count);
+        /// </code></example>
+        Task<PlateCornerForcesResultSet> GetPlateCornerForcesAsync(ILoadCase loadCase, Plate plate);
     }
 }

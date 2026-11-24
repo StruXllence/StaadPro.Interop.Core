@@ -49,7 +49,7 @@ internal static class PlateCompositeFixture
         if (!wrapper.Output.GetPlateCenterResultsAsync(lc, plate).IsFaulted ||
             !wrapper.Output.GetPlateCenterResultsAsync(new[] { lc }, new[] { plate }).IsFaulted ||
             !wrapper.Output.GetPlatePrincipalStressesAsync(lc, plate).IsFaulted) throw new Exception("Native failure lost.");
-        foreach (var m in typeof(IOSOutput).GetMethods().Where(m => new[] { "GetPlateCenterResults", "GetPlateCenterResultsAsync", "GetPlatePrincipalStressesAsync" }.Contains(m.Name)))
+        foreach (var m in typeof(IOSOutput).GetMethods().Where(m => new[] { "GetPlateCenterResults", "GetPlateCenterResultsAsync", "GetPlatePrincipalStressesAsync" }.Contains(m.Name) && m.GetParameters().Length == 2))
         {
             bool many = m.GetParameters()[0].ParameterType.IsGenericType;
             Type result = m.Name.Contains("Principal") ? typeof(PlatePrincipalStresses) : many ? typeof(IEnumerable<PlateCenterResults>) : typeof(PlateCenterResults);

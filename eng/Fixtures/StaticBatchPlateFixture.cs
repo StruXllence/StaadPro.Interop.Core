@@ -130,6 +130,6 @@ internal static class StaticBatchPlateFixture
                 if (!docs.Descendants("member").Any(e => (string)e.Attribute("name") == "P:" + model.FullName + "." + property.Name && e.Element("summary") != null && e.Element("value") != null))
                     throw new Exception("Plate property IntelliSense missing.");
         }
-        if (typeof(Plate).GetProperty("A") != null) throw new Exception("Identity support unexpectedly hydrated plate geometry.");
+        if (new Plate().A != null || typeof(Plate).GetProperty("Area") != null) throw new Exception("Manual incidence metadata unexpectedly hydrated or calculated full geometry.");
     }
 }

@@ -320,7 +320,9 @@ namespace StaadPro.Interop.Core.Tests.Adapters
             manual.Sqx=double.NaN;Assert.That(manual.Sqx,Is.NaN); // source manual setters deliberately unvalidated
             var zero=new PlateCenterForces(null,null);Assert.That(Components(zero),Is.All.Zero);
             Assert.That(zero.LoadCase,Is.Null);Assert.That(zero.Plate,Is.Null);
-            Assert.That(typeof(Plate).GetProperties().Any(x=>x.Name=="A"),Is.False); // identity subset, no geometry hydration
+            Assert.That(p.A,Is.Null); // detached incidence metadata is not hydrated by manual construction
+            var a=new Node{Id=11};p.A=a;Assert.That(p.A,Is.SameAs(a));
+            Assert.That(typeof(Plate).GetProperties().Any(x=>x.Name=="Area"),Is.False); // full geometry remains separate
         }
 
         [TestCaseSource(nameof(Operations))]

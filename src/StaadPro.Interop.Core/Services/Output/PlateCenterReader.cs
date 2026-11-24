@@ -15,6 +15,11 @@ namespace StaadPro.Interop.Core.Services.Output
             int plateId = plate.Id;
             if (loadId <= 0) throw new ArgumentOutOfRangeException(nameof(loadCase), "Case ID must be positive.");
             if (plateId <= 0) throw new ArgumentOutOfRangeException(nameof(plate), "Plate ID must be positive.");
+            return ReadCaptured(output, loadCase, plate, loadId, plateId);
+        }
+
+        internal static PlateCenterForces ReadCaptured(object output, ILoadCase loadCase, Plate plate, int loadId, int plateId)
+        {
             object buffer = new[] { double.NaN, double.NaN, double.NaN, double.NaN, double.NaN };
             object status = ((dynamic)output).GetAllPlateCenterForces(plateId, loadId, ref buffer);
             if (!NativeValues.ReadBoolean(status, "plate-center stresses success"))

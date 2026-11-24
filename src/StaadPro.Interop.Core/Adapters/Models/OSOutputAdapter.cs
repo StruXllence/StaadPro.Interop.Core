@@ -909,5 +909,144 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// Console.WriteLine(result.SmaxTop);
         /// </code></example>
         public PlatePrincipalStresses GetPlatePrincipalStresses(ILoadCase loadCase, Plate plate) => Wrapper.UseOutputBinding(this, wrapper => PlateSurfaceReader.Principal(wrapper.RawOutput, loadCase, plate));
+
+        /// <summary>Reads four native in-plane normal principal surface stresses as a settled task.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive ID, captured once. Other metadata is unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive ID, captured once. Geometry/corners are unused.</param>
+        /// <returns>An already settled task containing a new detached principal stress record. Supplied context references are retained; qualified scalar values are copied. Validation, binding and native errors fault the task and are rethrown when awaited. Failed or malformed retrieval produces no result.</returns>
+        /// <remarks>
+        /// <para>Calls GetPlateCenterNormalPrincipalStresses once with captured plate/case IDs and four distinct NaN Double output sentinels, ordered maximum top, minimum top, maximum bottom, minimum bottom. Reuses the synchronous principal query qualification. Native surface labels, signs and force/length-squared units are preserved; values are not reordered and no principal angles are inferred.</para>
+        /// <para>Requires Boolean true or integral-one native success. False/zero, unsupported status types/codes, incorrectly shaped arrays and unwritten/nonfinite components throw. All four scalar outputs must be Doubles. Distinct NaN sentinels detect missing writes; fully written zero/signed/extreme finite values retain their literal meaning.</para>
+        /// <para>Supplied case/plate references are not cloned. Their later ID edits can differ from the IDs queried; current context fields are not proof of observation identity. Metadata changes during callbacks do not redirect captured native requests. Sequential component reads are not an atomic solver snapshot and do not guarantee freshness or engineering validity. Scalar edits have no native effects or notifications. No unit conversion, design/acceptance calculation, geometry hydration, Wood-Armer calculation or context refresh is provided.</para>
+        /// <para>Runs under one shared current Output binding, constructing-thread, lifetime and reentrancy lease covering validation, enumeration, native calls and qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw native calls, other wrappers and external UI are uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, fallback, retry or native mutation occurs.</para>
+        /// <para>Performs all work synchronously before returning a successful or faulted task. Invocation can block; awaiting an already settled task does not dispatch COM. Unlike concurrent source task execution, no Task.Run, worker COM, Task.WhenAll, apartment switch, cancellation or UI dispatcher is used. Prefer the synchronous counterpart when a task-shaped API is unnecessary.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference/sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A selected ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval fails or native status/components are malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlatePrincipalStressesAsync(loadCase, plate).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.SmaxTop);
+        /// </code></example>
+        public Task<PlatePrincipalStresses> GetPlatePrincipalStressesAsync(ILoadCase loadCase, Plate plate)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateSurfaceReader.Principal((object)wrapper.RawOutput, loadCase, plate))); }
+            catch (Exception error) { return Task.FromException<PlatePrincipalStresses>(error); }
+        }
+
+        /// <summary>Reads complete plate-center components for one supplied case and plate.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive ID, captured once. Other metadata is unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive ID, captured once. Geometry/corners are unused.</param>
+        /// <returns>a new composite retaining four independent detached component records. Supplied context references are retained; qualified scalar values are copied. Failed or malformed retrieval produces no result.</returns>
+        /// <remarks>
+        /// <para>For each pair, calls GetAllPlateCenterForces, GetAllPlateCenterMoments, GetPlateCenterVonMisesStresses and GetPlateCenterNormalPrincipalStresses sequentially in that order, using the same captured IDs for all four calls. Unlike the individual queries, this retrieves all four component families. Forces contains SQX/SQY/SX/SY/SXY local stresses, not nodal forces. Moments contains MX/MY/MXY moment per unit width. VonMises contains native top/bottom stresses; Principal contains maximum/minimum top/bottom normal stresses. Stress units are native force/length-squared; moments retain native moment/length units.</para>
+        /// <para>Requires Boolean true or integral-one native success. False/zero, unsupported status types/codes, incorrectly shaped arrays and unwritten/nonfinite components throw. Array outputs must contain exactly five stress or three moment Doubles; scalar outputs must be Doubles. NaN sentinels detect missing writes. In-place/replacement/nonzero-bound arrays are qualified and copied; fully written zero/signed/extreme finite values retain their literal meaning.</para>
+        /// <para>Supplied case/plate references are not cloned. Their later ID edits can differ from the IDs queried; current context fields are not proof of observation identity. Metadata changes during callbacks do not redirect captured native requests. Sequential component reads are not an atomic solver snapshot and do not guarantee freshness or engineering validity. Scalar edits have no native effects or notifications. No unit conversion, design/acceptance calculation, geometry hydration, Wood-Armer calculation or context refresh is provided.</para>
+        /// <para>Runs under one shared current Output binding, constructing-thread, lifetime and reentrancy lease covering validation, enumeration, native calls and qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw native calls, other wrappers and external UI are uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, fallback, retry or native mutation occurs.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference/sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A selected ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval fails or native status/components are malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterResults(loadCase, plate);
+        /// Console.WriteLine(result.Moments.Mx);
+        /// </code></example>
+        public PlateCenterResults GetPlateCenterResults(ILoadCase loadCase, Plate plate) => Wrapper.UseOutputBinding(this, wrapper => PlateCompositeReader.Read((object)wrapper.RawOutput, loadCase, plate));
+
+        /// <summary>Reads complete plate-center components for one supplied case and plate.</summary>
+        /// <param name="loadCase">Non-null caller-owned case metadata with positive ID, captured once. Other metadata is unused.</param>
+        /// <param name="plate">Non-null caller-owned plate metadata with positive ID, captured once. Geometry/corners are unused.</param>
+        /// <returns>An already settled task containing a new composite retaining four independent detached component records. Supplied context references are retained; qualified scalar values are copied. Validation, binding and native errors fault the task and are rethrown when awaited. Failed or malformed retrieval produces no result.</returns>
+        /// <remarks>
+        /// <para>For each pair, calls GetAllPlateCenterForces, GetAllPlateCenterMoments, GetPlateCenterVonMisesStresses and GetPlateCenterNormalPrincipalStresses sequentially in that order, using the same captured IDs for all four calls. Unlike the individual queries, this retrieves all four component families. Forces contains SQX/SQY/SX/SY/SXY local stresses, not nodal forces. Moments contains MX/MY/MXY moment per unit width. VonMises contains native top/bottom stresses; Principal contains maximum/minimum top/bottom normal stresses. Stress units are native force/length-squared; moments retain native moment/length units.</para>
+        /// <para>Requires Boolean true or integral-one native success. False/zero, unsupported status types/codes, incorrectly shaped arrays and unwritten/nonfinite components throw. Array outputs must contain exactly five stress or three moment Doubles; scalar outputs must be Doubles. NaN sentinels detect missing writes. In-place/replacement/nonzero-bound arrays are qualified and copied; fully written zero/signed/extreme finite values retain their literal meaning.</para>
+        /// <para>Supplied case/plate references are not cloned. Their later ID edits can differ from the IDs queried; current context fields are not proof of observation identity. Metadata changes during callbacks do not redirect captured native requests. Sequential component reads are not an atomic solver snapshot and do not guarantee freshness or engineering validity. Scalar edits have no native effects or notifications. No unit conversion, design/acceptance calculation, geometry hydration, Wood-Armer calculation or context refresh is provided.</para>
+        /// <para>Runs under one shared current Output binding, constructing-thread, lifetime and reentrancy lease covering validation, enumeration, native calls and qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw native calls, other wrappers and external UI are uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, fallback, retry or native mutation occurs.</para>
+        /// <para>Performs all work synchronously before returning a successful or faulted task. Invocation can block; awaiting an already settled task does not dispatch COM. Unlike concurrent source task execution, no Task.Run, worker COM, Task.WhenAll, apartment switch, cancellation or UI dispatcher is used. Prefer the synchronous counterpart when a task-shaped API is unnecessary.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference/sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A selected ID is not positive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval fails or native status/components are malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterResultsAsync(loadCase, plate).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Moments.Mx);
+        /// </code></example>
+        public Task<PlateCenterResults> GetPlateCenterResultsAsync(ILoadCase loadCase, Plate plate)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCompositeReader.Read((object)wrapper.RawOutput, loadCase, plate))); }
+            catch (Exception error) { return Task.FromException<PlateCenterResults>(error); }
+        }
+
+        /// <summary>Reads complete plate-center components for every supplied case/plate occurrence.</summary>
+        /// <param name="loadCases">Non-null finite sequence of non-null case references with positive IDs; materialized once before plates. Order and duplicate occurrences are retained; at most 100,000 entries.</param>
+        /// <param name="plates">Non-null finite sequence of non-null plate references with positive IDs; materialized once after cases. Order and duplicate occurrences are retained; at most 100,000 entries and 100,000 Cartesian pairs.</param>
+        /// <returns>a new eager read-only collection of independent composite records in case-major, plate-minor order. Supplied context references are retained; qualified scalar values are copied. An empty valid dimension yields an empty collection after both inputs are validated. Failed or malformed retrieval produces no partial collection.</returns>
+        /// <remarks>
+        /// <para>For each pair, calls GetAllPlateCenterForces, GetAllPlateCenterMoments, GetPlateCenterVonMisesStresses and GetPlateCenterNormalPrincipalStresses sequentially in that order, using the same captured IDs for all four calls. Unlike the individual queries, this retrieves all four component families. Forces contains SQX/SQY/SX/SY/SXY local stresses, not nodal forces. Moments contains MX/MY/MXY moment per unit width. VonMises contains native top/bottom stresses; Principal contains maximum/minimum top/bottom normal stresses. Stress units are native force/length-squared; moments retain native moment/length units.</para>
+        /// <para>Captures every occurrence, reference and positive ID before any native call, even when the other dimension is empty. Neither input is re-enumerated and duplicates are not collapsed. At most 100,000 occurrences per input and 100,000 Cartesian pairs; oversized inputs/products fail before dispatch. Four calls per pair run sequentially on the owning thread. The first validation, enumeration or native failure stops processing and publishes no partial collection; no rollback/replay occurs. Re-enumerating the returned collection never queries STAAD. Collection storage is read-only; contained records/context references remain mutable.</para>
+        /// <para>Requires Boolean true or integral-one native success. False/zero, unsupported status types/codes, incorrectly shaped arrays and unwritten/nonfinite components throw. Array outputs must contain exactly five stress or three moment Doubles; scalar outputs must be Doubles. NaN sentinels detect missing writes. In-place/replacement/nonzero-bound arrays are qualified and copied; fully written zero/signed/extreme finite values retain their literal meaning.</para>
+        /// <para>Supplied case/plate references are not cloned. Their later ID edits can differ from the IDs queried; current context fields are not proof of observation identity. Metadata changes during callbacks do not redirect captured native requests. Sequential component reads are not an atomic solver snapshot and do not guarantee freshness or engineering validity. Scalar edits have no native effects or notifications. No unit conversion, design/acceptance calculation, geometry hydration, Wood-Armer calculation or context refresh is provided.</para>
+        /// <para>Runs under one shared current Output binding, constructing-thread, lifetime and reentrancy lease covering validation, enumeration, native calls and qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw native calls, other wrappers and external UI are uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, fallback, retry or native mutation occurs.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference/sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A selected ID is not positive.</exception>
+        /// <exception cref="ArgumentException">An input entry is null or an occurrence/pair limit is exceeded.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval fails or native status/components are malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterResults(new[] { loadCase }, new[] { plate });
+        /// Console.WriteLine(System.Linq.Enumerable.First(result).Moments.Mx);
+        /// </code></example>
+        public IEnumerable<PlateCenterResults> GetPlateCenterResults(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates) => Wrapper.UseOutputBinding(this, wrapper => PlateCompositeReader.ReadBatch((object)wrapper.RawOutput, loadCases, plates));
+
+        /// <summary>Reads complete plate-center components for every supplied case/plate occurrence.</summary>
+        /// <param name="loadCases">Non-null finite sequence of non-null case references with positive IDs; materialized once before plates. Order and duplicate occurrences are retained; at most 100,000 entries.</param>
+        /// <param name="plates">Non-null finite sequence of non-null plate references with positive IDs; materialized once after cases. Order and duplicate occurrences are retained; at most 100,000 entries and 100,000 Cartesian pairs.</param>
+        /// <returns>An already settled task containing a new eager read-only collection of independent composite records in case-major, plate-minor order. Supplied context references are retained; qualified scalar values are copied. An empty valid dimension yields an empty collection after both inputs are validated. Validation, binding and native errors fault the task and are rethrown when awaited. Failed or malformed retrieval produces no partial collection.</returns>
+        /// <remarks>
+        /// <para>For each pair, calls GetAllPlateCenterForces, GetAllPlateCenterMoments, GetPlateCenterVonMisesStresses and GetPlateCenterNormalPrincipalStresses sequentially in that order, using the same captured IDs for all four calls. Unlike the individual queries, this retrieves all four component families. Forces contains SQX/SQY/SX/SY/SXY local stresses, not nodal forces. Moments contains MX/MY/MXY moment per unit width. VonMises contains native top/bottom stresses; Principal contains maximum/minimum top/bottom normal stresses. Stress units are native force/length-squared; moments retain native moment/length units.</para>
+        /// <para>Captures every occurrence, reference and positive ID before any native call, even when the other dimension is empty. Neither input is re-enumerated and duplicates are not collapsed. At most 100,000 occurrences per input and 100,000 Cartesian pairs; oversized inputs/products fail before dispatch. Four calls per pair run sequentially on the owning thread. The first validation, enumeration or native failure stops processing and publishes no partial collection; no rollback/replay occurs. Re-enumerating the returned collection never queries STAAD. Collection storage is read-only; contained records/context references remain mutable.</para>
+        /// <para>Requires Boolean true or integral-one native success. False/zero, unsupported status types/codes, incorrectly shaped arrays and unwritten/nonfinite components throw. Array outputs must contain exactly five stress or three moment Doubles; scalar outputs must be Doubles. NaN sentinels detect missing writes. In-place/replacement/nonzero-bound arrays are qualified and copied; fully written zero/signed/extreme finite values retain their literal meaning.</para>
+        /// <para>Supplied case/plate references are not cloned. Their later ID edits can differ from the IDs queried; current context fields are not proof of observation identity. Metadata changes during callbacks do not redirect captured native requests. Sequential component reads are not an atomic solver snapshot and do not guarantee freshness or engineering validity. Scalar edits have no native effects or notifications. No unit conversion, design/acceptance calculation, geometry hydration, Wood-Armer calculation or context refresh is provided.</para>
+        /// <para>Runs under one shared current Output binding, constructing-thread, lifetime and reentrancy lease covering validation, enumeration, native calls and qualification. Refresh invalidates captured adapters; reacquire them. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal calls fail before native access. Raw native calls, other wrappers and external UI are uncoordinated. Original exceptions/HRESULTs propagate; no analysis, activation, selection, save, fallback, retry or native mutation occurs.</para>
+        /// <para>Performs all work synchronously before returning a successful or faulted task. Invocation can block; awaiting an already settled task does not dispatch COM. Unlike concurrent source task execution, no Task.Run, worker COM, Task.WhenAll, apartment switch, cancellation or UI dispatcher is used. Prefer the synchronous counterpart when a task-shaped API is unnecessary.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">An input reference/sequence is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A selected ID is not positive.</exception>
+        /// <exception cref="ArgumentException">An input entry is null or an occurrence/pair limit is exceeded.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid, retrieval fails or native status/components are malformed, unwritten or nonfinite.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCenterResultsAsync(new[] { loadCase }, new[] { plate }).GetAwaiter().GetResult();
+        /// Console.WriteLine(System.Linq.Enumerable.First(result).Moments.Mx);
+        /// </code></example>
+        public Task<IEnumerable<PlateCenterResults>> GetPlateCenterResultsAsync(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCompositeReader.ReadBatch((object)wrapper.RawOutput, loadCases, plates))); }
+            catch (Exception error) { return Task.FromException<IEnumerable<PlateCenterResults>>(error); }
+        }
     }
 }

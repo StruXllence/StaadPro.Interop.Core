@@ -21,7 +21,7 @@ namespace StaadPro.Interop.Core.Tests.Adapters
     [TestFixture, NonParallelizable, Apartment(ApartmentState.STA)]
     public sealed class PlateSurfaceTests
     {
-        private static readonly string[] Operations = ["moments", "momentsTask", "von", "vonTask", "principal"];
+        private static readonly string[] Operations = ["moments", "momentsTask", "von", "vonTask", "principal", "principalTask"];
 
         public sealed class Native
         {
@@ -81,6 +81,7 @@ namespace StaadPro.Interop.Core.Tests.Adapters
                 "von" => output.GetPlateCenterVonMises(loadCase, plate),
                 "vonTask" => output.GetPlateCenterVonMisesAsync(loadCase, plate).GetAwaiter().GetResult(),
                 "principal" => output.GetPlatePrincipalStresses(loadCase, plate),
+                "principalTask" => output.GetPlatePrincipalStressesAsync(loadCase, plate).GetAwaiter().GetResult(),
                 _ => throw new ArgumentOutOfRangeException(nameof(op))
             };
         }
@@ -212,12 +213,13 @@ namespace StaadPro.Interop.Core.Tests.Adapters
             Assert.That(result.LoadCase, Is.SameAs(lc)); Assert.That(result.Plate.Id, Is.EqualTo(99));
             Assert.That(Components(result)[0], Is.Not.EqualTo(0)); Assert.That(native.Calls, Has.Count.EqualTo(1));
         }
-        [TestCase("momentsTask")] [TestCase("vonTask")]
+        [TestCase("momentsTask")] [TestCase("vonTask")] [TestCase("principalTask")]
         public void TasksPerformNativeWorkBeforeReturnAndCaptureOriginalFaults(string op)
         {
             var native = new Native(); using var wrapper = Wrap(native);
             Task Start() => op == "momentsTask" ? wrapper.Output.GetPlateCenterMomentsAsync(new LoadCase(7, ""), new Plate { Id = 17 })
-                : wrapper.Output.GetPlateCenterVonMisesAsync(new LoadCase(7, ""), new Plate { Id = 17 });
+                : op == "vonTask" ? wrapper.Output.GetPlateCenterVonMisesAsync(new LoadCase(7, ""), new Plate { Id = 17 })
+                : wrapper.Output.GetPlatePrincipalStressesAsync(new LoadCase(7, ""), new Plate { Id = 17 });
             Task success = Start(); Assert.That(success.IsCompletedSuccessfully, Is.True); Assert.That(native.Calls, Has.Count.EqualTo(1));
             var failure = new COMException("native", unchecked((int)0x80004005)); native.Failure = failure;
             Task fault = null; Assert.DoesNotThrow(() => fault = Start()); Assert.That(fault.IsFaulted, Is.True);

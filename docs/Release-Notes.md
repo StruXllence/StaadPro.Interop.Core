@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261124 - 24 November 2026
+
+Ported `GetPlatePrincipalStressesAsync`, single and batch `GetPlateCenterResults`, and their task variants with complete matching interface/adapter XML IntelliSense. Output now exposes forty contracts. See [plate-center composite results](Plate-Center-Composite-Results.md) for method choices, data meaning, bounds and execution behavior.
+
+Added the named `PlateCenterResults` container using existing local stress, moment-per-width, surface von Mises and normal-principal records. Retained source constructor/factory names, case-reference compatibility and analytical plate-ID compatibility without introducing unit-service or geometry/design dependencies.
+
+Captured case/plate identities once per input occurrence and used them for all four sequential native calls. Batch selections are validated once before dispatch, retain duplicates and case-major/plate-minor order, enforce 100,000-occurrence/pair bounds and return eager read-only storage. Failed enumeration, malformed/unwritten/nonfinite outputs or a failed pair publish no partial collection. All methods share the current Output binding/constructing-thread lease. Task methods finish native work before returning settled tasks, preserving failures without worker COM. Sequential reads do not certify an atomic or fresh solver snapshot.
+
+Release build passed with zero warnings/errors and 2,917 offline tests, including 155 new cases. Installed-package verification checks nineteen Load/forty Output contracts, matching expanded XML IntelliSense, 243 compiled XML examples, README/twenty-two guide examples, composite native stand-ins, isolated dependencies and archive equality. No new live native, cross-version runtime or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261123.1 - 23 November 2026
 
 Added `GetPlateCenterMoments(ILoadCase loadCase, Plate plate)`, `GetPlateCenterMomentsAsync(...)`, `GetPlateCenterVonMises(ILoadCase loadCase, Plate plate)`, `GetPlateCenterVonMisesAsync(...)` and `GetPlatePrincipalStresses(ILoadCase loadCase, Plate plate)` with complete matching interface/adapter XML IntelliSense. See [plate-center moments and surface stresses](Plate-Center-Moments-and-Surface-Stresses.md).

@@ -10,6 +10,11 @@ namespace StaadPro.Interop.Core.Services.Output
         internal static PlateCenterMoments Moments(object output, ILoadCase loadCase, Plate plate)
         {
             CaptureIds(loadCase, plate, out int loadId, out int plateId);
+            return MomentsCaptured(output, loadCase, plate, loadId, plateId);
+        }
+
+        internal static PlateCenterMoments MomentsCaptured(object output, ILoadCase loadCase, Plate plate, int loadId, int plateId)
+        {
             object buffer = new[] { double.NaN, double.NaN, double.NaN };
             object status = ((dynamic)output).GetAllPlateCenterMoments(plateId, loadId, ref buffer);
             RequireSuccess(status, "plate-center moments");
@@ -26,6 +31,11 @@ namespace StaadPro.Interop.Core.Services.Output
         internal static PlateCenterVonMises VonMises(object output, ILoadCase loadCase, Plate plate)
         {
             CaptureIds(loadCase, plate, out int loadId, out int plateId);
+            return VonMisesCaptured(output, loadCase, plate, loadId, plateId);
+        }
+
+        internal static PlateCenterVonMises VonMisesCaptured(object output, ILoadCase loadCase, Plate plate, int loadId, int plateId)
+        {
             object top = double.NaN, bottom = double.NaN;
             object status = ((dynamic)output).GetPlateCenterVonMisesStresses(plateId, loadId, ref top, ref bottom);
             RequireSuccess(status, "plate-center von Mises stresses");
@@ -37,6 +47,11 @@ namespace StaadPro.Interop.Core.Services.Output
         internal static PlatePrincipalStresses Principal(object output, ILoadCase loadCase, Plate plate)
         {
             CaptureIds(loadCase, plate, out int loadId, out int plateId);
+            return PrincipalCaptured(output, loadCase, plate, loadId, plateId);
+        }
+
+        internal static PlatePrincipalStresses PrincipalCaptured(object output, ILoadCase loadCase, Plate plate, int loadId, int plateId)
+        {
             object maxTop = double.NaN, minTop = double.NaN, maxBottom = double.NaN, minBottom = double.NaN;
             object status = ((dynamic)output).GetPlateCenterNormalPrincipalStresses(plateId, loadId,
                 ref maxTop, ref minTop, ref maxBottom, ref minBottom);

@@ -13,6 +13,11 @@ Use corner queries for native nodal forces and moments at analytical plate incid
 | GetPlateCornerForces(IEnumerable<ILoadCase> loadCases, Plate plate) | Unique load-case by unique plate-corner observations in case-major, incidence order; requires A/B/C metadata and performs no hydration. |
 | GetPlateCornerForcesAsync(IEnumerable<ILoadCase> loadCases, Plate plate) | The same case-by-corner indexed result set, then a settled task. |
 | GetPlateCornerForces(ILoadCase loadCase, IEnumerable<Plate> plates) | Unique plate by unique plate-corner observations in plate-major, incidence order; requires A/B/C metadata on every plate and performs no hydration. |
+| GetPlateCornerForcesAsync(ILoadCase loadCase, IEnumerable<Plate> plates) | The same single-case plate selection, then a settled task. |
+| GetPlateCornerForces(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates) | Cartesian product of unique cases, unique plates and each plate's distinct supplied corners, in that order. |
+| GetPlateCornerForcesAsync(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates) | The same complete Cartesian result set, then a settled task. |
+| GetPlateCornerForces(IEnumerable<PlateCornerForcesRequest> requests) | Only explicitly requested case/plate/node triples, deduplicated by the complete key in first-occurrence order. |
+| GetPlateCornerForcesAsync(IEnumerable<PlateCornerForcesRequest> requests) | The same sparse result set, then a settled task. |
 | GetPlateCenterResults(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates, int nThreads) | Source-compatible hint 1..512; reuses bounded sequential center queries. Prefer the overload without the hint for new code. |
 
 ~~~csharp
@@ -40,6 +45,17 @@ var byCasesPlateTask = wrapper.Output.GetPlateCornerForcesAsync(new[] { loadCase
 Console.WriteLine(byCasesPlateTask.GetAwaiter().GetResult().Count);
 var byCasePlates = wrapper.Output.GetPlateCornerForces(loadCase, new[] { plate });
 Console.WriteLine(byCasePlates.PlateIds.Count);
+var byCasePlatesTask = wrapper.Output.GetPlateCornerForcesAsync(loadCase, new[] { plate });
+Console.WriteLine(byCasePlatesTask.GetAwaiter().GetResult().Count);
+var cartesian = wrapper.Output.GetPlateCornerForces(new[] { loadCase }, new[] { plate });
+Console.WriteLine(cartesian[1, 17, 11].Fx);
+var cartesianTask = wrapper.Output.GetPlateCornerForcesAsync(new[] { loadCase }, new[] { plate });
+Console.WriteLine(cartesianTask.GetAwaiter().GetResult().Count);
+var requests = new[] { new StaadPro.Interop.Core.Models.PlateCornerForcesRequest(loadCase, plate, a) };
+var sparse = wrapper.Output.GetPlateCornerForces(requests);
+Console.WriteLine(sparse[1, 17, 11].Fx);
+var sparseTask = wrapper.Output.GetPlateCornerForcesAsync(requests);
+Console.WriteLine(sparseTask.GetAwaiter().GetResult().Count);
 var center = wrapper.Output.GetPlateCenterResults(new[] { loadCase }, new[] { plate }, 1);
 Console.WriteLine(System.Linq.Enumerable.First(center).Moments.Mx);
 ~~~
@@ -51,6 +67,16 @@ The corner argument supplies a **positive node number, not ordinal 1/2/3/4**. Si
 If A/B/C is incomplete, the single-case/single-corner query obtains incidence through the acquired raw Geometry binding and hydrates each distinct positive node once. It creates new detached metadata without modifying the supplied plate. Incidence requires **integral zero success**, written positive A/B/C IDs and nonnegative D; D zero means absent. Coordinate retrieval is documented **void** and qualifies written finite Double XYZ outputs using NaN sentinels. It does not invent a Boolean return value. Hydrated coordinates retain native global coordinate values. Original native/dispatch errors propagate; incomplete or failed hydration does not fall back to the supplied partial geometry or dispatch a force query.
 
 The all-corners and batch-selection overloads instead require supplied incidence and validate/capture all inputs before force calls, even when a sequence is empty. Sequences are enumerated once, bounded to 100,000 occurrences and 100,000 unique observations, deduplicated by captured ID while retaining first references and original order, and checked across every entry including duplicate plate entries. Geometric degeneracy, planarity and native membership of supplied metadata are not certified. These metadata members extend Plate without porting the complete Geometry API.
+
+## Cartesian or sparse selection
+
+Use the two-sequence overload when every selected case is needed for every selected plate and every supplied corner. Cases are captured first, then plates, each sequence once. Positive case/plate IDs are deduplicated independently, retaining the first metadata reference. Output order is case, plate, then first A/B/C/D occurrence of each node ID. The product of unique cases and total unique plate-corner observations must not exceed 100,000; wide arithmetic prevents product overflow. Even an empty dimension still validates the other supplied sequence, including duplicate entries and incidence.
+
+Use the request overload when only particular case/plate/node triples are needed. It avoids creating unrequested Cartesian combinations. PlateCornerForcesRequest stores editable references and has an empty constructor and a three-reference constructor; neither queries or validates STAAD. Its Key property computes the current positive IDs, throws on incomplete/nonpositive metadata and does not validate plate membership. It is not a query receipt. The computed key is excluded from built-in System.Text.Json serialization; no Newtonsoft.Json runtime dependency is introduced.
+
+Sparse queries validate every occurrence, including duplicates, then deduplicate the complete captured case/plate/node key. Each first unique request retains its own case and plate context: different keys sharing a case or plate ID do not replace each other's metadata references. A requested node selects the first supplied incidence reference with the same ID; it does not require the identical node object. Requests require populated A/B/C metadata and never hydrate. Null requests/references, nonpositive IDs, missing incidence and non-incidence nodes fail before force calls.
+
+Each sequence is limited to 100,000 occurrences, including duplicates. All request identities, references and incidence IDs are captured before native work, and enumeration failures dispose enumerators and propagate without a partial result set. Later edits cannot redirect the captured work. Untyped null literals can be ambiguous between collection overloads; use the intended typed variable or an explicit cast when testing null handling.
 
 ## Native success and independent values
 
@@ -66,7 +92,7 @@ PlateCornerForcesResultSet owns read-only collection storage and indexes immutab
 
 ## Thread, lifetime and task behavior
 
-All five functions hold one current Output binding, lifetime, constructing-thread and reentrancy lease across argument capture, selection, optional hydration, force calls and qualification. Reacquire the adapter after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal operations fail before native work. Raw access, other wrappers and external UI remain outside that coordination.
+All corner-selection functions hold one current Output binding, lifetime, constructing-thread and reentrancy lease across argument capture, selection, optional hydration, force calls and qualification. Reacquire the adapter after refresh. Stale/manual-noncurrent, disposed, other-thread and reentrant Root/Load/Output/refresh/disposal operations fail before native work. Raw access, other wrappers and external UI remain outside that coordination.
 
 Task-shaped calls execute synchronously before returning settled success/fault tasks; invocation can block and awaiting preserves original failures/HRESULTs. There is no Task.Run, concurrent COM, apartment switch, dispatcher or cancellation. The thread-count compatibility hint does not create workers; invalid hints fail before input enumeration. Existing 100,000-occurrence and Cartesian-pair bounds, duplicate observations and case-major ordering remain in force for center selections.
 

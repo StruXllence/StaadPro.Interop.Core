@@ -70,11 +70,56 @@ namespace StaadPro.Interop.Core.Services.Output
             return ReadSelection(output, [new CapturedCase(loadCase, loadId)], capturedPlates);
         }
 
+        internal static PlateCornerForcesResultSet ReadForSelections(object output, IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates)
+        {
+            ArgumentNullException.ThrowIfNull(loadCases); ArgumentNullException.ThrowIfNull(plates);
+            var cases = CaptureLoadCases(loadCases);
+            var capturedPlates = CapturePlates(plates);
+            return ReadSelection(output, cases, capturedPlates);
+        }
+
+        private sealed class CapturedRequest(PlateCornerForcesKey key, ILoadCase loadCase, Plate plate, Corner corner)
+        {
+            internal PlateCornerForcesKey Key { get; } = key;
+            internal ILoadCase LoadCase { get; } = loadCase;
+            internal Plate Plate { get; } = plate;
+            internal Corner Corner { get; } = corner;
+        }
+
+        internal static PlateCornerForcesResultSet ReadRequests(object output, IEnumerable<PlateCornerForcesRequest> requests)
+        {
+            ArgumentNullException.ThrowIfNull(requests);
+            var captured = new List<CapturedRequest>(); var keys = new HashSet<PlateCornerForcesKey>();
+            int occurrences = 0;
+            foreach (var request in requests)
+            {
+                if (occurrences == Limit) throw new ArgumentException("At most 100,000 request occurrences are supported.", nameof(requests));
+                occurrences++;
+                if (request == null) throw new ArgumentNullException(nameof(requests), "A corner request is null.");
+                ILoadCase load = request.LoadCase; Plate plate = request.Plate; Node requested = request.CornerNode;
+                if (load == null || plate == null || requested == null)
+                    throw new ArgumentException("Request case, plate and corner metadata are required.", nameof(requests));
+                int loadId = load.Id, plateId = plate.Id, nodeId = requested.Id;
+                Positive(loadId, nameof(requests)); Positive(plateId, nameof(requests)); Positive(nodeId, nameof(requests));
+                var corners = Capture(plate.A, plate.B, plate.C, plate.D, nameof(requests));
+                Corner selected = null;
+                foreach (var corner in corners) if (corner.Id == nodeId) { selected = corner; break; }
+                if (selected == null) throw new ArgumentException("A requested node is not a supplied plate incidence node.", nameof(requests));
+                var key = new PlateCornerForcesKey(loadId, plateId, nodeId);
+                if (keys.Add(key)) captured.Add(new CapturedRequest(key, load, plate, selected));
+            }
+            var records = new List<PlateCornerForcesResultSet.Observation>(captured.Count);
+            foreach (var request in captured)
+                records.Add(new(request.Key, ReadCaptured(output, request.LoadCase, request.Plate, request.Corner, request.Key.LoadCaseId, request.Key.PlateId)));
+            return new PlateCornerForcesResultSet(records);
+        }
+
         private static PlateCornerForcesResultSet ReadSelection(object output, List<CapturedCase> cases, List<CapturedPlate> plates)
         {
-            int total = 0;
-            if (cases.Count > 0) foreach (var p in plates) total += cases.Count * p.Corners.Count;
-            var records = new List<PlateCornerForcesResultSet.Observation>(total);
+            long perCase = 0; foreach (var p in plates) perCase += p.Corners.Count;
+            long total = perCase * cases.Count;
+            if (total > Limit) throw new ArgumentException("At most 100,000 unique plate-corner observations may be queried at once.", nameof(plates));
+            var records = new List<PlateCornerForcesResultSet.Observation>((int)total);
             foreach (var load in cases)
                 foreach (var p in plates)
                     foreach (var corner in p.Corners)

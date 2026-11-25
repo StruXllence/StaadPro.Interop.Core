@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261125.1 - 25 November 2026
+
+Ported the single-case/multiple-plate task overload, Cartesian case/plate queries and sparse request queries, each with complete matching interface and adapter XML IntelliSense. Output now provides fifty-five contracts. See [plate-corner forces](Plate-Corner-Forces.md) for overload selection, examples and execution rules.
+
+Added source-based PlateCornerForcesRequest metadata with editable case, plate and corner references and a current-identity key. Cartesian selections retain unique case/plate/corner order; sparse selections deduplicate complete case/plate/node keys while retaining each first request's context. Both validate and capture bounded inputs before force calls, require supplied A/B/C incidence without hydration and preserve captured result-set indexes across metadata edits. Wide arithmetic checks the 100,000-observation Cartesian bound.
+
+Reused sequential native force qualification and independent six-Double copying. Later failures return no partial set; original native exceptions remain available. Task variants finish on the owning COM thread before returning settled tasks. No worker COM or additional native signature was introduced.
+
+Release build passed with zero warnings/errors and all 3,126 offline tests, including 42 new cases. Exact installed-package checks verify nineteen Load/fifty-five Output contracts, 273 compiled XML examples, README/twenty-three guides, native stand-ins and isolated restore/build/runtime/archive equality. No new live native, cross-version runtime or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261125 - 25 November 2026
 
 Ported the `GetPlateCornerForces(IEnumerable<ILoadCase>, Plate, Node)` and `GetPlateCornerForces(IEnumerable<ILoadCase>, Plate)` selection queries with their task variants, plus `GetPlateCornerForces(ILoadCase, IEnumerable<Plate>)`, with complete matching interface/adapter XML IntelliSense. Output now provides fifty contracts. See [plate-corner forces](Plate-Corner-Forces.md) for selection behavior, deduplication, bounds and execution rules.

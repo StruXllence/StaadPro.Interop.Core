@@ -226,7 +226,7 @@ namespace StaadPro.Interop.Core.Tests.Adapters
 
             if (op == "casePlates")
             {
-                Assert.Throws<ArgumentNullException>(() => w.Output.GetPlateCornerForces(null, Array.Empty<Plate>()));
+                Assert.Throws<ArgumentNullException>(() => w.Output.GetPlateCornerForces((ILoadCase)null, Array.Empty<Plate>()));
                 Assert.Throws<ArgumentOutOfRangeException>(() => w.Output.GetPlateCornerForces(new LoadCase(0, ""), Array.Empty<Plate>()));
                 var empty = w.Output.GetPlateCornerForces(new LoadCase(7, ""), Array.Empty<Plate>());
                 Assert.That(empty, Is.Empty);
@@ -446,7 +446,7 @@ namespace StaadPro.Interop.Core.Tests.Adapters
         {
             var xml = XDocument.Load(Path.ChangeExtension(typeof(IOSOutput).Assembly.Location, ".xml"));
             var methods = typeof(IOSOutput).GetMethods()
-                .Where(m => m.Name.Contains("PlateCornerForces") && m.GetParameters().Any(p => p.ParameterType.IsGenericType))
+                .Where(m => m.Name.Contains("PlateCornerForces") && (m.GetParameters()[0].ParameterType == typeof(IEnumerable<ILoadCase>) && m.GetParameters()[1].ParameterType == typeof(Plate) || m.Name == "GetPlateCornerForces" && m.GetParameters()[0].ParameterType == typeof(ILoadCase) && m.GetParameters()[1].ParameterType == typeof(IEnumerable<Plate>)))
                 .ToArray();
             Assert.That(methods, Has.Length.EqualTo(5));
 

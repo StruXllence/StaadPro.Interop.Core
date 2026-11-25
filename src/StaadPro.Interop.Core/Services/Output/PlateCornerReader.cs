@@ -8,8 +8,14 @@ namespace StaadPro.Interop.Core.Services.Output
 {
     internal static class PlateCornerReader
     {
+        private const int Limit = 100000;
         private sealed class Corner(Node node, int id)
         { internal Node Node { get; } = node; internal int Id { get; } = id; }
+        private sealed class CapturedCase(ILoadCase loadCase, int id)
+        { internal ILoadCase LoadCase { get; } = loadCase; internal int Id { get; } = id; }
+        private sealed class CapturedPlate(Plate plate, int id, List<Corner> corners)
+        { internal Plate Plate { get; } = plate; internal int Id { get; } = id; internal List<Corner> Corners { get; } = corners; }
+
         internal static PlateCornerForces Read(object output, object geometry, ILoadCase loadCase, Plate plate, Node cornerNode)
         {
             ArgumentNullException.ThrowIfNull(loadCase); ArgumentNullException.ThrowIfNull(plate); ArgumentNullException.ThrowIfNull(cornerNode);
@@ -18,34 +24,124 @@ namespace StaadPro.Interop.Core.Services.Output
             Node a = plate.A, b = plate.B, c = plate.C, d = plate.D;
             if (a == null || b == null || c == null)
             { plate = Hydrate(geometry, plateId); a = plate.A; b = plate.B; c = plate.C; d = plate.D; }
-            var corners = Capture(a, b, c, d);
-            foreach (var corner in corners)
-                if (corner.Id == nodeId) return ReadCaptured(output, loadCase, plate, corner, loadId, plateId);
-            throw new ArgumentException("The requested node is not a supplied/resolved plate incidence node.", nameof(cornerNode));
+            var corners = Capture(a, b, c, d, nameof(plate));
+            var corner = FindCorner(corners, nodeId, "The requested node is not a supplied/resolved plate incidence node.");
+            return ReadCaptured(output, loadCase, plate, corner, loadId, plateId);
         }
+
         internal static PlateCornerForcesResultSet ReadAll(object output, ILoadCase loadCase, Plate plate)
         {
             ArgumentNullException.ThrowIfNull(loadCase); ArgumentNullException.ThrowIfNull(plate);
             int loadId = loadCase.Id, plateId = plate.Id;
             Positive(loadId, nameof(loadCase)); Positive(plateId, nameof(plate));
-            var corners = Capture(plate.A, plate.B, plate.C, plate.D);
-            var records = new List<PlateCornerForcesResultSet.Observation>(corners.Count);
-            foreach (var corner in corners)
-            {
-                var key = new PlateCornerForcesKey(loadId, plateId, corner.Id);
-                records.Add(new(key, ReadCaptured(output, loadCase, plate, corner, loadId, plateId)));
-            }
+            var corners = Capture(plate.A, plate.B, plate.C, plate.D, nameof(plate));
+            return ReadSelection(output, [new CapturedCase(loadCase, loadId)], [new CapturedPlate(plate, plateId, corners)]);
+        }
+
+        internal static PlateCornerForcesResultSet ReadForLoadCases(object output, IEnumerable<ILoadCase> loadCases, Plate plate, Node cornerNode)
+        {
+            ArgumentNullException.ThrowIfNull(loadCases); ArgumentNullException.ThrowIfNull(plate); ArgumentNullException.ThrowIfNull(cornerNode);
+            int plateId = plate.Id, nodeId = cornerNode.Id;
+            Positive(plateId, nameof(plate)); Positive(nodeId, nameof(cornerNode));
+            var corners = Capture(plate.A, plate.B, plate.C, plate.D, nameof(plate));
+            var corner = FindCorner(corners, nodeId, "The requested node is not a supplied plate incidence node.");
+            var cases = CaptureLoadCases(loadCases);
+            return ReadSelection(output, cases, [new CapturedPlate(plate, plateId, [corner])]);
+        }
+
+        internal static PlateCornerForcesResultSet ReadForLoadCases(object output, IEnumerable<ILoadCase> loadCases, Plate plate)
+        {
+            ArgumentNullException.ThrowIfNull(loadCases); ArgumentNullException.ThrowIfNull(plate);
+            int plateId = plate.Id;
+            Positive(plateId, nameof(plate));
+            var corners = Capture(plate.A, plate.B, plate.C, plate.D, nameof(plate));
+            var cases = CaptureLoadCases(loadCases);
+            if ((long)cases.Count * corners.Count > Limit)
+                throw new ArgumentException("At most 100,000 plate-corner observations may be queried at once.", nameof(loadCases));
+            return ReadSelection(output, cases, [new CapturedPlate(plate, plateId, corners)]);
+        }
+
+        internal static PlateCornerForcesResultSet ReadForPlates(object output, ILoadCase loadCase, IEnumerable<Plate> plates)
+        {
+            ArgumentNullException.ThrowIfNull(loadCase); ArgumentNullException.ThrowIfNull(plates);
+            int loadId = loadCase.Id;
+            Positive(loadId, nameof(loadCase));
+            var capturedPlates = CapturePlates(plates);
+            return ReadSelection(output, [new CapturedCase(loadCase, loadId)], capturedPlates);
+        }
+
+        private static PlateCornerForcesResultSet ReadSelection(object output, List<CapturedCase> cases, List<CapturedPlate> plates)
+        {
+            int total = 0;
+            if (cases.Count > 0) foreach (var p in plates) total += cases.Count * p.Corners.Count;
+            var records = new List<PlateCornerForcesResultSet.Observation>(total);
+            foreach (var load in cases)
+                foreach (var p in plates)
+                    foreach (var corner in p.Corners)
+                    {
+                        var key = new PlateCornerForcesKey(load.Id, p.Id, corner.Id);
+                        records.Add(new(key, ReadCaptured(output, load.LoadCase, p.Plate, corner, load.Id, p.Id)));
+                    }
             return new PlateCornerForcesResultSet(records);
         }
-        private static List<Corner> Capture(Node a, Node b, Node c, Node d)
+
+        private static List<CapturedCase> CaptureLoadCases(IEnumerable<ILoadCase> loadCases)
         {
-            if (a == null || b == null || c == null) throw new ArgumentException("Plate A, B and C incidence references are required.", "plate");
+            var result = new List<CapturedCase>();
+            var seenIds = new HashSet<int>();
+            int occurrences = 0;
+            foreach (ILoadCase loadCase in loadCases)
+            {
+                if (occurrences == Limit) throw new ArgumentException("At most 100,000 load-case occurrences are supported.", nameof(loadCases));
+                occurrences++;
+                if (loadCase == null) throw new ArgumentException("A selected load case is null.", nameof(loadCases));
+                int id = loadCase.Id;
+                if (id <= 0) throw new ArgumentOutOfRangeException(nameof(loadCases), "Every selected load case ID must be positive.");
+                if (seenIds.Add(id)) result.Add(new CapturedCase(loadCase, id));
+            }
+            return result;
+        }
+
+        private static List<CapturedPlate> CapturePlates(IEnumerable<Plate> plates)
+        {
+            var result = new List<CapturedPlate>();
+            var seenIds = new HashSet<int>();
+            int occurrences = 0, totalObservations = 0;
+            foreach (Plate plate in plates)
+            {
+                if (occurrences == Limit) throw new ArgumentException("At most 100,000 plate occurrences are supported.", nameof(plates));
+                occurrences++;
+                if (plate == null) throw new ArgumentException("A selected plate is null.", nameof(plates));
+                int id = plate.Id;
+                if (id <= 0) throw new ArgumentOutOfRangeException(nameof(plates), "Every selected plate ID must be positive.");
+                var corners = Capture(plate.A, plate.B, plate.C, plate.D, nameof(plates));
+                if (seenIds.Add(id))
+                {
+                    totalObservations += corners.Count;
+                    if (totalObservations > Limit)
+                        throw new ArgumentException("At most 100,000 plate-corner observations may be queried at once.", nameof(plates));
+                    result.Add(new CapturedPlate(plate, id, corners));
+                }
+            }
+            return result;
+        }
+
+        private static Corner FindCorner(List<Corner> corners, int nodeId, string message)
+        {
+            foreach (var corner in corners)
+                if (corner.Id == nodeId) return corner;
+            throw new ArgumentException(message, "cornerNode");
+        }
+
+        private static List<Corner> Capture(Node a, Node b, Node c, Node d, string parameter)
+        {
+            if (a == null || b == null || c == null) throw new ArgumentException("Plate A, B and C incidence references are required.", parameter);
             var corners = new List<Corner>(4); var ids = new HashSet<int>();
             foreach (Node node in new[] { a, b, c, d })
             {
                 if (node == null) continue;
                 int id = node.Id;
-                if (id <= 0) throw new ArgumentException("Every supplied incidence node must have a positive ID.", "plate");
+                if (id <= 0) throw new ArgumentException("Every supplied incidence node must have a positive ID.", parameter);
                 if (ids.Add(id)) corners.Add(new(node, id));
             }
             return corners;

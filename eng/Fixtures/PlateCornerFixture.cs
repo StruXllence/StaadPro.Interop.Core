@@ -50,19 +50,43 @@ internal static class PlateCornerFixture
         var hydrated = wrapper.Output.GetPlateCornerForces(lc, new Plate { Id = 17 }, a);
         if (root.Geometry.Calls != 4 || hydrated.Plate.A.Id != 11 || hydrated.CornerNode.Y != 1) throw new Exception("Zero-success/void-output hydration changed.");
         root.Output.Success = false;
-        if (!wrapper.Output.GetPlateCornerForcesAsync(lc, p).IsFaulted || !wrapper.Output.GetPlateCornerForcesAsync(lc, p, a).IsFaulted) throw new Exception("Native failure lost.");
+        if (!wrapper.Output.GetPlateCornerForcesAsync(lc, p).IsFaulted || !wrapper.Output.GetPlateCornerForcesAsync(lc, p, a).IsFaulted ||
+            !wrapper.Output.GetPlateCornerForcesAsync(new[] { lc }, p, a).IsFaulted || !wrapper.Output.GetPlateCornerForcesAsync(new[] { lc }, p).IsFaulted) throw new Exception("Native failure lost.");
+        root.Output.Success = true;
+        var casesCorner = wrapper.Output.GetPlateCornerForces(new[] { lc, lc }, p, a);
+        var casesCornerTask = wrapper.Output.GetPlateCornerForcesAsync(new[] { lc }, p, a).GetAwaiter().GetResult();
+        var casesAll = wrapper.Output.GetPlateCornerForces(new[] { lc, lc }, p);
+        var casesAllTask = wrapper.Output.GetPlateCornerForcesAsync(new[] { lc }, p).GetAwaiter().GetResult();
+        var casePlates = wrapper.Output.GetPlateCornerForces(lc, new[] { p, p });
+        if (casesCorner.Count != 1 || casesCornerTask.Count != 1 || casesAll.Count != 3 || casesAllTask.Count != 3 || casePlates.Count != 3)
+            throw new Exception("Corner batch selection counts/deduplication changed.");
         using var center = new OpenStaadWrapper(new PlateCompositeRoot());
         if (center.Output.GetPlateCenterResults(new[] { lc }, new[] { p }, 512).Count() != 1) throw new Exception("Thread-count compatibility changed.");
         var selected = typeof(IOSOutput).GetMethods().Where(m => m.Name.Contains("PlateCornerForces") || m.Name == "GetPlateCenterResults" && m.GetParameters().Length == 3).ToArray();
-        if (selected.Length != 5) throw new Exception("Expected five new contracts.");
+        if (selected.Length != 10) throw new Exception("Expected ten corner/compatibility contracts.");
         foreach (var m in selected)
         {
-            bool hint = m.Name == "GetPlateCenterResults", single = m.GetParameters().Length == 3 && !hint;
+            bool hint = m.Name == "GetPlateCenterResults";
+            var ps = m.GetParameters();
+            bool single = ps.Length == 3 && !hint && ps[0].ParameterType == typeof(ILoadCase);
+            bool casesSingleCorner = ps.Length == 3 && !hint && ps[0].ParameterType == typeof(IEnumerable<ILoadCase>);
+            bool casesAllCorners = ps.Length == 2 && ps[0].ParameterType == typeof(IEnumerable<ILoadCase>);
+            bool caseAllPlates = ps.Length == 2 && ps[1].ParameterType == typeof(IEnumerable<Plate>);
             Type type = hint ? typeof(IEnumerable<PlateCenterResults>) : single ? typeof(PlateCornerForces) : typeof(PlateCornerForcesResultSet);
-            Type[] parameters = hint ? new[] { typeof(IEnumerable<ILoadCase>), typeof(IEnumerable<Plate>), typeof(int) } : single ? new[] { typeof(ILoadCase), typeof(Plate), typeof(Node) } : new[] { typeof(ILoadCase), typeof(Plate) };
-            string[] names = hint ? new[] { "loadCases", "plates", "nThreads" } : single ? new[] { "loadCase", "plate", "cornerNode" } : new[] { "loadCase", "plate" };
-            if (m.ReturnType != (m.Name.EndsWith("Async") ? typeof(Task<>).MakeGenericType(type) : type) || !m.GetParameters().Select(p => p.Name).SequenceEqual(names) ||
-                !m.GetParameters().Select(p => p.ParameterType).SequenceEqual(parameters) || m.GetParameters().Any(p => p.IsOptional || p.ParameterType.IsByRef)) throw new Exception("Corner/hint contract changed.");
+            Type[] parameters = hint ? new[] { typeof(IEnumerable<ILoadCase>), typeof(IEnumerable<Plate>), typeof(int) }
+                : single ? new[] { typeof(ILoadCase), typeof(Plate), typeof(Node) }
+                : casesSingleCorner ? new[] { typeof(IEnumerable<ILoadCase>), typeof(Plate), typeof(Node) }
+                : casesAllCorners ? new[] { typeof(IEnumerable<ILoadCase>), typeof(Plate) }
+                : caseAllPlates ? new[] { typeof(ILoadCase), typeof(IEnumerable<Plate>) }
+                : new[] { typeof(ILoadCase), typeof(Plate) };
+            string[] names = hint ? new[] { "loadCases", "plates", "nThreads" }
+                : single ? new[] { "loadCase", "plate", "cornerNode" }
+                : casesSingleCorner ? new[] { "loadCases", "plate", "cornerNode" }
+                : casesAllCorners ? new[] { "loadCases", "plate" }
+                : caseAllPlates ? new[] { "loadCase", "plates" }
+                : new[] { "loadCase", "plate" };
+            if (m.ReturnType != (m.Name.EndsWith("Async") ? typeof(Task<>).MakeGenericType(type) : type) || !ps.Select(q => q.Name).SequenceEqual(names) ||
+                !ps.Select(q => q.ParameterType).SequenceEqual(parameters) || ps.Any(q => q.IsOptional || q.ParameterType.IsByRef)) throw new Exception("Corner/hint contract changed.");
         }
         foreach (var type in new[] { typeof(PlateCornerForces), typeof(PlateCornerForcesKey), typeof(PlateCornerForcesResultSet), typeof(Plate) })
         {

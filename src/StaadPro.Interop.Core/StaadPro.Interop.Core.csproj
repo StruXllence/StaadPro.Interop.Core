@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261124.1</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261125</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
     <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction, static-check and plate-center moment/surface-stress composite and corner-force queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
-    <PackageReleaseNotes>Ported the plate-center thread-count compatibility overload and single/all-corners plate-force queries with task variants and complete matching XML IntelliSense. Added source-based named corner result, immutable key and indexed result-set models plus optional plate incidence metadata. Qualified Boolean force success, integral-zero incidence success and documented-void coordinate outputs with complete written finite buffers. Preserved captured request identities, first-incidence order, duplicate-ID handling and owning-thread execution without partial result sets or worker COM. Forty-five Output contracts are available; see the plate-corner guide.</PackageReleaseNotes>
+    <PackageReleaseNotes>Ported multiple-load-case and multiple-plate corner-force selection queries with task variants and complete matching XML IntelliSense. Preserved source deduplication, first-occurrence order, supplied A/B/C incidence validation without implicit hydration and captured-key result-set indexing across mutable edits. Qualified Boolean/integral-one force success, written finite six-Double arrays, bounded 100,000 occurrence/observation checks and owning-thread execution without worker COM or partial result sets. Fifty Output contracts are available; see the plate-corner guide.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>

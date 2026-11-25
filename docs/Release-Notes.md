@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261125 - 25 November 2026
+
+Ported the `GetPlateCornerForces(IEnumerable<ILoadCase>, Plate, Node)` and `GetPlateCornerForces(IEnumerable<ILoadCase>, Plate)` selection queries with their task variants, plus `GetPlateCornerForces(ILoadCase, IEnumerable<Plate>)`, with complete matching interface/adapter XML IntelliSense. Output now provides fifty contracts. See [plate-corner forces](Plate-Corner-Forces.md) for selection behavior, deduplication, bounds and execution rules.
+
+Preserved source first-occurrence order, duplicate-ID deduplication, captured observation keys and read-only result-set indexing across mutable entity edits. All five selection queries require supplied A/B/C plate incidence, validate scalar/sequence inputs and corner membership before native access (even when sequences are empty), bound inputs to 100,000 occurrences and 100,000 unique corner observations, and perform no Geometry hydration.
+
+Qualified Boolean/integral-one native force success, exact six-Double finite array shapes, independent buffer copying and failure stopping without partial result sets. Task methods execute synchronously on the owning COM thread under one shared current-binding lease before returning settled success or faulted tasks, without worker COM.
+
+Release build passed with zero warnings/errors and all 3,084 offline tests, including 39 new cases. Exact installed-package checks verify nineteen Load/fifty Output contracts, matching expanded IntelliSense, 263 compiled XML examples, README/twenty-three guides, native stand-ins and isolated restore/build/runtime/archive equality. No new live native, cross-version runtime or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261124.1 - 24 November 2026
 
 Ported the `GetPlateCenterResults(..., int nThreads)` compatibility overload and single/all-corners `GetPlateCornerForces` queries with their task variants, with complete matching interface/adapter XML IntelliSense. Output now provides forty-five contracts. See [plate-corner forces](Plate-Corner-Forces.md) for method choices, incidence resolution, native status conventions and execution behavior.

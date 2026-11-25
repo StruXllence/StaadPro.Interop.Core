@@ -8,6 +8,11 @@ Use corner queries for native nodal forces and moments at analytical plate incid
 | GetPlateCornerForcesAsync(ILoadCase loadCase, Plate plate, Node cornerNode) | The same work, then an already settled task. |
 | GetPlateCornerForces(ILoadCase loadCase, Plate plate) | One observation per distinct supplied A/B/C/D node ID; requires A/B/C metadata and performs no hydration. |
 | GetPlateCornerForcesAsync(ILoadCase loadCase, Plate plate) | The same complete indexed result set, then a settled task. |
+| GetPlateCornerForces(IEnumerable<ILoadCase> loadCases, Plate plate, Node cornerNode) | One observation per unique load-case ID at one supplied corner; requires A/B/C metadata and performs no hydration. |
+| GetPlateCornerForcesAsync(IEnumerable<ILoadCase> loadCases, Plate plate, Node cornerNode) | The same deduplicated corner result set, then a settled task. |
+| GetPlateCornerForces(IEnumerable<ILoadCase> loadCases, Plate plate) | Unique load-case by unique plate-corner observations in case-major, incidence order; requires A/B/C metadata and performs no hydration. |
+| GetPlateCornerForcesAsync(IEnumerable<ILoadCase> loadCases, Plate plate) | The same case-by-corner indexed result set, then a settled task. |
+| GetPlateCornerForces(ILoadCase loadCase, IEnumerable<Plate> plates) | Unique plate by unique plate-corner observations in plate-major, incidence order; requires A/B/C metadata on every plate and performs no hydration. |
 | GetPlateCenterResults(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates, int nThreads) | Source-compatible hint 1..512; reuses bounded sequential center queries. Prefer the overload without the hint for new code. |
 
 ~~~csharp
@@ -25,6 +30,16 @@ var completed = wrapper.Output.GetPlateCornerForcesAsync(loadCase, plate, a);
 Console.WriteLine(completed.GetAwaiter().GetResult().Fy);
 var completedSet = wrapper.Output.GetPlateCornerForcesAsync(loadCase, plate);
 Console.WriteLine(completedSet.GetAwaiter().GetResult().Count);
+var byCasesCorner = wrapper.Output.GetPlateCornerForces(new[] { loadCase }, plate, a);
+Console.WriteLine(byCasesCorner[1, 17, 11].Fx);
+var byCasesCornerTask = wrapper.Output.GetPlateCornerForcesAsync(new[] { loadCase }, plate, a);
+Console.WriteLine(byCasesCornerTask.GetAwaiter().GetResult().Count);
+var byCasesPlate = wrapper.Output.GetPlateCornerForces(new[] { loadCase }, plate);
+Console.WriteLine(byCasesPlate.GetForLoadCaseAndPlate(1, 17).Count);
+var byCasesPlateTask = wrapper.Output.GetPlateCornerForcesAsync(new[] { loadCase }, plate);
+Console.WriteLine(byCasesPlateTask.GetAwaiter().GetResult().Count);
+var byCasePlates = wrapper.Output.GetPlateCornerForces(loadCase, new[] { plate });
+Console.WriteLine(byCasePlates.PlateIds.Count);
 var center = wrapper.Output.GetPlateCenterResults(new[] { loadCase }, new[] { plate }, 1);
 Console.WriteLine(System.Linq.Enumerable.First(center).Moments.Mx);
 ~~~
@@ -33,9 +48,9 @@ Console.WriteLine(System.Linq.Enumerable.First(center).Moments.Mx);
 
 The corner argument supplies a **positive node number, not ordinal 1/2/3/4**. Single-corner queries capture positive load/plate/requested-node IDs once, then select the first A/B/C/D incidence reference with the requested ID. The returned node can differ from the supplied node object of the same ID. Supplied incidence requires A/B/C; D can be null or repeat an ID for a triangle. Every non-null supplied incidence ID must be positive; their coordinates are unused and are not geometry validity evidence.
 
-If A/B/C is incomplete, the single-corner query obtains incidence through the acquired raw Geometry binding and hydrates each distinct positive node once. It creates new detached metadata without modifying the supplied plate. Incidence requires **integral zero success**, written positive A/B/C IDs and nonnegative D; D zero means absent. Coordinate retrieval is documented **void** and qualifies written finite Double XYZ outputs using NaN sentinels. It does not invent a Boolean return value. Hydrated coordinates retain native global coordinate values. Original native/dispatch errors propagate; incomplete or failed hydration does not fall back to the supplied partial geometry or dispatch a force query.
+If A/B/C is incomplete, the single-case/single-corner query obtains incidence through the acquired raw Geometry binding and hydrates each distinct positive node once. It creates new detached metadata without modifying the supplied plate. Incidence requires **integral zero success**, written positive A/B/C IDs and nonnegative D; D zero means absent. Coordinate retrieval is documented **void** and qualifies written finite Double XYZ outputs using NaN sentinels. It does not invent a Boolean return value. Hydrated coordinates retain native global coordinate values. Original native/dispatch errors propagate; incomplete or failed hydration does not fall back to the supplied partial geometry or dispatch a force query.
 
-The all-corners overload instead requires supplied incidence and validates/captures it before force calls. It queries each distinct node ID once in A/B/C/D encounter order, retaining the first reference for repeated IDs. Geometric degeneracy, planarity and native membership of supplied metadata are not certified. These metadata members extend Plate without porting the complete Geometry API.
+The all-corners and batch-selection overloads instead require supplied incidence and validate/capture all inputs before force calls, even when a sequence is empty. Sequences are enumerated once, bounded to 100,000 occurrences and 100,000 unique observations, deduplicated by captured ID while retaining first references and original order, and checked across every entry including duplicate plate entries. Geometric degeneracy, planarity and native membership of supplied metadata are not certified. These metadata members extend Plate without porting the complete Geometry API.
 
 ## Native success and independent values
 

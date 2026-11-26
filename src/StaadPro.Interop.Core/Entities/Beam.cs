@@ -2,7 +2,7 @@ using StaadPro.Interop.Core.Common;
 
 namespace StaadPro.Interop.Core.Entities
 {
-    /// <summary>Stores detached analytical-member identity, supplied endpoints and a steel-utilization observation.</summary>
+    /// <summary>Stores detached analytical-member identity, supplied endpoints, beta angle and steel utilization.</summary>
     /// <remarks>Uses managed property notifications without a native binding or geometry hydration. Construction does
     /// not validate IDs, create a native member, register node connectivity, initialize releases or calculate axes.
     /// Equality and hashing use mutable Id, matching the member-identity contract; remove/reinsert a Beam in ordinary
@@ -31,6 +31,10 @@ namespace StaadPro.Interop.Core.Entities
         /// <summary>Gets the supplied end-node reference.</summary>
         /// <value>The constructor reference or null. No node hydration or axis computation is implied.</value>
         public Node EndNode { get; private set; }
+        /// <summary>Gets or sets the supplied member beta angle in degrees.</summary>
+        /// <value>The detached angle, initially zero. Positive values rotate the transverse axes by the right-hand rule about the start-to-end axis.</value>
+        /// <remarks>The setter stores manual metadata and raises managed notifications. Frame calculations validate the angle and capture its current value.</remarks>
+        public double BetaAngle { get => Get<double>(); set => Set(value); }
         /// <summary>Gets or sets the detached steel-utilization observation.</summary>
         /// <value>The stored ratio, initially zero before population. Manual edits are not validated and do not update
         /// STAAD. Qualified Output population may store nonnegative ratios or documented -1/-999 absence sentinels.</value>

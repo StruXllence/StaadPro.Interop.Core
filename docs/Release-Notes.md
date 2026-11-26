@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261126.2 - 26 November 2026
+
+Added `GetMemberLocalCoordinateSystem(Beam member)` and the node and beam overloads of `TransformPlateCornerForcesToMemberLocal` and `TransformPlateCornerForcesToMemberLocalAsync`. All five have matching interface and adapter XML IntelliSense. See [member-local frames and force projection](Member-Local-Plate-Corner-Forces.md).
+
+The frame captures origin and three orthonormal axes. It follows the start-to-end direction and uses supplied beam beta in degrees for the beam overload. The near-vertical reference is orthogonalized to retain a right-handed basis for tilted members. The node overload uses a zero-beta frame from the corner to the other node.
+
+The transforms project already-global force and moment vectors independently at the same reference point. They preserve units and the moment reference point and return a detached `MemberForces` record with case and end metadata. Both task overloads finish the managed operation on the owning thread before returning a completed or faulted task.
+
+The Release build completed with zero warnings and errors. All 3,245 tests passed, including 19 new cases. The installed consumer verified all seventy Output contracts, compiled 303 XML IntelliSense examples and twenty-four guide examples, and exercised the detached projection APIs.
+
 ## 1.0.0-preview.20261126.1 - 26 November 2026
 
 Completed the family-specific plate-corner task overload, the hydrated load-case-ID batch queries with synchronous/task variants, and the global-coordinate naming alias pair. Output now provides sixty-five contracts with full matching interface/adapter XML IntelliSense. See [plate-corner forces](Plate-Corner-Forces.md) for overload selection, query order and examples.

@@ -41,6 +41,7 @@ try {
     $plateSurfaceGuide = Read-Entry 'docs/Plate-Center-Moments-and-Surface-Stresses.md'
     $plateCompositeGuide = Read-Entry 'docs/Plate-Center-Composite-Results.md'
     $plateCornerGuide = Read-Entry 'docs/Plate-Corner-Forces.md'
+    $memberLocalGuide = Read-Entry 'docs/Member-Local-Plate-Corner-Forces.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
@@ -108,7 +109,7 @@ try {
     foreach($domain in @('Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
-        if($contracts.Count -ne $(if($domain -eq 'Load'){19}else{65})){throw 'Unexpected force domain documentation count.'}
+        if($contracts.Count -ne $(if($domain -eq 'Load'){19}else{70})){throw 'Unexpected force domain documentation count.'}
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched force domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete force domain IntelliSense.'}}}
     }
     $examples = @($documentation.SelectNodes('//example/code'))
@@ -721,6 +722,7 @@ internal static class PackageSmoke
         PlateCornerFixture.Verify(docs);
         PlateCornerHydrationFixture.Verify();
         PlateCornerHydrationFixture.VerifyBatchesAndAliases();
+        MemberLocalFrameFixture.Verify(docs);
         foreach(Type definitionType in new[]{typeof(LoadEnvelopeDetail),typeof(ILoadEnvelopeDetail),typeof(LoadEnvelopType),typeof(StaadLoadCombination),typeof(StaadPro.Interop.Core.Base.LoadCombination),typeof(StaadPro.Interop.Core.Interfaces.ILoadCombination)})
         {
             if(!docs.Descendants("member").Any(item=>(string)item.Attribute("name")=="T:"+definitionType.FullName&&item.Element("summary")!=null))throw new Exception("New definition type XML missing.");
@@ -791,7 +793,7 @@ internal static class PackageSmoke
                 }
             }
             else if(contract==typeof(IOSLoad)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"GetLoadCaseTitle","GetAllPrimaryLoadCases","GetAllReferenceLoadCases","GetPrimaryLoadCaseFromId","GetReferenceLoadCaseFromId","GetPrimaryLoadCasesFromIds","GetReferenceLoadCasesFromIds","GetLoadCombinationCaseFromId","GetLoadCombinationCasesFromIds","GetAllLoadCombinationCases","GetAllLoadCasesOfType","GetLoadCase","GetLoadCases","GetLoadCasesFromIds","GetLoadCasesOfType","GetEnvelopeIds","GetLoadEnvelopeDetail","GetAllLoadEnvelopeDetails","GetLoadCombination"}.OrderBy(n=>n)))throw new Exception("Unexpected Load operations.");}
-            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed","GetBucklingFactor","GetBucklingModeDisplacement","GetBucklingModeDisplacementAtNode","GetMemberSteelUtilizationRatio","GetMemberSteelUtilizationRatioAsync","GetMemberEndForcesAsync","GetMemberSteelUtilizationRatioAsync","GetMemberSteelUtilizationRatios","PopulateMemberSteelUtilizationRatios","GetMemberSteelUtilizationRatiosAsync","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeams","GetSteelDesignResultsForBeams","GetGoverningMember","GetSupportReactions","GetSupportForces","GetSupportReactionsAsync","GetSupportForcesAsync","GetStaticCheckResultAsync","GetStaticCheckResults","GetStaticCheckResults","GetStaticCheckResultsAsync","GetPlateCenterForces","GetPlateCenterForcesAsync","GetPlateCenterMoments","GetPlateCenterMomentsAsync","GetPlateCenterVonMises","GetPlateCenterVonMisesAsync","GetPlatePrincipalStresses","GetPlatePrincipalStressesAsync","GetPlateCenterResults","GetPlateCenterResultsAsync","GetPlateCenterResults","GetPlateCenterResultsAsync","GetPlateCenterResults","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForcesInGlobalCoordinates","GetPlateCornerForcesInGlobalCoordinatesAsync"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
+            else if(contract==typeof(IOSOutput)) {if(!methods.Select(m=>m.Name).OrderBy(n=>n).SequenceEqual(new[]{"AreResultsAvailable","GetMemberEndForces","GetMemberEndForces","AreBucklingAnalysisResultsAvailable","GetNumberOfBucklingFactorsComputed","GetBucklingFactor","GetBucklingModeDisplacement","GetBucklingModeDisplacementAtNode","GetMemberSteelUtilizationRatio","GetMemberSteelUtilizationRatioAsync","GetMemberEndForcesAsync","GetMemberSteelUtilizationRatioAsync","GetMemberSteelUtilizationRatios","PopulateMemberSteelUtilizationRatios","GetMemberSteelUtilizationRatiosAsync","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeam","GetSteelDesignResultsForBeams","GetSteelDesignResultsForBeams","GetGoverningMember","GetSupportReactions","GetSupportForces","GetSupportReactionsAsync","GetSupportForcesAsync","GetStaticCheckResultAsync","GetStaticCheckResults","GetStaticCheckResults","GetStaticCheckResultsAsync","GetPlateCenterForces","GetPlateCenterForcesAsync","GetPlateCenterMoments","GetPlateCenterMomentsAsync","GetPlateCenterVonMises","GetPlateCenterVonMisesAsync","GetPlatePrincipalStresses","GetPlatePrincipalStressesAsync","GetPlateCenterResults","GetPlateCenterResultsAsync","GetPlateCenterResults","GetPlateCenterResultsAsync","GetPlateCenterResults","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForces","GetPlateCornerForcesAsync","GetPlateCornerForcesInGlobalCoordinates","GetPlateCornerForcesInGlobalCoordinatesAsync","TransformPlateCornerForcesToMemberLocal","TransformPlateCornerForcesToMemberLocal","TransformPlateCornerForcesToMemberLocalAsync","TransformPlateCornerForcesToMemberLocalAsync","GetMemberLocalCoordinateSystem"}.OrderBy(n=>n)))throw new Exception("Unexpected Output operations.");}
             else if (methods.Length != 0) throw new Exception("Unexpected domain operation: "+contract.Name);
         }
         foreach (Type model in new[] { typeof(ShortJobInfo), typeof(FullJobInfo) })
@@ -917,6 +919,10 @@ if([string]::IsNullOrWhiteSpace($cornerCode)){throw 'Missing corner guide exampl
 [IO.File]::WriteAllText((Join-Path $consumer 'PlateCornerExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class PlateCornerExample{static void Example(){using var wrapper=new OpenStaadWrapper(new PlateCornerRoot());'+$cornerCode+'}}')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Fixtures/PlateCornerFixture.cs') -Destination (Join-Path $consumer 'PlateCornerFixture.cs')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Fixtures/PlateCornerHydrationFixture.cs') -Destination (Join-Path $consumer 'PlateCornerHydrationFixture.cs')
+$memberLocalCode=[regex]::Match($memberLocalGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if([string]::IsNullOrWhiteSpace($memberLocalCode)){throw 'Missing member-local frame guide example.'}
+[IO.File]::WriteAllText((Join-Path $consumer 'MemberLocalFrameExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class MemberLocalFrameExample{static void Example(){using var wrapper=new OpenStaadWrapper(new MemberLocalFrameRoot());'+$memberLocalCode+'}}')
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Fixtures/MemberLocalFrameFixture.cs') -Destination (Join-Path $consumer 'MemberLocalFrameFixture.cs')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -937,4 +943,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all twenty-three Root/domain guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all twenty-four Root/domain guide examples compiled without executing native examples.')

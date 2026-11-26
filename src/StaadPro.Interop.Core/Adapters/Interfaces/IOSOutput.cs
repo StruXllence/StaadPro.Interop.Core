@@ -1667,5 +1667,124 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(result.Fx);
         /// </code></example>
         Task<PlateCornerForces> GetPlateCornerForcesInGlobalCoordinatesAsync(ILoadCase loadCase, Plate plate, Node cornerNode);
+
+        /// <summary>Projects supplied global plate-corner forces and moments onto a zero-beta frame from the corner to another node.</summary>
+        /// <param name="plateCornerForces">Detached record with six finite components already expressed in global XYZ, populated case and plate metadata, and a corner belonging to the supplied plate.</param>
+        /// <param name="otherMemberNode">Detached other endpoint with finite coordinates, distinct from the plate corner.</param>
+        /// <returns>A new editable MemberForces record with the projected components and captured case and member-end metadata.</returns>
+        /// <remarks><para>The frame runs from the corner node to otherMemberNode with zero beta. The result uses BeamId 0 and End Start to identify this conceptual member direction.</para>
+        /// <para>The start-to-end direction is U. For zero beta, V follows the projection of global Y, with a projected signed global X reference near vertical. W completes a right-handed orthonormal frame. The near-vertical projection keeps the axes perpendicular even for a slightly tilted member.</para>
+        /// <para>Each component is a dot product with the corresponding base axis. Forces and moments are projected independently, preserving the supplied units, sign convention and moment reference point. Supply global components from a verified source. This calculation uses supplied data and the wrapper lease without accessing STAAD.</para>
+        /// <para>Use the wrapper's current Output adapter on its owning thread. The operation holds the shared binding and lifetime lease while capturing input and computing results.</para></remarks>
+        /// <exception cref="ArgumentNullException">A required argument is null.</exception>
+        /// <exception cref="ArgumentException">The record context, incidence, member geometry, beta or components are invalid.</exception>
+        /// <exception cref="InvalidOperationException">The binding, thread or operation lease is invalid.</exception>
+        /// <exception cref="OverflowException">A projection cannot be represented as a finite Double.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(1, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(2, 1, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { A = a };
+        /// var load = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var corner = new PlateCornerForces(load, plate, a, 1, 2, 3, 4, 5, 6);
+        /// var local = wrapper.Output.TransformPlateCornerForcesToMemberLocal(corner, b);
+        /// Console.WriteLine(local.Fy);
+        /// </code></example>
+        MemberForces TransformPlateCornerForcesToMemberLocal(PlateCornerForces plateCornerForces, Node otherMemberNode);
+
+        /// <summary>Projects supplied global plate-corner forces and moments onto a zero-beta frame from the corner to another node.</summary>
+        /// <param name="plateCornerForces">Detached record with six finite components already expressed in global XYZ, populated case and plate metadata, and a corner belonging to the supplied plate.</param>
+        /// <param name="otherMemberNode">Detached other endpoint with finite coordinates, distinct from the plate corner.</param>
+        /// <returns>A settled task containing a new editable MemberForces record. Validation and binding errors fault the task.</returns>
+        /// <remarks><para>The frame runs from the corner node to otherMemberNode with zero beta. The result uses BeamId 0 and End Start to identify this conceptual member direction.</para>
+        /// <para>The start-to-end direction is U. For zero beta, V follows the projection of global Y, with a projected signed global X reference near vertical. W completes a right-handed orthonormal frame. The near-vertical projection keeps the axes perpendicular even for a slightly tilted member.</para>
+        /// <para>Each component is a dot product with the corresponding base axis. Forces and moments are projected independently, preserving the supplied units, sign convention and moment reference point. Supply global components from a verified source. This calculation uses supplied data and the wrapper lease without accessing STAAD.</para>
+        /// <para>Use the wrapper's current Output adapter on its owning thread. The operation holds the shared binding and lifetime lease while capturing input and computing results. All work completes before the task is returned.</para></remarks>
+        /// <exception cref="ArgumentNullException">A required argument is null.</exception>
+        /// <exception cref="ArgumentException">The record context, incidence, member geometry, beta or components are invalid.</exception>
+        /// <exception cref="InvalidOperationException">The binding, thread or operation lease is invalid.</exception>
+        /// <exception cref="OverflowException">A projection cannot be represented as a finite Double.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(1, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(2, 1, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { A = a };
+        /// var load = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var corner = new PlateCornerForces(load, plate, a, 1, 2, 3, 4, 5, 6);
+        /// var local = wrapper.Output.TransformPlateCornerForcesToMemberLocalAsync(corner, b).GetAwaiter().GetResult();
+        /// Console.WriteLine(local.Fy);
+        /// </code></example>
+        Task<MemberForces> TransformPlateCornerForcesToMemberLocalAsync(PlateCornerForces plateCornerForces, Node otherMemberNode);
+
+        /// <summary>Projects supplied global plate-corner forces and moments onto the supplied beam frame.</summary>
+        /// <param name="plateCornerForces">Detached record with six finite components already expressed in global XYZ, populated case and plate metadata, and a corner belonging to the supplied plate.</param>
+        /// <param name="member">Detached member with a positive ID, two finite and distinct endpoints and a finite beta angle in degrees.</param>
+        /// <returns>A new editable MemberForces record with the projected components and captured case and member-end metadata.</returns>
+        /// <remarks><para>The corner must match one of the member ends. Reference identity or equal positive IDs match first. If either ID is nonpositive, coordinates within 1e-9 model length units match. The start end takes precedence if both match. The frame uses StartNode to EndNode at either end. Its beta is the captured member.BetaAngle in degrees, positive by the right-hand rule about U.</para>
+        /// <para>The start-to-end direction is U. For zero beta, V follows the projection of global Y, with a projected signed global X reference near vertical. W completes a right-handed orthonormal frame. The near-vertical projection keeps the axes perpendicular even for a slightly tilted member.</para>
+        /// <para>Each component is a dot product with the corresponding base axis. Forces and moments are projected independently, preserving the supplied units, sign convention and moment reference point. Supply global components from a verified source. This calculation uses supplied data and the wrapper lease without accessing STAAD.</para>
+        /// <para>Use the wrapper's current Output adapter on its owning thread. The operation holds the shared binding and lifetime lease while capturing input and computing results.</para></remarks>
+        /// <exception cref="ArgumentNullException">A required argument is null.</exception>
+        /// <exception cref="ArgumentException">The record context, incidence, member geometry, beta or components are invalid.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The supplied beam identifier is nonpositive.</exception>
+        /// <exception cref="InvalidOperationException">The binding, thread or operation lease is invalid.</exception>
+        /// <exception cref="OverflowException">A projection cannot be represented as a finite Double.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(1, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(2, 1, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { A = a };
+        /// var load = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var corner = new PlateCornerForces(load, plate, a, 1, 2, 3, 4, 5, 6);
+        /// var member = new StaadPro.Interop.Core.Entities.Beam(7, a, b) { BetaAngle = 90 };
+        /// var local = wrapper.Output.TransformPlateCornerForcesToMemberLocal(corner, member);
+        /// Console.WriteLine(local.Fy);
+        /// </code></example>
+        MemberForces TransformPlateCornerForcesToMemberLocal(PlateCornerForces plateCornerForces, Beam member);
+
+        /// <summary>Projects supplied global plate-corner forces and moments onto the supplied beam frame.</summary>
+        /// <param name="plateCornerForces">Detached record with six finite components already expressed in global XYZ, populated case and plate metadata, and a corner belonging to the supplied plate.</param>
+        /// <param name="member">Detached member with a positive ID, two finite and distinct endpoints and a finite beta angle in degrees.</param>
+        /// <returns>A settled task containing a new editable MemberForces record. Validation and binding errors fault the task.</returns>
+        /// <remarks><para>The corner must match one of the member ends. Reference identity or equal positive IDs match first. If either ID is nonpositive, coordinates within 1e-9 model length units match. The start end takes precedence if both match. The frame uses StartNode to EndNode at either end. Its beta is the captured member.BetaAngle in degrees, positive by the right-hand rule about U.</para>
+        /// <para>The start-to-end direction is U. For zero beta, V follows the projection of global Y, with a projected signed global X reference near vertical. W completes a right-handed orthonormal frame. The near-vertical projection keeps the axes perpendicular even for a slightly tilted member.</para>
+        /// <para>Each component is a dot product with the corresponding base axis. Forces and moments are projected independently, preserving the supplied units, sign convention and moment reference point. Supply global components from a verified source. This calculation uses supplied data and the wrapper lease without accessing STAAD.</para>
+        /// <para>Use the wrapper's current Output adapter on its owning thread. The operation holds the shared binding and lifetime lease while capturing input and computing results. All work completes before the task is returned.</para></remarks>
+        /// <exception cref="ArgumentNullException">A required argument is null.</exception>
+        /// <exception cref="ArgumentException">The record context, incidence, member geometry, beta or components are invalid.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The supplied beam identifier is nonpositive.</exception>
+        /// <exception cref="InvalidOperationException">The binding, thread or operation lease is invalid.</exception>
+        /// <exception cref="OverflowException">A projection cannot be represented as a finite Double.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(1, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(2, 1, 0, 0);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate { A = a };
+        /// var load = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var corner = new PlateCornerForces(load, plate, a, 1, 2, 3, 4, 5, 6);
+        /// var member = new StaadPro.Interop.Core.Entities.Beam(7, a, b) { BetaAngle = 90 };
+        /// var local = wrapper.Output.TransformPlateCornerForcesToMemberLocalAsync(corner, member).GetAwaiter().GetResult();
+        /// Console.WriteLine(local.Fy);
+        /// </code></example>
+        Task<MemberForces> TransformPlateCornerForcesToMemberLocalAsync(PlateCornerForces plateCornerForces, Beam member);
+
+        /// <summary>Builds a detached, right-handed member coordinate frame from supplied endpoints and beta.</summary>
+        /// <param name="member">Detached beam with two finite distinct endpoints and a finite BetaAngle in degrees. A draft beam ID is permitted.</param>
+        /// <returns>An immutable LocalCS containing the captured origin coordinates, origin node ID, and three unit directions expressed in global XYZ.</returns>
+        /// <remarks><para>The start-to-end direction is U. For zero beta, V follows the projection of global Y, with a projected signed global X reference near vertical. W completes a right-handed orthonormal frame. The near-vertical projection keeps the axes perpendicular even for a slightly tilted member.</para>
+        /// <para>Positive beta rotates V and W about U by the right-hand rule. Beta is supplied on the Beam and is independent of any model settings or native beta lookup. Endpoint separation must exceed 1e-9 model length units. Beta magnitudes at most 1e-9 degrees are treated as zero.</para>
+        /// <para>Use the wrapper's current Output adapter on its owning thread. The operation holds the shared binding and lifetime lease while capturing input and computing results. The calculation uses only supplied data.</para></remarks>
+        /// <exception cref="ArgumentNullException">member is null.</exception>
+        /// <exception cref="ArgumentException">An endpoint is missing, the endpoints are equivalent or too close, or a coordinate or beta is nonfinite.</exception>
+        /// <exception cref="InvalidOperationException">The binding, thread or operation lease is invalid.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(1, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(2, 1, 0, 0);
+        /// var member = new StaadPro.Interop.Core.Entities.Beam(7, a, b) { BetaAngle = 90 };
+        /// var frame = wrapper.Output.GetMemberLocalCoordinateSystem(member);
+        /// Console.WriteLine(frame.U.X);
+        /// </code></example>
+        LocalCS GetMemberLocalCoordinateSystem(Beam member);
     }
 }

@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261126 - 26 November 2026
+
+Ported five ID-based plate-corner overloads: automatic binding resolution, explicit current Geometry/Load bindings, their two task variants and explicit load-family discovery. Output now exposes sixty contracts. Complete matching interface/adapter XML IntelliSense and the [plate-corner guide](Plate-Corner-Forces.md) explain the differences from supplied-metadata, all-corner and sparse/Cartesian queries.
+
+Hydrated detached plate incidence/coordinates and load-case metadata through existing qualified readers. Preserved primary, combination and reference precedence, complete bounded inventory validation and single-family discovery when explicitly requested. Explicit adapters must be current bindings from the same Output wrapper; foreign, manually reconstructed and replaced adapters fail before native work.
+
+Kept the complete sequence under one owning-thread lifetime/reentrancy lease without recursive public adapter calls. Geometry/membership/discovery failures stop before force retrieval, native exceptions retain their original identity, and each successful six-Double force buffer is copied independently. Task variants finish on the caller before returning settled tasks. No worker COM, model acquisition, analysis, unit conversion, fallback or native mutation was added.
+
+Release build passed with zero warnings/errors and all **3,188 offline tests**, including **62 new cases**. Exact installed-package checks verify nineteen Load/sixty Output contracts, **283 compiled XML examples**, README/twenty-three guides and all five new native-stand-in workflows, with isolated restore/build/runtime/archive equality. These checks do not add live native, cross-version runtime or engineering qualification.
+
 ## 1.0.0-preview.20261125.1 - 25 November 2026
 
 Ported the single-case/multiple-plate task overload, Cartesian case/plate queries and sparse request queries, each with complete matching interface and adapter XML IntelliSense. Output now provides fifty-five contracts. See [plate-corner forces](Plate-Corner-Forces.md) for overload selection, examples and execution rules.

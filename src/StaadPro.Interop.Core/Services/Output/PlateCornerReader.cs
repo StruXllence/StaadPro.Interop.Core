@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using StaadPro.Interop.Core.Adapters.Interfaces;
+using StaadPro.Interop.Core.Enums;
+using StaadPro.Interop.Core.Services.Load;
 using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Models;
 using StaadPro.Interop.Core.Services.Interop;
@@ -15,6 +18,38 @@ namespace StaadPro.Interop.Core.Services.Output
         { internal ILoadCase LoadCase { get; } = loadCase; internal int Id { get; } = id; }
         private sealed class CapturedPlate(Plate plate, int id, List<Corner> corners)
         { internal Plate Plate { get; } = plate; internal int Id { get; } = id; internal List<Corner> Corners { get; } = corners; }
+
+        // Called only within one Output lease; reuse internal readers rather than reentering public adapters.
+        internal static PlateCornerForces ReadByIds(OpenStaadWrapper wrapper, int loadCaseId, int plateId,
+            int cornerNodeId, IOSGeometry geometry, IOSLoad load, LoadCaseType? loadCaseType = null)
+        {
+            Positive(loadCaseId, nameof(loadCaseId)); Positive(plateId, nameof(plateId)); Positive(cornerNodeId, nameof(cornerNodeId));
+            if (loadCaseType.HasValue && loadCaseType.Value is not
+                (LoadCaseType.PrimaryLoad or LoadCaseType.LoadCombination or LoadCaseType.ReferenceLoad))
+                throw new ArgumentOutOfRangeException(nameof(loadCaseType), "Only primary, combination and reference families can be resolved.");
+            ArgumentNullException.ThrowIfNull(geometry); ArgumentNullException.ThrowIfNull(load);
+            if (!ReferenceEquals(geometry, wrapper.Geometry))
+                throw new ArgumentException("Use this wrapper's current Geometry adapter.", nameof(geometry));
+            if (!ReferenceEquals(load, wrapper.Load))
+                throw new ArgumentException("Use this wrapper's current Load adapter.", nameof(load));
+
+            var plate = Hydrate((object)wrapper.RawGeometry, plateId);
+            var corners = Capture(plate.A, plate.B, plate.C, plate.D, nameof(plateId));
+            Corner selectedCorner = null;
+            foreach (var corner in corners) if (corner.Id == cornerNodeId) { selectedCorner = corner; break; }
+            if (selectedCorner == null)
+                throw new ArgumentException("The requested node is not an incidence node of the hydrated plate.", nameof(cornerNodeId));
+
+            ILoadCase selectedCase = null;
+            var families = loadCaseType.HasValue ? new[] { loadCaseType.Value } :
+                new[] { LoadCaseType.PrimaryLoad, LoadCaseType.LoadCombination, LoadCaseType.ReferenceLoad };
+            foreach (var family in families)
+                foreach (var candidate in LoadCaseMetadataReader.ReadAllOfType((object)wrapper.RawLoad, family))
+                    if (candidate.Id == loadCaseId && selectedCase == null) selectedCase = candidate;
+            if (selectedCase == null)
+                throw new InvalidOperationException("Load case " + loadCaseId + " was not found in the requested load families.");
+            return ReadCaptured((object)wrapper.RawOutput, selectedCase, plate, selectedCorner, loadCaseId, plateId);
+        }
 
         internal static PlateCornerForces Read(object output, object geometry, ILoadCase loadCase, Plate plate, Node cornerNode)
         {

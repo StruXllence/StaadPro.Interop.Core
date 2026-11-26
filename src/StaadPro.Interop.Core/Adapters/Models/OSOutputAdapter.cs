@@ -1501,5 +1501,150 @@ namespace StaadPro.Interop.Core.Adapters.Models
             try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadRequests((object)wrapper.RawOutput, requests))); }
             catch (Exception error) { return Task.FromException<PlateCornerForcesResultSet>(error); }
         }
+
+        /// <summary>Resolves native plate/case metadata from IDs and reads one plate-corner force observation.</summary>
+        /// <param name="loadCaseId">Positive analyzed case/combination ID. Resolved by primary, then combination, then reference precedence; the first matching family wins, while every family inventory is still validated.</param>
+        /// <param name="plateId">Positive analytical plate number. Native incidence and every distinct corner coordinate are hydrated into new detached metadata.</param>
+        /// <param name="cornerNodeId">Positive incidence-node number, not corner ordinal 1/2/3/4. Resolved to the first matching hydrated A/B/C/D reference.</param>
+        /// <returns>A new PlateCornerForces with detached case/plate/node context and independently copied Fx/Fy/Fz/Mx/My/Mz values in native axes, signs and base units. No partial result or default-zero fallback is returned.</returns>
+        /// <remarks>
+        /// <para>When to use: Choose ID-based queries when populated metadata is unavailable. The ILoadCase/Plate/Node overload can reuse supplied metadata, and collection/sparse-request overloads require supplied A/B/C and do not hydrate. Uses the acquired wrapper's current Geometry and Load adapters without opening another model. Default discovery reads complete primary, combination and reference inventories in that order, including metadata for unrequested IDs. Invalid data in any family can fail the observation even after an earlier matching case. Use the family overload to constrain discovery.</para>
+        /// <para>Validates scalar IDs, supported family and adapter ownership before native work. Hydrates plate incidence first: integral zero success with written positive A/B/C and nonnegative D is required; D zero is absent. Reads each distinct positive node once through documented-void coordinate retrieval, requiring written finite Double XYZ. Repeated incidence IDs share hydrated references. Resolves membership before load discovery. No native force call occurs if geometry, membership, discovery or metadata validation fails.</para>
+        /// <para>Reuses bounded internal Load readers under the same operation lease. Each family inventory is limited to 100,000 entries; Int32 IDs must be positive, unique and completely written. Primary/combination number retrieval distinguishes Boolean success from integral counts and rechecks counts after Boolean success; reference retrieval requires the reported count. Titles/types are validated and copied into detached records; combinations retain LoadType.None. No synthetic title/case, missing-family fallback, case activation or result freshness inference occurs.</para>
+        /// <para>Calls native GetPlateCornerForces once with captured plate/node/case IDs and a six-Double NaN-sentinel buffer. Boolean true/integral one and fully written finite exact rank-one six-Double output are required; replaced/nonzero-bound arrays are copied. No integer/string coercion, stress conversion, averaging, rotation, unit-service conversion or sign change occurs. Family precedence identifies metadata only; the native result API still receives a case ID without a family selector. Native membership/engineering suitability of an analysis is not certified.</para>
+        /// <para>One current Output, constructing-thread, lifetime and reentrancy lease spans validation, hydration, discovery and force retrieval. Reacquire Output/Geometry/Load after refresh. Public adapter methods are not recursively called. Original transport/missing-signature exceptions and HRESULTs propagate without retry. Other wrappers, raw calls and external STAAD/metadata edits are outside the lease; observations are sequential, not atomic. Returned context/scalars remain editable. No model acquisition, selection, analysis, save, replay or native mutation is performed.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required Geometry or Load adapter is unavailable/null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An ID is not positive.</exception>
+        /// <exception cref="ArgumentException">A supplied adapter is not current for this wrapper or the requested node is not on the hydrated plate.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid; a case is absent; or native status, geometry, metadata or force output is unsuccessful, malformed or unwritten.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetPlateCornerForces(1, 17, 11);
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public PlateCornerForces GetPlateCornerForces(int loadCaseId, int plateId, int cornerNodeId) =>
+            Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadByIds(wrapper, loadCaseId, plateId, cornerNodeId, wrapper.Geometry, wrapper.Load));
+
+        /// <summary>Resolves native plate/case metadata from IDs and reads one plate-corner force observation as a settled task.</summary>
+        /// <param name="loadCaseId">Positive analyzed case/combination ID. Resolved by primary, then combination, then reference precedence; the first matching family wins, while every family inventory is still validated.</param>
+        /// <param name="plateId">Positive analytical plate number. Native incidence and every distinct corner coordinate are hydrated into new detached metadata.</param>
+        /// <param name="cornerNodeId">Positive incidence-node number, not corner ordinal 1/2/3/4. Resolved to the first matching hydrated A/B/C/D reference.</param>
+        /// <returns>An already settled task containing a new PlateCornerForces with detached case/plate/node context and independently copied Fx/Fy/Fz/Mx/My/Mz values in native axes, signs and base units. Validation, ownership, hydration, discovery and native failures fault the task and are rethrown when awaited. No partial result or default-zero fallback is returned.</returns>
+        /// <remarks>
+        /// <para>When to use: Choose ID-based queries when populated metadata is unavailable. The ILoadCase/Plate/Node overload can reuse supplied metadata, and collection/sparse-request overloads require supplied A/B/C and do not hydrate. Uses the acquired wrapper's current Geometry and Load adapters without opening another model. Default discovery reads complete primary, combination and reference inventories in that order, including metadata for unrequested IDs. Invalid data in any family can fail the observation even after an earlier matching case. Use the family overload to constrain discovery.</para>
+        /// <para>Validates scalar IDs, supported family and adapter ownership before native work. Hydrates plate incidence first: integral zero success with written positive A/B/C and nonnegative D is required; D zero is absent. Reads each distinct positive node once through documented-void coordinate retrieval, requiring written finite Double XYZ. Repeated incidence IDs share hydrated references. Resolves membership before load discovery. No native force call occurs if geometry, membership, discovery or metadata validation fails.</para>
+        /// <para>Reuses bounded internal Load readers under the same operation lease. Each family inventory is limited to 100,000 entries; Int32 IDs must be positive, unique and completely written. Primary/combination number retrieval distinguishes Boolean success from integral counts and rechecks counts after Boolean success; reference retrieval requires the reported count. Titles/types are validated and copied into detached records; combinations retain LoadType.None. No synthetic title/case, missing-family fallback, case activation or result freshness inference occurs.</para>
+        /// <para>Calls native GetPlateCornerForces once with captured plate/node/case IDs and a six-Double NaN-sentinel buffer. Boolean true/integral one and fully written finite exact rank-one six-Double output are required; replaced/nonzero-bound arrays are copied. No integer/string coercion, stress conversion, averaging, rotation, unit-service conversion or sign change occurs. Family precedence identifies metadata only; the native result API still receives a case ID without a family selector. Native membership/engineering suitability of an analysis is not certified.</para>
+        /// <para>One current Output, constructing-thread, lifetime and reentrancy lease spans validation, hydration, discovery and force retrieval. Reacquire Output/Geometry/Load after refresh. Public adapter methods are not recursively called. Original transport/missing-signature exceptions and HRESULTs propagate without retry. Other wrappers, raw calls and external STAAD/metadata edits are outside the lease; observations are sequential, not atomic. Returned context/scalars remain editable. No model acquisition, selection, analysis, save, replay or native mutation is performed.</para>
+        /// <para>Executes all work synchronously on the owning COM thread before returning a completed or faulted task. Invocation can block; awaiting does not dispatch COM. No Task.Run, worker COM, parallel retrieval, apartment switch, cancellation or dispatcher is introduced. Prefer the synchronous overload when task-shaped composition is unnecessary.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required Geometry or Load adapter is unavailable/null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An ID is not positive.</exception>
+        /// <exception cref="ArgumentException">A supplied adapter is not current for this wrapper or the requested node is not on the hydrated plate.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid; a case is absent; or native status, geometry, metadata or force output is unsuccessful, malformed or unwritten.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetPlateCornerForcesAsync(1, 17, 11).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public Task<PlateCornerForces> GetPlateCornerForcesAsync(int loadCaseId, int plateId, int cornerNodeId)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadByIds(wrapper, loadCaseId, plateId, cornerNodeId, wrapper.Geometry, wrapper.Load))); }
+            catch (Exception error) { return Task.FromException<PlateCornerForces>(error); }
+        }
+
+        /// <summary>Resolves native plate/case metadata from IDs and reads one plate-corner force observation.</summary>
+        /// <param name="loadCaseId">Positive analyzed case/combination ID. Resolved by primary, then combination, then reference precedence; the first matching family wins, while every family inventory is still validated.</param>
+        /// <param name="plateId">Positive analytical plate number. Native incidence and every distinct corner coordinate are hydrated into new detached metadata.</param>
+        /// <param name="cornerNodeId">Positive incidence-node number, not corner ordinal 1/2/3/4. Resolved to the first matching hydrated A/B/C/D reference.</param>
+        /// <param name="geometry">This Output wrapper's non-null current Geometry adapter. Foreign, manually reconstructed and replaced adapters are rejected, even if their raw native object appears equal.</param>
+        /// <param name="load">This Output wrapper's non-null current Load adapter. A different wrapper's metadata cannot be combined with this Output.</param>
+        /// <returns>A new PlateCornerForces with detached case/plate/node context and independently copied Fx/Fy/Fz/Mx/My/Mz values in native axes, signs and base units. No partial result or default-zero fallback is returned.</returns>
+        /// <remarks>
+        /// <para>When to use: Choose ID-based queries when populated metadata is unavailable. The ILoadCase/Plate/Node overload can reuse supplied metadata, and collection/sparse-request overloads require supplied A/B/C and do not hydrate. Explicit adapters identify the current bindings to reuse; they are not a cross-model or custom-provider injection mechanism. Default discovery reads complete primary, combination and reference inventories in that order, including metadata for unrequested IDs. Invalid data in any family can fail the observation even after an earlier matching case. Use the family overload to constrain discovery.</para>
+        /// <para>Validates scalar IDs, supported family and adapter ownership before native work. Hydrates plate incidence first: integral zero success with written positive A/B/C and nonnegative D is required; D zero is absent. Reads each distinct positive node once through documented-void coordinate retrieval, requiring written finite Double XYZ. Repeated incidence IDs share hydrated references. Resolves membership before load discovery. No native force call occurs if geometry, membership, discovery or metadata validation fails.</para>
+        /// <para>Reuses bounded internal Load readers under the same operation lease. Each family inventory is limited to 100,000 entries; Int32 IDs must be positive, unique and completely written. Primary/combination number retrieval distinguishes Boolean success from integral counts and rechecks counts after Boolean success; reference retrieval requires the reported count. Titles/types are validated and copied into detached records; combinations retain LoadType.None. No synthetic title/case, missing-family fallback, case activation or result freshness inference occurs.</para>
+        /// <para>Calls native GetPlateCornerForces once with captured plate/node/case IDs and a six-Double NaN-sentinel buffer. Boolean true/integral one and fully written finite exact rank-one six-Double output are required; replaced/nonzero-bound arrays are copied. No integer/string coercion, stress conversion, averaging, rotation, unit-service conversion or sign change occurs. Family precedence identifies metadata only; the native result API still receives a case ID without a family selector. Native membership/engineering suitability of an analysis is not certified.</para>
+        /// <para>One current Output, constructing-thread, lifetime and reentrancy lease spans validation, hydration, discovery and force retrieval. Reacquire Output/Geometry/Load after refresh. Public adapter methods are not recursively called. Original transport/missing-signature exceptions and HRESULTs propagate without retry. Other wrappers, raw calls and external STAAD/metadata edits are outside the lease; observations are sequential, not atomic. Returned context/scalars remain editable. No model acquisition, selection, analysis, save, replay or native mutation is performed.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required Geometry or Load adapter is unavailable/null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An ID is not positive.</exception>
+        /// <exception cref="ArgumentException">A supplied adapter is not current for this wrapper or the requested node is not on the hydrated plate.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid; a case is absent; or native status, geometry, metadata or force output is unsuccessful, malformed or unwritten.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetPlateCornerForces(1, 17, 11, wrapper.Geometry, wrapper.Load);
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public PlateCornerForces GetPlateCornerForces(int loadCaseId, int plateId, int cornerNodeId, IOSGeometry geometry, IOSLoad load) =>
+            Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadByIds(wrapper, loadCaseId, plateId, cornerNodeId, geometry, load));
+
+        /// <summary>Resolves native plate/case metadata from IDs and reads one plate-corner force observation as a settled task.</summary>
+        /// <param name="loadCaseId">Positive analyzed case/combination ID. Resolved by primary, then combination, then reference precedence; the first matching family wins, while every family inventory is still validated.</param>
+        /// <param name="plateId">Positive analytical plate number. Native incidence and every distinct corner coordinate are hydrated into new detached metadata.</param>
+        /// <param name="cornerNodeId">Positive incidence-node number, not corner ordinal 1/2/3/4. Resolved to the first matching hydrated A/B/C/D reference.</param>
+        /// <param name="geometry">This Output wrapper's non-null current Geometry adapter. Foreign, manually reconstructed and replaced adapters are rejected, even if their raw native object appears equal.</param>
+        /// <param name="load">This Output wrapper's non-null current Load adapter. A different wrapper's metadata cannot be combined with this Output.</param>
+        /// <returns>An already settled task containing a new PlateCornerForces with detached case/plate/node context and independently copied Fx/Fy/Fz/Mx/My/Mz values in native axes, signs and base units. Validation, ownership, hydration, discovery and native failures fault the task and are rethrown when awaited. No partial result or default-zero fallback is returned.</returns>
+        /// <remarks>
+        /// <para>When to use: Choose ID-based queries when populated metadata is unavailable. The ILoadCase/Plate/Node overload can reuse supplied metadata, and collection/sparse-request overloads require supplied A/B/C and do not hydrate. Explicit adapters identify the current bindings to reuse; they are not a cross-model or custom-provider injection mechanism. Default discovery reads complete primary, combination and reference inventories in that order, including metadata for unrequested IDs. Invalid data in any family can fail the observation even after an earlier matching case. Use the family overload to constrain discovery.</para>
+        /// <para>Validates scalar IDs, supported family and adapter ownership before native work. Hydrates plate incidence first: integral zero success with written positive A/B/C and nonnegative D is required; D zero is absent. Reads each distinct positive node once through documented-void coordinate retrieval, requiring written finite Double XYZ. Repeated incidence IDs share hydrated references. Resolves membership before load discovery. No native force call occurs if geometry, membership, discovery or metadata validation fails.</para>
+        /// <para>Reuses bounded internal Load readers under the same operation lease. Each family inventory is limited to 100,000 entries; Int32 IDs must be positive, unique and completely written. Primary/combination number retrieval distinguishes Boolean success from integral counts and rechecks counts after Boolean success; reference retrieval requires the reported count. Titles/types are validated and copied into detached records; combinations retain LoadType.None. No synthetic title/case, missing-family fallback, case activation or result freshness inference occurs.</para>
+        /// <para>Calls native GetPlateCornerForces once with captured plate/node/case IDs and a six-Double NaN-sentinel buffer. Boolean true/integral one and fully written finite exact rank-one six-Double output are required; replaced/nonzero-bound arrays are copied. No integer/string coercion, stress conversion, averaging, rotation, unit-service conversion or sign change occurs. Family precedence identifies metadata only; the native result API still receives a case ID without a family selector. Native membership/engineering suitability of an analysis is not certified.</para>
+        /// <para>One current Output, constructing-thread, lifetime and reentrancy lease spans validation, hydration, discovery and force retrieval. Reacquire Output/Geometry/Load after refresh. Public adapter methods are not recursively called. Original transport/missing-signature exceptions and HRESULTs propagate without retry. Other wrappers, raw calls and external STAAD/metadata edits are outside the lease; observations are sequential, not atomic. Returned context/scalars remain editable. No model acquisition, selection, analysis, save, replay or native mutation is performed.</para>
+        /// <para>Executes all work synchronously on the owning COM thread before returning a completed or faulted task. Invocation can block; awaiting does not dispatch COM. No Task.Run, worker COM, parallel retrieval, apartment switch, cancellation or dispatcher is introduced. Prefer the synchronous overload when task-shaped composition is unnecessary.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required Geometry or Load adapter is unavailable/null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An ID is not positive.</exception>
+        /// <exception cref="ArgumentException">A supplied adapter is not current for this wrapper or the requested node is not on the hydrated plate.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid; a case is absent; or native status, geometry, metadata or force output is unsuccessful, malformed or unwritten.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetPlateCornerForcesAsync(1, 17, 11, wrapper.Geometry, wrapper.Load).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public Task<PlateCornerForces> GetPlateCornerForcesAsync(int loadCaseId, int plateId, int cornerNodeId, IOSGeometry geometry, IOSLoad load)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadByIds(wrapper, loadCaseId, plateId, cornerNodeId, geometry, load))); }
+            catch (Exception error) { return Task.FromException<PlateCornerForces>(error); }
+        }
+
+        /// <summary>Resolves native plate/case metadata from IDs and reads one plate-corner force observation.</summary>
+        /// <param name="loadCaseId">Positive analyzed case/combination ID. Resolved only in loadCaseType.</param>
+        /// <param name="plateId">Positive analytical plate number. Native incidence and every distinct corner coordinate are hydrated into new detached metadata.</param>
+        /// <param name="cornerNodeId">Positive incidence-node number, not corner ordinal 1/2/3/4. Resolved to the first matching hydrated A/B/C/D reference.</param>
+        /// <param name="loadCaseType">PrimaryLoad, LoadCombination or ReferenceLoad only. RepeatLoad and undefined values fail before native access. This selects metadata discovery, not a native force-call selector.</param>
+        /// <param name="geometry">This Output wrapper's non-null current Geometry adapter. Foreign, manually reconstructed and replaced adapters are rejected, even if their raw native object appears equal.</param>
+        /// <param name="load">This Output wrapper's non-null current Load adapter. A different wrapper's metadata cannot be combined with this Output.</param>
+        /// <returns>A new PlateCornerForces with detached case/plate/node context and independently copied Fx/Fy/Fz/Mx/My/Mz values in native axes, signs and base units. No partial result or default-zero fallback is returned.</returns>
+        /// <remarks>
+        /// <para>When to use: Choose ID-based queries when populated metadata is unavailable. The ILoadCase/Plate/Node overload can reuse supplied metadata, and collection/sparse-request overloads require supplied A/B/C and do not hydrate. Explicit adapters identify the current bindings to reuse; they are not a cross-model or custom-provider injection mechanism. An explicit family avoids scanning the other families and disambiguates overlapping case IDs.</para>
+        /// <para>Validates scalar IDs, supported family and adapter ownership before native work. Hydrates plate incidence first: integral zero success with written positive A/B/C and nonnegative D is required; D zero is absent. Reads each distinct positive node once through documented-void coordinate retrieval, requiring written finite Double XYZ. Repeated incidence IDs share hydrated references. Resolves membership before load discovery. No native force call occurs if geometry, membership, discovery or metadata validation fails.</para>
+        /// <para>Reuses bounded internal Load readers under the same operation lease. Each family inventory is limited to 100,000 entries; Int32 IDs must be positive, unique and completely written. Primary/combination number retrieval distinguishes Boolean success from integral counts and rechecks counts after Boolean success; reference retrieval requires the reported count. Titles/types are validated and copied into detached records; combinations retain LoadType.None. No synthetic title/case, missing-family fallback, case activation or result freshness inference occurs.</para>
+        /// <para>Calls native GetPlateCornerForces once with captured plate/node/case IDs and a six-Double NaN-sentinel buffer. Boolean true/integral one and fully written finite exact rank-one six-Double output are required; replaced/nonzero-bound arrays are copied. No integer/string coercion, stress conversion, averaging, rotation, unit-service conversion or sign change occurs. Family precedence identifies metadata only; the native result API still receives a case ID without a family selector. Native membership/engineering suitability of an analysis is not certified.</para>
+        /// <para>One current Output, constructing-thread, lifetime and reentrancy lease spans validation, hydration, discovery and force retrieval. Reacquire Output/Geometry/Load after refresh. Public adapter methods are not recursively called. Original transport/missing-signature exceptions and HRESULTs propagate without retry. Other wrappers, raw calls and external STAAD/metadata edits are outside the lease; observations are sequential, not atomic. Returned context/scalars remain editable. No model acquisition, selection, analysis, save, replay or native mutation is performed.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required Geometry or Load adapter is unavailable/null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">An ID is not positive or loadCaseType is unsupported.</exception>
+        /// <exception cref="ArgumentException">A supplied adapter is not current for this wrapper or the requested node is not on the hydrated plate.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding/thread/lease is invalid; a case is absent; or native status, geometry, metadata or force output is unsuccessful, malformed or unwritten.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Original native failure propagates with its HRESULT.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">A required native signature is unavailable.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetPlateCornerForces(1, 17, 11, StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad, wrapper.Geometry, wrapper.Load);
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public PlateCornerForces GetPlateCornerForces(int loadCaseId, int plateId, int cornerNodeId, LoadCaseType loadCaseType, IOSGeometry geometry, IOSLoad load) =>
+            Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadByIds(wrapper, loadCaseId, plateId, cornerNodeId, geometry, load, loadCaseType));
     }
 }

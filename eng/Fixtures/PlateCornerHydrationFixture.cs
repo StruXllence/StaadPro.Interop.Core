@@ -120,4 +120,28 @@ internal static class PlateCornerHydrationFixture
             !wrapper.Output.GetPlateCornerForcesAsync(1,17,11,wrapper.Geometry,wrapper.Load).IsFaulted)
             throw new Exception("Installed ID hydration task failure lost.");
     }
+    internal static void VerifyBatchesAndAliases()
+    {
+        var native = new PlateCornerHydrationNative();
+        using var wrapper = new OpenStaadWrapper(new PlateCornerHydrationRoot(native));
+        var family = wrapper.Output.GetPlateCornerForcesAsync(2,17,11,LoadCaseType.LoadCombination,wrapper.Geometry,wrapper.Load);
+        var batch = wrapper.Output.GetPlateCornerForces(new[]{3,1,2,3},17,11,wrapper.Geometry,wrapper.Load);
+        var batchTask = wrapper.Output.GetPlateCornerForcesAsync(new[]{3,1,2},17,11,wrapper.Geometry,wrapper.Load);
+        var loadCase = new LoadCase(1,"Case");
+        var p = new Plate(new Node(11,0,0,0),new Node(12,0,1,0),new Node(13,0,0,1)){Id=17};
+        var global = wrapper.Output.GetPlateCornerForcesInGlobalCoordinates(loadCase,p,p.A);
+        var globalTask = wrapper.Output.GetPlateCornerForcesInGlobalCoordinatesAsync(loadCase,p,p.A);
+        if (!family.IsCompletedSuccessfully || family.Result.LoadCase.CaseType != LoadCaseType.LoadCombination ||
+            !batch.Results.Select(r=>r.LoadCaseId).SequenceEqual(new[]{3,1,2}) ||
+            !batchTask.IsCompletedSuccessfully || batchTask.Result.Count != 3 ||
+            !ReferenceEquals(batch[3,17,11].Plate,batch[1,17,11].Plate) ||
+            global.Fx != 1 || global.Mz != -6 || !ReferenceEquals(global.Plate,p) ||
+            !globalTask.IsCompletedSuccessfully || globalTask.Result.Fy != -2)
+            throw new Exception("Installed family/batch/global alias contracts changed.");
+        native.ForceStatus=false;
+        if (!wrapper.Output.GetPlateCornerForcesAsync(2,17,11,LoadCaseType.LoadCombination,wrapper.Geometry,wrapper.Load).IsFaulted ||
+            !wrapper.Output.GetPlateCornerForcesAsync(new[]{1},17,11,wrapper.Geometry,wrapper.Load).IsFaulted ||
+            !wrapper.Output.GetPlateCornerForcesInGlobalCoordinatesAsync(loadCase,p,p.A).IsFaulted)
+            throw new Exception("Installed family/batch/alias faults lost.");
+    }
 }

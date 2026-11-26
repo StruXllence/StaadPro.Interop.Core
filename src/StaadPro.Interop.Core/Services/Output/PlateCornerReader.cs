@@ -19,7 +19,7 @@ namespace StaadPro.Interop.Core.Services.Output
         private sealed class CapturedPlate(Plate plate, int id, List<Corner> corners)
         { internal Plate Plate { get; } = plate; internal int Id { get; } = id; internal List<Corner> Corners { get; } = corners; }
 
-        // Called only within one Output lease; reuse internal readers rather than reentering public adapters.
+        // All native calls and caller enumeration run under the single Output operation lease.
         internal static PlateCornerForces ReadByIds(OpenStaadWrapper wrapper, int loadCaseId, int plateId,
             int cornerNodeId, IOSGeometry geometry, IOSLoad load, LoadCaseType? loadCaseType = null)
         {
@@ -27,28 +27,69 @@ namespace StaadPro.Interop.Core.Services.Output
             if (loadCaseType.HasValue && loadCaseType.Value is not
                 (LoadCaseType.PrimaryLoad or LoadCaseType.LoadCombination or LoadCaseType.ReferenceLoad))
                 throw new ArgumentOutOfRangeException(nameof(loadCaseType), "Only primary, combination and reference families can be resolved.");
+            ValidateBindings(wrapper, geometry, load);
+            var plate = Hydrate((object)wrapper.RawGeometry, plateId);
+            var corner = HydratedCorner(plate, cornerNodeId);
+            var cases = ResolveCases((object)wrapper.RawLoad, [loadCaseId], loadCaseType);
+            return ReadCaptured((object)wrapper.RawOutput, cases[0].LoadCase, plate, corner, loadCaseId, plateId);
+        }
+
+        internal static PlateCornerForcesResultSet ReadForIds(OpenStaadWrapper wrapper, IEnumerable<int> loadCaseIds,
+            int plateId, int cornerNodeId, IOSGeometry geometry, IOSLoad load)
+        {
+            ArgumentNullException.ThrowIfNull(loadCaseIds);
+            Positive(plateId, nameof(plateId)); Positive(cornerNodeId, nameof(cornerNodeId));
+            ValidateBindings(wrapper, geometry, load);
+            var ids = new List<int>(); var seen = new HashSet<int>(); int occurrences = 0;
+            foreach (int id in loadCaseIds)
+            {
+                if (occurrences == Limit)
+                    throw new ArgumentException("At most 100,000 case-ID occurrences are supported.", nameof(loadCaseIds));
+                occurrences++;
+                Positive(id, nameof(loadCaseIds));
+                if (seen.Add(id)) ids.Add(id);
+            }
+            if (ids.Count == 0) return new PlateCornerForcesResultSet();
+            // The batch source contract resolves all cases before the one shared plate hydration.
+            var cases = ResolveCases((object)wrapper.RawLoad, ids, null);
+            var plate = Hydrate((object)wrapper.RawGeometry, plateId);
+            var corner = HydratedCorner(plate, cornerNodeId);
+            return ReadSelection((object)wrapper.RawOutput, cases, [new CapturedPlate(plate, plateId, [corner])]);
+        }
+
+        private static void ValidateBindings(OpenStaadWrapper wrapper, IOSGeometry geometry, IOSLoad load)
+        {
             ArgumentNullException.ThrowIfNull(geometry); ArgumentNullException.ThrowIfNull(load);
             if (!ReferenceEquals(geometry, wrapper.Geometry))
                 throw new ArgumentException("Use this wrapper's current Geometry adapter.", nameof(geometry));
             if (!ReferenceEquals(load, wrapper.Load))
                 throw new ArgumentException("Use this wrapper's current Load adapter.", nameof(load));
+        }
 
-            var plate = Hydrate((object)wrapper.RawGeometry, plateId);
-            var corners = Capture(plate.A, plate.B, plate.C, plate.D, nameof(plateId));
-            Corner selectedCorner = null;
-            foreach (var corner in corners) if (corner.Id == cornerNodeId) { selectedCorner = corner; break; }
-            if (selectedCorner == null)
-                throw new ArgumentException("The requested node is not an incidence node of the hydrated plate.", nameof(cornerNodeId));
+        private static Corner HydratedCorner(Plate plate, int cornerNodeId)
+        {
+            var corners = Capture(plate.A, plate.B, plate.C, plate.D, "plateId");
+            foreach (var corner in corners) if (corner.Id == cornerNodeId) return corner;
+            throw new ArgumentException("The requested node is not an incidence node of the hydrated plate.", nameof(cornerNodeId));
+        }
 
-            ILoadCase selectedCase = null;
+        private static List<CapturedCase> ResolveCases(object load, List<int> ids, LoadCaseType? loadCaseType)
+        {
+            var requested = new HashSet<int>(ids);
+            var found = new Dictionary<int, ILoadCase>();
             var families = loadCaseType.HasValue ? new[] { loadCaseType.Value } :
                 new[] { LoadCaseType.PrimaryLoad, LoadCaseType.LoadCombination, LoadCaseType.ReferenceLoad };
             foreach (var family in families)
-                foreach (var candidate in LoadCaseMetadataReader.ReadAllOfType((object)wrapper.RawLoad, family))
-                    if (candidate.Id == loadCaseId && selectedCase == null) selectedCase = candidate;
-            if (selectedCase == null)
-                throw new InvalidOperationException("Load case " + loadCaseId + " was not found in the requested load families.");
-            return ReadCaptured((object)wrapper.RawOutput, selectedCase, plate, selectedCorner, loadCaseId, plateId);
+                foreach (var candidate in LoadCaseMetadataReader.ReadAllOfType(load, family))
+                    if (requested.Contains(candidate.Id)) found.TryAdd(candidate.Id, candidate);
+            var cases = new List<CapturedCase>(ids.Count);
+            foreach (int id in ids)
+            {
+                if (!found.TryGetValue(id, out var loadCase))
+                    throw new InvalidOperationException("Load case " + id + " was not found in the requested load families.");
+                cases.Add(new CapturedCase(loadCase, id));
+            }
+            return cases;
         }
 
         internal static PlateCornerForces Read(object output, object geometry, ILoadCase loadCase, Plate plate, Node cornerNode)

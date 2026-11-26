@@ -1,5 +1,15 @@
 # Release notes
 
+## 1.0.0-preview.20261126.1 - 26 November 2026
+
+Completed the family-specific plate-corner task overload, the hydrated load-case-ID batch queries with synchronous/task variants, and the global-coordinate naming alias pair. Output now provides sixty-five contracts with full matching interface/adapter XML IntelliSense. See [plate-corner forces](Plate-Corner-Forces.md) for overload selection, query order and examples.
+
+Captured and validated batch IDs once, bounded to 100,000 occurrences including duplicates, retaining first unique request order. Complete primary/combination/reference case resolution and membership validation precede one shared plate hydration. Empty batches skip native work after scalar/ownership validation; later native failures stop without publishing a partial result set. Reused current same-wrapper bindings, captured-key indexes, independent force copies and original exceptions.
+
+The global-named methods retain the same reported native components as the ordinary corner query. They add no plate-basis rotation or coordinate selector, preserving signs, normalization and units. Their naming follows the source convention; deployed native axes/signs still require engineering acceptance. Task methods finish synchronously on the owning COM thread before returning settled success/fault tasks.
+
+Release build passed with zero warnings/errors and all **3,226 offline tests**, including **38 new cases**. Exact installed-package checks verify nineteen Load/sixty-five Output contracts, **293 compiled XML examples**, README/twenty-three guides and all five new native-stand-in workflows, with isolated restore/build/runtime/archive equality. No new live native, cross-version runtime or engineering qualification is claimed.
+
 ## 1.0.0-preview.20261126 - 26 November 2026
 
 Ported five ID-based plate-corner overloads: automatic binding resolution, explicit current Geometry/Load bindings, their two task variants and explicit load-family discovery. Output now exposes sixty contracts. Complete matching interface/adapter XML IntelliSense and the [plate-corner guide](Plate-Corner-Forces.md) explain the differences from supplied-metadata, all-corner and sparse/Cartesian queries.

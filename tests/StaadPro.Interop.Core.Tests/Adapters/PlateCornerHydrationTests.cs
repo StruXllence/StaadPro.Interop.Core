@@ -293,7 +293,7 @@ namespace StaadPro.Interop.Core.Tests.Adapters
         public void FiveIdContractsHaveMatchingFullXmlAndSourceParameterOrder()
         {
             var xml=XDocument.Load(Path.ChangeExtension(typeof(IOSOutput).Assembly.Location,".xml"));
-            var methods=typeof(IOSOutput).GetMethods().Where(m=>m.Name.Contains("PlateCornerForces")&&m.GetParameters()[0].ParameterType==typeof(int)).ToArray();
+            var methods=typeof(IOSOutput).GetMethods().Where(m=>m.Name.Contains("PlateCornerForces")&&m.GetParameters()[0].ParameterType==typeof(int) && !(m.Name=="GetPlateCornerForcesAsync" && m.GetParameters().Length==6)).ToArray();
             Assert.That(methods,Has.Length.EqualTo(5));
             foreach(var method in methods)
             {

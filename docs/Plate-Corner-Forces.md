@@ -23,6 +23,11 @@ Use corner queries for native nodal forces and moments at analytical plate incid
 | GetPlateCornerForces(int loadCaseId, int plateId, int cornerNodeId, IOSGeometry geometry, IOSLoad load) | The same default-family query with explicitly supplied current adapters from this wrapper. |
 | GetPlateCornerForcesAsync(int loadCaseId, int plateId, int cornerNodeId, IOSGeometry geometry, IOSLoad load) | The same explicit-binding query, then a settled task. |
 | GetPlateCornerForces(int loadCaseId, int plateId, int cornerNodeId, LoadCaseType loadCaseType, IOSGeometry geometry, IOSLoad load) | Hydrates context and searches only the specified primary, combination or reference family. |
+| GetPlateCornerForcesAsync(int loadCaseId, int plateId, int cornerNodeId, LoadCaseType loadCaseType, IOSGeometry geometry, IOSLoad load) | The same explicit-family single-corner query, then a settled task. |
+| GetPlateCornerForces(IEnumerable<int> loadCaseIds, int plateId, int cornerNodeId, IOSGeometry geometry, IOSLoad load) | Validates/captures unique IDs, resolves all cases, then hydrates one shared plate/corner and reads one row per ID. |
+| GetPlateCornerForcesAsync(IEnumerable<int> loadCaseIds, int plateId, int cornerNodeId, IOSGeometry geometry, IOSLoad load) | The same complete ID batch, then a settled task. |
+| GetPlateCornerForcesInGlobalCoordinates(ILoadCase loadCase, Plate plate, Node cornerNode) | Naming alias for the existing native single-corner components, with no additional plate-basis rotation. |
+| GetPlateCornerForcesInGlobalCoordinatesAsync(ILoadCase loadCase, Plate plate, Node cornerNode) | The same naming alias, then a settled task. |
 | GetPlateCenterResults(IEnumerable<ILoadCase> loadCases, IEnumerable<Plate> plates, int nThreads) | Source-compatible hint 1..512; reuses bounded sequential center queries. Prefer the overload without the hint for new code. |
 
 ~~~csharp
@@ -72,6 +77,17 @@ Console.WriteLine(explicitTask.GetAwaiter().GetResult().Mz);
 var primaryOnly = wrapper.Output.GetPlateCornerForces(1, 17, 11,
     StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad, wrapper.Geometry, wrapper.Load);
 Console.WriteLine(primaryOnly.LoadCase.CaseType);
+var primaryTask = wrapper.Output.GetPlateCornerForcesAsync(1, 17, 11,
+    StaadPro.Interop.Core.Enums.LoadCaseType.PrimaryLoad, wrapper.Geometry, wrapper.Load);
+Console.WriteLine(primaryTask.GetAwaiter().GetResult().Fx);
+var byIds = wrapper.Output.GetPlateCornerForces(new[] { 1, 2, 1 }, 17, 11, wrapper.Geometry, wrapper.Load);
+Console.WriteLine(byIds.Count);
+var byIdsTask = wrapper.Output.GetPlateCornerForcesAsync(new[] { 1, 2 }, 17, 11, wrapper.Geometry, wrapper.Load);
+Console.WriteLine(byIdsTask.GetAwaiter().GetResult().Count);
+var globalAlias = wrapper.Output.GetPlateCornerForcesInGlobalCoordinates(loadCase, plate, a);
+Console.WriteLine(globalAlias.Fx);
+var globalAliasTask = wrapper.Output.GetPlateCornerForcesInGlobalCoordinatesAsync(loadCase, plate, a);
+Console.WriteLine(globalAliasTask.GetAwaiter().GetResult().Mz);
 var center = wrapper.Output.GetPlateCenterResults(new[] { loadCase }, new[] { plate }, 1);
 Console.WriteLine(System.Linq.Enumerable.First(center).Moments.Mx);
 ~~~
@@ -82,7 +98,7 @@ The corner argument supplies a **positive node number, not ordinal 1/2/3/4**. Si
 
 If A/B/C is incomplete, the single-case/single-corner query obtains incidence through the acquired raw Geometry binding and hydrates each distinct positive node once. It creates new detached metadata without modifying the supplied plate. Incidence requires **integral zero success**, written positive A/B/C IDs and nonnegative D; D zero means absent. Coordinate retrieval is documented **void** and qualifies written finite Double XYZ outputs using NaN sentinels. It does not invent a Boolean return value. Hydrated coordinates retain native global coordinate values. Original native/dispatch errors propagate; incomplete or failed hydration does not fall back to the supplied partial geometry or dispatch a force query.
 
-The all-corners and batch-selection overloads instead require supplied incidence and validate/capture all inputs before force calls, even when a sequence is empty. Sequences are enumerated once, bounded to 100,000 occurrences and 100,000 unique observations, deduplicated by captured ID while retaining first references and original order, and checked across every entry including duplicate plate entries. Geometric degeneracy, planarity and native membership of supplied metadata are not certified. These metadata members extend Plate without porting the complete Geometry API.
+The all-corners and entity-based batch-selection overloads instead require supplied incidence and validate/capture all inputs before force calls, even when a sequence is empty. Sequences are enumerated once, bounded to 100,000 occurrences and 100,000 unique observations, deduplicated by captured ID while retaining first references and original order, and checked across every entry including duplicate plate entries. Geometric degeneracy, planarity and native membership of supplied metadata are not certified. These metadata members extend Plate without porting the complete Geometry API.
 
 ## ID-based hydration and case families
 
@@ -95,6 +111,22 @@ Explicit Geometry/Load arguments must be the exact current adapters of this Outp
 The sequence is scalar/family/ownership validation, native incidence, each distinct corner's coordinates, corner membership, complete selected-family discovery/metadata and finally one force call. Incidence requires integral-zero success and valid written A/B/C/D; coordinates use documented-void retrieval with finite written Double XYZ. Repeated corners share hydrated node references. Each load family is bounded to 100,000 entries; positive unique Int32 IDs and operation-specific Boolean/count semantics are preserved by the existing Load reader. No synthetic title/case, missing-data fallback, public adapter reentry or partial force record is introduced.
 
 The full sequence runs under one current Output/owning-thread/lifetime/reentrancy lease. Returned context and scalar data remain editable; each call creates independent metadata and component storage. Native/external edits remain outside this lease, so observations are not atomic or a result-freshness guarantee. Transport/missing-signature errors propagate unchanged. Task variants complete all work on the caller before returning settled tasks; no worker COM, additional model acquisition, selection, analysis, save, retry, transform or native mutation occurs.
+
+## Hydrated case-ID batches
+
+Use the IEnumerable<int> overload pair when several case IDs are needed at one plate/corner and no entity metadata is available. It validates current same-wrapper adapters and positive plate/corner IDs before enumerating input, then captures all IDs once, validating every occurrence and retaining the first unique ID order. Inputs are bounded to 100,000 occurrences including duplicates; duplicate IDs produce one observation.
+
+A valid empty sequence returns a fresh empty set with no native metadata, geometry or force calls. Scalar/adapter validation still applies. Nonempty batches resolve complete primary/combination/reference metadata once per family and qualify every requested case **before** geometry. This order differs from scalar ID queries, which hydrate geometry first. Missing cases or malformed later/unrequested metadata therefore stop the batch before incidence/coordinate calls. Precedence remains primary, combination, reference.
+
+After resolution, one plate is hydrated and the requested corner is resolved once for the entire batch. Force calls follow unique requested-ID order. Rows share the detached plate/corner references while retaining separate detached cases and independent component copies. The read-only result-set indexes use captured keys even if returned metadata is edited. Failure at a later force read stops remaining work and returns no partial set.
+
+One owning-thread/current-binding lease covers enumeration, Load discovery, Geometry hydration and Output reads without recursive public adapter calls. Enumeration errors dispose the iterator and propagate unchanged. Task variants finish on the caller before returning settled tasks; there is no parallel native retrieval.
+
+## Global-coordinate naming aliases
+
+GetPlateCornerForcesInGlobalCoordinates and its task variant follow the source STAAD-global corner-action convention by exposing the **same native components** as the ordinary entity-based single-corner query. They do not transform a plate-local vector, compute a plate basis, add a coordinate-selector argument or rotate the response again. Supplied complete incidence is reused; incomplete incidence uses the same detached hydration path. No Load metadata discovery is required.
+
+These names do not independently certify the coordinate convention of every STAAD build. Qualify native axes/signs through controlled engineering acceptance before combining result families. The aliases retain the reported native Fx/Fy/Fz/Mx/My/Mz values, signs and units; they do not add averaging, stress-to-force conversion, equilibrium checks or an arbitrary frame interpretation. They preserve existing input/binding/failure and owning-thread task behavior.
 
 ## Cartesian or sparse selection
 

@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261126</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261126.1</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
     <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction, static-check and plate-center moment/surface-stress composite and corner-force queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
-    <PackageReleaseNotes>Ported five ID-based plate-corner overloads with automatic or explicit current Geometry/Load bindings, family-specific metadata resolution and task variants. Reused qualified incidence/coordinate hydration, bounded Load discovery and strict copied six-Double force output under one owning-thread operation lease. Preserved primary/combination/reference precedence, detached context, original failures and no partial/default results. Sixty Output contracts are available with matching XML IntelliSense and updated usage guidance.</PackageReleaseNotes>
+    <PackageReleaseNotes>Completed the family-specific plate-corner task overload, hydrated case-ID batch queries and task variant, and global-coordinate naming aliases. Preserved one-pass bounded ID capture, first-occurrence order, complete case resolution before one shared plate hydration, current same-wrapper ownership and no partial results. Reused native components without an additional rotation and retained original failures and owning-thread settled tasks. Sixty-five Output contracts include matching XML IntelliSense and updated guidance.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>

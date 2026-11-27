@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.0.0-preview.20261128 - 28 November 2026
+
+Added `GetAllBeamsList()`, `GetAllNodesList()`, `GetAllPlatesList()` and `GetAllSolidsList()`. These return detached, eager ID snapshots in native order. Each inventory checks the native count, array shape, unique positive IDs and count stability before returning results. Empty inventories skip the list call.
+
+Added `GetNode(int nId)`. It reads three finite global coordinate values from OpenSTAAD without unit conversion and returns a detached node. Zero keeps its existing source meaning of no node. All five methods run under one current-binding operation on the wrapper's owning COM thread and ship matching interface and adapter IntelliSense. [Geometry inventory and node-coordinate guide](Geometry-Inventories.md).
+
 ## 1.0.0-preview.20261127.2 - 27 November 2026
 
 Added `GetPlateStressAtPoint` with two finite global points and an owned 32-component result. The named fields follow native index order. Incomplete or malformed success responses fail before values reach callers.

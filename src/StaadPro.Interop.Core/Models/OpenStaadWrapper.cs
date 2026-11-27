@@ -258,6 +258,17 @@ namespace StaadPro.Interop.Core.Models
             }
         }
 
+        internal T UseGeometryBinding<T>(OSGeometryAdapter adapter, Func<OpenStaadWrapper, T> operation)
+        {
+            ThrowIfDisposed();
+            using (operationContext.Enter())
+            {
+                if (!ReferenceEquals(Geometry, adapter))
+                    throw new InvalidOperationException("This Geometry binding is not current; reacquire wrapper.Geometry.");
+                return operation(this);
+            }
+        }
+
         internal T UseLoadBinding<T>(OSLoadAdapter adapter, Func<OpenStaadWrapper,T> operation)
         {
             ThrowIfDisposed();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace StaadPro.Interop.Core.Services.Interop
 {
@@ -26,6 +27,25 @@ namespace StaadPro.Interop.Core.Services.Interop
                 case ulong n when n <= long.MaxValue: return (long)n;
                 default: throw new InvalidOperationException("OpenSTAAD returned an unsupported " + name + " type.");
             }
+        }
+
+        internal static int[] ReadPositiveInt32Ids(object buffer, int count, string name)
+        {
+            if (buffer is not Array array || array.Rank != 1 || array.Length != count ||
+                array.GetType().GetElementType() != typeof(int))
+                throw new InvalidOperationException($"{name} require a one-dimensional Int32 array matching the count.");
+
+            var ids = new int[count];
+            var seen = new HashSet<int>();
+            int lower = array.GetLowerBound(0);
+            for (int i = 0; i < count; i++)
+            {
+                int id = (int)array.GetValue(lower + i);
+                if (id <= 0 || !seen.Add(id))
+                    throw new InvalidOperationException($"{name} are unwritten, nonpositive or duplicated.");
+                ids[i] = id;
+            }
+            return ids;
         }
 
         internal static uint ReadProcessId(object value)

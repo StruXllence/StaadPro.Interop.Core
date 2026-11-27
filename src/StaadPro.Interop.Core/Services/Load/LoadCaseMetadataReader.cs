@@ -173,23 +173,8 @@ namespace StaadPro.Interop.Core.Services.Load
             return ids;
         }
 
-        internal static int[] QualifyIds(object buffer, int count)
-        {
-            if (buffer is not Array array || array.Rank != 1 || array.Length != count ||
-                array.GetType().GetElementType() != typeof(int))
-                throw new InvalidOperationException("Case IDs require a one-dimensional Int32 array matching the count.");
-            var ids = new int[count];
-            var seen = new HashSet<int>();
-            int lower = array.GetLowerBound(0);
-            for (int i = 0; i < count; i++)
-            {
-                int id = (int)array.GetValue(lower + i);
-                if (id <= 0 || !seen.Add(id))
-                    throw new InvalidOperationException("Case IDs are unwritten, nonpositive or duplicated.");
-                ids[i] = id;
-            }
-            return ids;
-        }
+        internal static int[] QualifyIds(object buffer, int count) =>
+            NativeValues.ReadPositiveInt32Ids(buffer, count, "Case IDs");
 
         private static int Count(object load, LoadCaseType family)
         {

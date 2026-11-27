@@ -2,7 +2,7 @@
 
 ## Scope
 
-This preview implements OpenStaadWrapper and its acquisition prerequisites. It preserves all thirty source properties plus IsConnected, two constructors, RefreshUnits, RefreshComObjects and Dispose. Root now exposes five guarded cache observations and five guarded live model/process observations; other domain interfaces/adapters retain only binding properties. See [Root metadata](Root-Metadata.md) for the implemented contracts. Adapters remain single, non-partial classes.
+This preview implements OpenStaadWrapper and its acquisition prerequisites. It preserves all thirty source properties plus IsConnected, two constructors, RefreshUnits, RefreshComObjects and Dispose. Root, Geometry, Load and Output expose guarded managed operations. See [Root metadata](Root-Metadata.md) for cache observations and [Geometry inventories](Geometry-Inventories.md) for model ID and node queries. Adapters remain single, non-partial classes.
 
 The source reference is the separate [Framework project](https://github.com/StruXllence/StaadPro.Interop/tree/20821c50c9e1e3a3955d7e111cdf906d5b921588/src/StaadPro.Interop). It was inspected read-only. Earlier inherited Core experiments are not the implementation scope of this first clean package.
 

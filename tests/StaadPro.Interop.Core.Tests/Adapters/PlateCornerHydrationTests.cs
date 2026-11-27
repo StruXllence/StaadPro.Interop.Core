@@ -39,6 +39,11 @@ namespace StaadPro.Interop.Core.Tests.Adapters
         {
             public OpenStaadWrapper Wrapper => throw new ApplicationException("Do not inspect a foreign adapter.");
             public dynamic ComObject => throw new ApplicationException("Do not access a foreign raw object.");
+            public IEnumerable<int> GetAllBeamsList() => throw new NotSupportedException();
+            public IEnumerable<int> GetAllNodesList() => throw new NotSupportedException();
+            public IEnumerable<int> GetAllPlatesList() => throw new NotSupportedException();
+            public IEnumerable<int> GetAllSolidsList() => throw new NotSupportedException();
+            public StaadPro.Interop.Core.Entities.Node GetNode(int nId) => throw new NotSupportedException();
         }
         [TestCaseSource(nameof(Operations))]
         public void IdQueriesHydrateDetachedMetadataCopyForcesAndKeepCallerThread(string op)

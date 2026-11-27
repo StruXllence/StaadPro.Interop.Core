@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261127.1</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261127.2</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
     <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction, static-check and plate-center moment/surface-stress composite, corner-force and cut-line resultant queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
-    <PackageReleaseNotes>Ported the member-local plate-corner result overloads and the plate cut-line resultant queries. Preserved plate and corner metadata, exposed native failure through a named result, and qualified all six components on success. Output provides 80 contracts with matching XML IntelliSense.</PackageReleaseNotes>
+    <PackageReleaseNotes>Ported pointwise plate stress and four offset-aware member-end and physical-joint overloads. Qualified the 32-component stress packet, resolved global offsets and transferred face moments to their incidence joints under one owning-thread operation. Output provides 85 contracts with matching XML IntelliSense.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -47,6 +47,7 @@
     <None Include="../../docs/Plate-Corner-Forces.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Member-Local-Plate-Corner-Forces.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Plate-Cut-Line-Resultants.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Point-Stress-and-Member-Offsets.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Plate-Center-Composite-Results.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Plate-Center-Moments-and-Surface-Stresses.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Support-Reactions-and-Static-Checks.md" Pack="true" PackagePath="docs/" />

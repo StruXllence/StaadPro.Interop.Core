@@ -1,5 +1,13 @@
 # Release notes
 
+## 1.0.0-preview.20261127.2 - 27 November 2026
+
+Added `GetPlateStressAtPoint` with two finite global points and an owned 32-component result. The named fields follow native index order. Incomplete or malformed success responses fail before values reach callers.
+
+Added two `GetMemberEndForcesConsideringOffsets` and two `GetMemberEndForcesAtPhysicalJoint` overloads. The supplied-member path captures the selected joint from the beam. The ID path resolves valid incidence through Geometry. The shared workflow reads the global offset through Property and transfers the reported global force couple to the incidence joint. Missing offset information is distinguished from a written zero offset. Ordinary native force failure returns null.
+
+Output now provides 85 contracts with matching XML IntelliSense. [Point stress and member-offset guide](Point-Stress-and-Member-Offsets.md)
+
 ## 1.0.0-preview.20261127.1 - 27 November 2026
 
 Added two member-local plate-corner overloads that preserve case, plate and resolved corner metadata. Both mark the components as member-local, allowing the detached transform to catch accidental double projection. The task overload completes the read and projection on the wrapper's owning thread. [Member-local plate-corner guide](Member-Local-Plate-Corner-Forces.md)

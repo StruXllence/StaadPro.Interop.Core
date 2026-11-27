@@ -2245,5 +2245,140 @@ namespace StaadPro.Interop.Core.Adapters.Models
             try { return Task.FromResult(GetPlateCutLineResultant(plateList, loadCaseId, startPoint, endPoint, transformForceToGlobal)); }
             catch (Exception error) { return Task.FromException<Forces>(error); }
         }
+
+        /// <summary>Reads the thirty-two native plate stress and resultant values at a supplied point.</summary>
+        /// <param name="pId">Positive analytical plate number.</param>
+        /// <param name="lcId">Positive analyzed case or combination number.</param>
+        /// <param name="stressPoint">Finite global XYZ coordinates for the stress evaluation point in native length units. The node ID is unused.</param>
+        /// <param name="facingPoint">Finite global XYZ coordinates for the facing point used by OpenSTAAD to orient the request. The node ID is unused.</param>
+        /// <returns>A detached packet with the two captured points and 32 qualified Double values in native index order.</returns>
+        /// <remarks>
+        /// <para>Pass the two points in the model coordinates expected by OpenSTAAD. The reader submits two three-Double arrays and one initially unwritten 32-Double buffer. It requires a successful native flag and a one-dimensional, completely written finite Double packet.</para>
+        /// <para>The point and facing geometry is interpreted by STAAD.Pro. The result preserves native component dimensions and conventions. No interpolation, rotation or unit conversion is performed by the wrapper.</para>
+        /// <para>Requires the wrapper's current Output adapter on its owning thread. Use the replacement adapter after refresh. Calls observe current native results, with no model edit, analysis, or freshness guarantee.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">Either point is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The plate or case number is nonpositive.</exception>
+        /// <exception cref="ArgumentException">Either point has a nonfinite coordinate.</exception>
+        /// <exception cref="InvalidOperationException">The Output binding is unavailable, replaced, on another thread, or reentered, or native status or data cannot be qualified.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A native call fails. The original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The active native interface lacks the required dispatch member.</exception>
+        /// <example><code>
+        /// var point = new StaadPro.Interop.Core.Entities.Node(0, 1, 0, 1);
+        /// var facing = new StaadPro.Interop.Core.Entities.Node(0, 2, 0, 1);
+        /// var result = wrapper.Output.GetPlateStressAtPoint(17, 1, point, facing);
+        /// Console.WriteLine(result.TopMax);
+        /// </code></example>
+        public PlateStressResult GetPlateStressAtPoint(int pId, int lcId, Node stressPoint, Node facingPoint) =>
+            Wrapper.UseOutputBinding(this, wrapper => PlatePointStressReader.Read((object)wrapper.RawOutput, pId, lcId, stressPoint, facingPoint));
+
+        /// <summary>Reads global member-face forces and returns the same force couple at the physical incidence joint.</summary>
+        /// <param name="loadCaseTitle">Non-null literal title attached to the detached force records. No native title lookup is performed.</param>
+        /// <param name="beam">Supplied analytical member with positive ID and a finite joint at the requested end. The captured joint ID and coordinates are used directly.</param>
+        /// <param name="loadCaseId">Positive analyzed case or combination number.</param>
+        /// <param name="memberEnd">Start or End of the analytical member as defined by its incidence.</param>
+        /// <returns>Editable detached face and joint force records, captured coordinates, global offset and offset status. Returns null if native member-end force retrieval reports false.</returns>
+        /// <remarks>
+        /// <para>Uses one owning-thread Output operation for prerequisite reads and the force query. The current Property binding reads the global joint-to-face offset. Only documented native status -6027 means no offset specification. Successful written zero remains distinguishable in the offset-aware result.</para>
+        /// <para>Queries GetMemberEndForces in global XYZ. Face position is joint plus offset. Transfers the moment as M at the face plus offset cross force and preserves force components and end-action signs. Use joint coordinates and offsets compatible with the native Output moment length unit. The wrapper does not infer unit conversions or certify native force-reference behavior for every build.</para>
+        /// <para>Requires the wrapper's current Output adapter on its owning thread. Use the replacement adapter after refresh. Calls observe current native results, with no model edit, analysis, or freshness guarantee.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The title or Beam is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The member or case ID is nonpositive, or the end selector is invalid.</exception>
+        /// <exception cref="ArgumentException">The supplied end lacks a positive joint ID or finite coordinates.</exception>
+        /// <exception cref="InvalidOperationException">A required binding is unavailable, stale, used from another thread or reentered, or native incidence, offset or force data cannot be qualified.</exception>
+        /// <exception cref="OverflowException">A computed face coordinate or transferred moment is outside the finite Double range.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A native call fails. The original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The active native interface lacks the required dispatch member.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var beam = new StaadPro.Interop.Core.Entities.Beam(17, a, b);
+        /// var result = wrapper.Output.GetMemberEndForcesConsideringOffsets("Dead", beam, 1, StaadPro.Interop.Core.Enums.MemberEnd.Start);
+        /// if (result != null) Console.WriteLine(result.PhysicalJointForces.Mz);
+        /// </code></example>
+        public OffsetAwareMemberEndForces GetMemberEndForcesConsideringOffsets(string loadCaseTitle, Beam beam, int loadCaseId, MemberEnd memberEnd) =>
+            Wrapper.UseOutputBinding(this, wrapper => MemberOffsetReader.Read(wrapper, loadCaseTitle, beam, loadCaseId, memberEnd));
+
+        /// <summary>Reads global member-face forces and returns the same force couple at the physical incidence joint.</summary>
+        /// <param name="loadCaseTitle">Non-null literal title attached to the detached force records. No native title lookup is performed.</param>
+        /// <param name="beamId">Positive analytical member number. The wrapper resolves incidence and the requested joint through its current Geometry binding.</param>
+        /// <param name="loadCaseId">Positive analyzed case or combination number.</param>
+        /// <param name="memberEnd">Start or End of the analytical member as defined by its incidence.</param>
+        /// <returns>Editable detached face and joint force records, captured coordinates, global offset and offset status. Returns null if native member-end force retrieval reports false.</returns>
+        /// <remarks>
+        /// <para>Uses one owning-thread Output operation for prerequisite reads and the force query. The current Property binding reads the global joint-to-face offset. Only documented native status -6027 means no offset specification. Successful written zero remains distinguishable in the offset-aware result.</para>
+        /// <para>Queries GetMemberEndForces in global XYZ. Face position is joint plus offset. Transfers the moment as M at the face plus offset cross force and preserves force components and end-action signs. Use joint coordinates and offsets compatible with the native Output moment length unit. The wrapper does not infer unit conversions or certify native force-reference behavior for every build.</para>
+        /// <para>Requires the wrapper's current Output adapter on its owning thread. Use the replacement adapter after refresh. Calls observe current native results, with no model edit, analysis, or freshness guarantee.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The supplied title is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The member or case ID is nonpositive, or the end selector is invalid.</exception>
+        /// <exception cref="InvalidOperationException">A required binding is unavailable, stale, used from another thread or reentered, or native incidence, offset or force data cannot be qualified.</exception>
+        /// <exception cref="OverflowException">A computed face coordinate or transferred moment is outside the finite Double range.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A native call fails. The original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The active native interface lacks the required dispatch member.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetMemberEndForcesConsideringOffsets("Dead", 17, 1, StaadPro.Interop.Core.Enums.MemberEnd.Start);
+        /// if (result != null) Console.WriteLine(result.PhysicalJointForces.Mz);
+        /// </code></example>
+        public OffsetAwareMemberEndForces GetMemberEndForcesConsideringOffsets(string loadCaseTitle, int beamId, int loadCaseId, MemberEnd memberEnd) =>
+            Wrapper.UseOutputBinding(this, wrapper => MemberOffsetReader.Read(wrapper, loadCaseTitle, beamId, loadCaseId, memberEnd));
+
+        /// <summary>Transfers reported global member-face forces and moments to the physical incidence joint.</summary>
+        /// <param name="loadCaseTitle">Non-null literal title attached to the detached force records. No native title lookup is performed.</param>
+        /// <param name="beam">Supplied analytical member with positive ID and a finite joint at the requested end. The captured joint ID and coordinates are used directly.</param>
+        /// <param name="loadCaseId">Positive analyzed case or combination number.</param>
+        /// <param name="memberEnd">Start or End of the analytical member as defined by its incidence.</param>
+        /// <returns>Editable detached global force and moment components at the joint. Returns null if native member-end force retrieval reports false.</returns>
+        /// <remarks>
+        /// <para>Uses one owning-thread Output operation for prerequisite reads and the force query. The current Property binding reads the global joint-to-face offset. Only documented native status -6027 means no offset specification. Successful written zero remains distinguishable in the offset-aware result.</para>
+        /// <para>Queries GetMemberEndForces in global XYZ. Face position is joint plus offset. Transfers the moment as M at the face plus offset cross force and preserves force components and end-action signs. Use joint coordinates and offsets compatible with the native Output moment length unit. The wrapper does not infer unit conversions or certify native force-reference behavior for every build.</para>
+        /// <para>Requires the wrapper's current Output adapter on its owning thread. Use the replacement adapter after refresh. Calls observe current native results, with no model edit, analysis, or freshness guarantee.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The title or Beam is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The member or case ID is nonpositive, or the end selector is invalid.</exception>
+        /// <exception cref="ArgumentException">The supplied end lacks a positive joint ID or finite coordinates.</exception>
+        /// <exception cref="InvalidOperationException">A required binding is unavailable, stale, used from another thread or reentered, or native incidence, offset or force data cannot be qualified.</exception>
+        /// <exception cref="OverflowException">A computed face coordinate or transferred moment is outside the finite Double range.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A native call fails. The original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The active native interface lacks the required dispatch member.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var beam = new StaadPro.Interop.Core.Entities.Beam(17, a, b);
+        /// var result = wrapper.Output.GetMemberEndForcesAtPhysicalJoint("Dead", beam, 1, StaadPro.Interop.Core.Enums.MemberEnd.Start);
+        /// if (result != null) Console.WriteLine(result.Mz);
+        /// </code></example>
+        public MemberForces GetMemberEndForcesAtPhysicalJoint(string loadCaseTitle, Beam beam, int loadCaseId, MemberEnd memberEnd) =>
+            GetMemberEndForcesConsideringOffsets(loadCaseTitle, beam, loadCaseId, memberEnd)?.PhysicalJointForces;
+
+        /// <summary>Transfers reported global member-face forces and moments to the physical incidence joint.</summary>
+        /// <param name="loadCaseTitle">Non-null literal title attached to the detached force records. No native title lookup is performed.</param>
+        /// <param name="beamId">Positive analytical member number. The wrapper resolves incidence and the requested joint through its current Geometry binding.</param>
+        /// <param name="loadCaseId">Positive analyzed case or combination number.</param>
+        /// <param name="memberEnd">Start or End of the analytical member as defined by its incidence.</param>
+        /// <returns>Editable detached global force and moment components at the joint. Returns null if native member-end force retrieval reports false.</returns>
+        /// <remarks>
+        /// <para>Uses one owning-thread Output operation for prerequisite reads and the force query. The current Property binding reads the global joint-to-face offset. Only documented native status -6027 means no offset specification. Successful written zero remains distinguishable in the offset-aware result.</para>
+        /// <para>Queries GetMemberEndForces in global XYZ. Face position is joint plus offset. Transfers the moment as M at the face plus offset cross force and preserves force components and end-action signs. Use joint coordinates and offsets compatible with the native Output moment length unit. The wrapper does not infer unit conversions or certify native force-reference behavior for every build.</para>
+        /// <para>Requires the wrapper's current Output adapter on its owning thread. Use the replacement adapter after refresh. Calls observe current native results, with no model edit, analysis, or freshness guarantee.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The supplied title is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The member or case ID is nonpositive, or the end selector is invalid.</exception>
+        /// <exception cref="InvalidOperationException">A required binding is unavailable, stale, used from another thread or reentered, or native incidence, offset or force data cannot be qualified.</exception>
+        /// <exception cref="OverflowException">A computed face coordinate or transferred moment is outside the finite Double range.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper has been disposed.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">A native call fails. The original exception and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The active native interface lacks the required dispatch member.</exception>
+        /// <example><code>
+        /// var result = wrapper.Output.GetMemberEndForcesAtPhysicalJoint("Dead", 17, 1, StaadPro.Interop.Core.Enums.MemberEnd.Start);
+        /// if (result != null) Console.WriteLine(result.Mz);
+        /// </code></example>
+        public MemberForces GetMemberEndForcesAtPhysicalJoint(string loadCaseTitle, int beamId, int loadCaseId, MemberEnd memberEnd) =>
+            GetMemberEndForcesConsideringOffsets(loadCaseTitle, beamId, loadCaseId, memberEnd)?.PhysicalJointForces;
     }
 }

@@ -79,7 +79,7 @@ internal static class PlateCornerFixture
         root.Output.Success = true;
         using var center = new OpenStaadWrapper(new PlateCompositeRoot());
         if (center.Output.GetPlateCenterResults(new[] { lc }, new[] { p }, 512).Count() != 1) throw new Exception("Thread-count compatibility changed.");
-        var selected = typeof(IOSOutput).GetMethods().Where(m => (m.Name == "GetPlateCornerForces" || m.Name == "GetPlateCornerForcesAsync") && m.GetParameters()[0].ParameterType != typeof(int) && m.GetParameters()[0].ParameterType != typeof(IEnumerable<int>) || m.Name == "GetPlateCenterResults" && m.GetParameters().Length == 3).ToArray();
+        var selected = typeof(IOSOutput).GetMethods().Where(m => (m.Name == "GetPlateCornerForces" || m.Name == "GetPlateCornerForcesAsync") && m.GetParameters().Length <= 3 && m.GetParameters()[0].ParameterType != typeof(int) && m.GetParameters()[0].ParameterType != typeof(IEnumerable<int>) || m.Name == "GetPlateCenterResults" && m.GetParameters().Length == 3).ToArray();
         if (selected.Length != 15) throw new Exception("Expected fifteen corner/compatibility contracts.");
         foreach (var m in selected)
         {

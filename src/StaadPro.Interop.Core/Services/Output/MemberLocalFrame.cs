@@ -25,9 +25,7 @@ namespace StaadPro.Interop.Core.Services.Output
             ArgumentNullException.ThrowIfNull(plateCornerForces);
             ArgumentNullException.ThrowIfNull(otherMemberNode);
             var (corner, loadCase) = CaptureCorner(plateCornerForces);
-            var end = Capture(otherMemberNode, nameof(otherMemberNode));
-            var frame = CreateFrame(corner, end, 0, nameof(otherMemberNode));
-            return Project(plateCornerForces, loadCase, frame, 0, MemberEnd.Start);
+            return Prepare(corner, otherMemberNode).Apply(plateCornerForces, loadCase.Id, loadCase.Title);
         }
 
         internal static MemberForces Transform(PlateCornerForces plateCornerForces, Beam member)
@@ -37,6 +35,28 @@ namespace StaadPro.Interop.Core.Services.Output
             int beamId = member.Id;
             if (beamId <= 0) throw new ArgumentOutOfRangeException(nameof(member), "Member ID must be positive.");
             var (corner, loadCase) = CaptureCorner(plateCornerForces);
+            return Prepare(corner, member, beamId).Apply(plateCornerForces, loadCase.Id, loadCase.Title);
+        }
+
+        internal static Projection Prepare(Node corner, Node otherMemberNode) =>
+            Prepare(Capture(corner, nameof(corner)), otherMemberNode);
+
+        internal static Projection Prepare(Node corner, Beam member)
+        {
+            int beamId = member.Id;
+            if (beamId <= 0) throw new ArgumentOutOfRangeException(nameof(member), "Member ID must be positive.");
+            return Prepare(Capture(corner, nameof(corner)), member, beamId);
+        }
+
+        private static Projection Prepare(NodePosition corner, Node otherMemberNode)
+        {
+            var end = Capture(otherMemberNode, nameof(otherMemberNode));
+            var frame = CreateFrame(corner, end, 0, nameof(otherMemberNode));
+            return new Projection(frame, 0, MemberEnd.Start);
+        }
+
+        private static Projection Prepare(NodePosition corner, Beam member, int beamId)
+        {
             var (start, end, beta) = CaptureMember(member);
             MemberEnd memberEnd;
             if (SameNode(corner, start)) memberEnd = MemberEnd.Start;
@@ -44,7 +64,7 @@ namespace StaadPro.Interop.Core.Services.Output
             else throw new ArgumentException("The plate corner must be a member endpoint.", nameof(member));
 
             var frame = CreateFrame(start, end, beta, nameof(member));
-            return Project(plateCornerForces, loadCase, frame, beamId, memberEnd);
+            return new Projection(frame, beamId, memberEnd);
         }
 
         private static (NodePosition Start, NodePosition End, double Beta) CaptureMember(Beam member)
@@ -131,24 +151,28 @@ namespace StaadPro.Interop.Core.Services.Output
             return new LocalCS(start.Id, start.Position, u, v, w);
         }
 
-        private static MemberForces Project(PlateCornerForces plateCornerForces, ILoadCase loadCase,
-            LocalCS frame, int beamId, MemberEnd end)
+        internal readonly struct Projection(LocalCS frame, int beamId, MemberEnd end)
         {
-            var force = new CartesianVector3(plateCornerForces.Fx, plateCornerForces.Fy, plateCornerForces.Fz);
-            var moment = new CartesianVector3(plateCornerForces.Mx, plateCornerForces.My, plateCornerForces.Mz);
-            if (!IsFinite(force) || !IsFinite(moment))
-                throw new ArgumentException("All six supplied components must be finite.", nameof(plateCornerForces));
-
-            // Both vectors are expressed at the same point in a new basis. The origin does not enter a vector projection.
-            force = ProjectVector(force, frame);
-            moment = ProjectVector(moment, frame);
-            return new MemberForces
+            internal MemberForces Apply(Forces plateCornerForces, int loadCaseId, string loadCaseTitle)
             {
-                BeamId = beamId, End = end,
-                LoadCaseId = loadCase.Id, LoadCaseTitle = loadCase.Title,
-                Fx = force.X, Fy = force.Y, Fz = force.Z,
-                Mx = moment.X, My = moment.Y, Mz = moment.Z
-            };
+                var force = new CartesianVector3(plateCornerForces.Fx, plateCornerForces.Fy, plateCornerForces.Fz);
+                var moment = new CartesianVector3(plateCornerForces.Mx, plateCornerForces.My, plateCornerForces.Mz);
+                if (!IsFinite(force) || !IsFinite(moment))
+                    throw new ArgumentException("All six supplied components must be finite.", nameof(plateCornerForces));
+
+                // Project both vectors at the original corner. The frame origin does not enter a vector projection.
+                force = ProjectVector(force, frame);
+                moment = ProjectVector(moment, frame);
+                return new MemberForces
+                {
+                    BeamId = beamId,
+                    End = end,
+                    LoadCaseId = loadCaseId,
+                    LoadCaseTitle = loadCaseTitle,
+                    Fx = force.X, Fy = force.Y, Fz = force.Z,
+                    Mx = moment.X, My = moment.Y, Mz = moment.Z
+                };
+            }
         }
 
         private static CartesianVector3 ProjectVector(CartesianVector3 vector, LocalCS frame)

@@ -5,6 +5,7 @@ using StaadPro.Interop.Core.Enums;
 using StaadPro.Interop.Core.Services.Load;
 using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Models;
+using StaadPro.Interop.Core.Models.Output;
 using StaadPro.Interop.Core.Services.Interop;
 
 namespace StaadPro.Interop.Core.Services.Output
@@ -94,15 +95,73 @@ namespace StaadPro.Interop.Core.Services.Output
 
         internal static PlateCornerForces Read(object output, object geometry, ILoadCase loadCase, Plate plate, Node cornerNode)
         {
-            ArgumentNullException.ThrowIfNull(loadCase); ArgumentNullException.ThrowIfNull(plate); ArgumentNullException.ThrowIfNull(cornerNode);
-            int loadId = loadCase.Id, plateId = plate.Id, nodeId = cornerNode.Id;
-            Positive(loadId, nameof(loadCase)); Positive(plateId, nameof(plate)); Positive(nodeId, nameof(cornerNode));
+            ArgumentNullException.ThrowIfNull(loadCase);
+            ArgumentNullException.ThrowIfNull(plate);
+            ArgumentNullException.ThrowIfNull(cornerNode);
+            int loadId = loadCase.Id;
+            Positive(loadId, nameof(loadCase));
+            var captured = CaptureSingle(geometry, plate, cornerNode);
+            return ReadCaptured(output, loadCase, captured.Plate, captured.Corner, loadId, captured.PlateId);
+        }
+
+        internal static PlateCornerForcesQueryResult ReadGlobal(object output, object geometry, Plate plate,
+            Node cornerNode, int loadCaseId)
+        {
+            Positive(loadCaseId, nameof(loadCaseId));
+            var captured = CaptureSingle(geometry, plate, cornerNode);
+            var key = new PlateCornerForcesKey(loadCaseId, captured.PlateId, captured.Corner.Id);
+            var actions = ReadActions(output, key.PlateId, key.CornerNodeId, key.LoadCaseId);
+            var forces = actions == null ? null :
+                new PlateCornerForces(new LoadCase(loadCaseId), captured.Plate, captured.Corner.Node, actions);
+            return new PlateCornerForcesQueryResult(key, forces);
+        }
+
+        internal static MemberForces ReadProjected(OpenStaadWrapper wrapper, ILoadCase loadCase, Plate plate,
+            Node cornerNode, Node otherMemberNode)
+        {
+            ArgumentNullException.ThrowIfNull(otherMemberNode);
+            return ReadProjected(wrapper, loadCase, plate, cornerNode, corner => MemberLocalFrame.Prepare(corner, otherMemberNode));
+        }
+
+        internal static MemberForces ReadProjected(OpenStaadWrapper wrapper, ILoadCase loadCase, Plate plate,
+            Node cornerNode, Beam member)
+        {
+            ArgumentNullException.ThrowIfNull(member);
+            return ReadProjected(wrapper, loadCase, plate, cornerNode, corner => MemberLocalFrame.Prepare(corner, member));
+        }
+
+        private static MemberForces ReadProjected(OpenStaadWrapper wrapper, ILoadCase loadCase, Plate plate,
+            Node cornerNode, Func<Node, MemberLocalFrame.Projection> prepare)
+        {
+            ArgumentNullException.ThrowIfNull(loadCase);
+            int loadId = loadCase.Id;
+            Positive(loadId, nameof(loadCase));
+            string loadTitle = loadCase.Title;
+            var captured = CaptureSingle((object)wrapper.RawGeometry, plate, cornerNode);
+            var projection = prepare(captured.Corner.Node);
+            var actions = RequireActions((object)wrapper.RawOutput, captured.PlateId, captured.Corner.Id, loadId);
+            return projection.Apply(actions, loadId, loadTitle);
+        }
+
+        private static (Plate Plate, int PlateId, Corner Corner) CaptureSingle(object geometry, Plate plate, Node cornerNode)
+        {
+            ArgumentNullException.ThrowIfNull(plate);
+            ArgumentNullException.ThrowIfNull(cornerNode);
+            int plateId = plate.Id, nodeId = cornerNode.Id;
+            Positive(plateId, nameof(plate));
+            Positive(nodeId, nameof(cornerNode));
             Node a = plate.A, b = plate.B, c = plate.C, d = plate.D;
             if (a == null || b == null || c == null)
-            { plate = Hydrate(geometry, plateId); a = plate.A; b = plate.B; c = plate.C; d = plate.D; }
+            {
+                plate = Hydrate(geometry, plateId);
+                a = plate.A;
+                b = plate.B;
+                c = plate.C;
+                d = plate.D;
+            }
             var corners = Capture(a, b, c, d, nameof(plate));
             var corner = FindCorner(corners, nodeId, "The requested node is not a supplied/resolved plate incidence node.");
-            return ReadCaptured(output, loadCase, plate, corner, loadId, plateId);
+            return (plate, plateId, corner);
         }
 
         internal static PlateCornerForcesResultSet ReadAll(object output, ILoadCase loadCase, Plate plate)
@@ -269,11 +328,21 @@ namespace StaadPro.Interop.Core.Services.Output
         }
         private static PlateCornerForces ReadCaptured(object output, ILoadCase load, Plate plate, Corner corner, int loadId, int plateId)
         {
-            object buffer = new[] { double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN };
-            object status = ((dynamic)output).GetPlateCornerForces(plateId, corner.Id, loadId, ref buffer);
-            if (!NativeValues.ReadBoolean(status, "plate-corner force success")) throw new InvalidOperationException("OpenSTAAD could not retrieve plate-corner forces.");
-            var forces = SupportResultReader.ReadForces(buffer, "plate-corner forces");
+            var forces = RequireActions(output, plateId, corner.Id, loadId);
             return new PlateCornerForces(load, plate, corner.Node, forces);
+        }
+
+        private static Forces RequireActions(object output, int plateId, int cornerNodeId, int loadId) =>
+            ReadActions(output, plateId, cornerNodeId, loadId) ??
+                throw new InvalidOperationException("OpenSTAAD could not retrieve plate-corner forces.");
+
+        private static Forces ReadActions(object output, int plateId, int cornerNodeId, int loadId)
+        {
+            object buffer = new[] { double.NaN, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN };
+            object status = ((dynamic)output).GetPlateCornerForces(plateId, cornerNodeId, loadId, ref buffer);
+            return NativeValues.ReadBoolean(status, "plate-corner force success")
+                ? SupportResultReader.ReadForces(buffer, "plate-corner forces")
+                : null;
         }
         private static Plate Hydrate(object geometry, int plateId)
         {

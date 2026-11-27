@@ -278,7 +278,7 @@ namespace StaadPro.Interop.Core.Tests.Adapters
         public void FiveSourceContractsShipWithFullMatchingExpandedXml()
         {
             var xml = XDocument.Load(Path.ChangeExtension(typeof(IOSOutput).Assembly.Location, ".xml"));
-            var methods = typeof(IOSOutput).GetMethods().Where(m => (m.Name == "GetPlateCornerForces" || m.Name == "GetPlateCornerForcesAsync") && m.GetParameters()[0].ParameterType == typeof(ILoadCase) && !m.GetParameters().Any(p => p.ParameterType.IsGenericType) || m.Name == "GetPlateCenterResults" && m.GetParameters().Length == 3).ToArray(); Assert.That(methods, Has.Length.EqualTo(5));
+            var methods = typeof(IOSOutput).GetMethods().Where(m => (m.Name == "GetPlateCornerForces" || m.Name == "GetPlateCornerForcesAsync") && m.GetParameters()[0].ParameterType == typeof(ILoadCase) && m.GetParameters().Length <= 3 && !m.GetParameters().Any(p => p.ParameterType.IsGenericType) || m.Name == "GetPlateCenterResults" && m.GetParameters().Length == 3).ToArray(); Assert.That(methods, Has.Length.EqualTo(5));
             foreach (var m in methods)
             {
                 string TypeId(Type t) => t.IsGenericType ? t.GetGenericTypeDefinition().FullName.Split((char)96)[0] + "{" + string.Join(",", t.GetGenericArguments().Select(TypeId)) + "}" : t.FullName;

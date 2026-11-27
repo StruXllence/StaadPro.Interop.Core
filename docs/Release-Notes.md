@@ -1,5 +1,13 @@
 # Release notes
 
+## 1.0.0-preview.20261127 - 27 November 2026
+
+Added five Output contracts. `GetPlateCornerForcesGlobal(Plate, Node, int)` retains the queried identifiers and returns a copied six-component record on native success. An ordinary native failure keeps the identifiers and leaves `Forces` null. Invalid input, malformed output and transport errors propagate.
+
+Added node and beam overloads of `GetPlateCornerForces` and `GetPlateCornerForcesAsync` that read a single corner and project its force and moment into the supplied member basis. Both task variants finish on the wrapper's owning thread before returning. Projection retains the original corner, units and case metadata. It applies no member-end sign reversal or moment transfer. See [the member-local guide](Member-Local-Plate-Corner-Forces.md) for usage and axis qualification.
+
+The package provides 75 Output contracts, with matching interface and adapter XML documentation.
+
 ## 1.0.0-preview.20261126.2 - 26 November 2026
 
 Added `GetMemberLocalCoordinateSystem(Beam member)` and the node and beam overloads of `TransformPlateCornerForcesToMemberLocal` and `TransformPlateCornerForcesToMemberLocalAsync`. All five have matching interface and adapter XML IntelliSense. See [member-local frames and force projection](Member-Local-Plate-Corner-Forces.md).

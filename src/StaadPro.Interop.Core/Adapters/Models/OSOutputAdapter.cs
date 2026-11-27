@@ -1933,5 +1933,162 @@ namespace StaadPro.Interop.Core.Adapters.Models
         /// </code></example>
         public LocalCS GetMemberLocalCoordinateSystem(Beam member) =>
             Wrapper.UseOutputBinding(this, _ => MemberLocalFrame.Create(member));
+
+        /// <summary>Reads the native global plate-corner force and moment packet with a named success result.</summary>
+        /// <param name="plate">Plate with a positive ID. Complete A/B/C incidence is reused; otherwise the current Geometry binding hydrates the plate and the corner coordinates.</param>
+        /// <param name="cornerNode">Positive incidence-node ID. Uses the matching plate incidence node, even when a different object supplied the same ID.</param>
+        /// <param name="loadCaseId">Positive numerical case selector passed directly to OpenSTAAD.</param>
+        /// <returns>Captured request IDs and a detached six-component record on native success. A false or zero native result retains the IDs and leaves the force record null.</returns>
+        /// <remarks>
+        /// <para>Uses the same corner selection and hydration rules as the single-corner query. The native function takes a numeric case selector. The returned case record carries the requested ID with default managed metadata; no case family or title is discovered. An unsuccessful native response discards the entire output buffer.</para>
+        /// <para>Copies Fx/Fy/Fz/Mx/My/Mz on success without an additional rotation or moment transfer. The axis convention follows prior STAAD.Pro 2026.0.0.340 equilibrium evidence for the native six-component packet. Other builds and model contexts need independent verification. Components retain the native units.</para>
+        /// <para>Runs through the current Output binding on the wrapper's owning thread. Reacquire the adapter after refresh. The operation is read-only and does not activate a case, run analysis, or guarantee result freshness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required argument is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The supplied or hydrated geometry does not contain the requested corner or has invalid incidence.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, on the wrong thread, or reentered, or a required native result is malformed or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails. The original exception is propagated.</exception>
+        /// <example><code>
+        /// var corner = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var other = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var third = new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(corner, other, third) { Id = 17 };
+        /// var result = wrapper.Output.GetPlateCornerForcesGlobal(plate, corner, 1);
+        /// if (result.IsSuccessful) Console.WriteLine(result.Forces.Fx);
+        /// </code></example>
+        public PlateCornerForcesQueryResult GetPlateCornerForcesGlobal(Plate plate, Node cornerNode, int loadCaseId) =>
+            Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadGlobal((object)wrapper.RawOutput, (object)wrapper.RawGeometry, plate, cornerNode, loadCaseId));
+
+        /// <summary>Reads one plate-corner action and expresses its force and moment in a zero-beta basis pointing from the corner to the other node.</summary>
+        /// <param name="loadCase">Case or combination metadata with a positive ID. The ID and title are captured before the native force read.</param>
+        /// <param name="plate">Plate with a positive ID. Complete A/B/C incidence is reused; otherwise the current Geometry binding hydrates the plate and the corner coordinates.</param>
+        /// <param name="cornerNode">Positive incidence-node ID. Uses the matching plate incidence node, even when a different object supplied the same ID.</param>
+        /// <param name="otherMemberNode">Other end of the conceptual member direction. Coordinates must be finite and more than 1e-9 coordinate units from the resolved corner.</param>
+        /// <returns>An editable member-local record retaining the captured case ID and title. Force and moment remain at the original corner.</returns>
+        /// <remarks>
+        /// <para>After resolving the corner, validates the projection frame before the native force call. Exactly one qualified force packet is read under the same binding lease. The frame uses the resolved corner as its start. The result uses BeamId zero and MemberEnd.Start.</para>
+        /// <para>Projects the force and moment vectors independently without end-sign reversal, moment transfer or conversion to analytical member internal forces. The axis convention follows prior STAAD.Pro 2026.0.0.340 equilibrium evidence for the native six-component packet. Other builds and model contexts need independent verification. Components retain the native units.</para>
+        /// <para>Runs through the current Output binding on the wrapper's owning thread. Reacquire the adapter after refresh. The operation is read-only and does not activate a case, run analysis, or guarantee result freshness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required argument is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The supplied or hydrated geometry does not contain the requested corner or has invalid incidence or a degenerate projection frame.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, on the wrong thread, or reentered, or a required native result is unsuccessful, malformed or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails. The original exception is propagated.</exception>
+        /// <exception cref="OverflowException">A projected component exceeds the finite Double range.</exception>
+        /// <example><code>
+        /// var corner = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var other = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var third = new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(corner, other, third) { Id = 17 };
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var result = wrapper.Output.GetPlateCornerForces(loadCase, plate, corner, other);
+        /// Console.WriteLine(result.Fy);
+        /// </code></example>
+        public MemberForces GetPlateCornerForces(ILoadCase loadCase, Plate plate, Node cornerNode, Node otherMemberNode) =>
+            Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadProjected(wrapper, loadCase, plate, cornerNode, otherMemberNode));
+
+        /// <summary>Reads one plate-corner action and expresses its force and moment in a zero-beta basis pointing from the corner to the other node through a settled task.</summary>
+        /// <param name="loadCase">Case or combination metadata with a positive ID. The ID and title are captured before the native force read.</param>
+        /// <param name="plate">Plate with a positive ID. Complete A/B/C incidence is reused; otherwise the current Geometry binding hydrates the plate and the corner coordinates.</param>
+        /// <param name="cornerNode">Positive incidence-node ID. Uses the matching plate incidence node, even when a different object supplied the same ID.</param>
+        /// <param name="otherMemberNode">Other end of the conceptual member direction. Coordinates must be finite and more than 1e-9 coordinate units from the resolved corner.</param>
+        /// <returns>A completed or faulted task. On success it contains an editable member-local record retaining the captured case ID and title. Force and moment remain at the original corner.</returns>
+        /// <remarks>
+        /// <para>After resolving the corner, validates the projection frame before the native force call. Exactly one qualified force packet is read under the same binding lease. The frame uses the resolved corner as its start. The result uses BeamId zero and MemberEnd.Start.</para>
+        /// <para>Projects the force and moment vectors independently without end-sign reversal, moment transfer or conversion to analytical member internal forces. The axis convention follows prior STAAD.Pro 2026.0.0.340 equilibrium evidence for the native six-component packet. Other builds and model contexts need independent verification. Components retain the native units.</para>
+        /// <para>Runs through the current Output binding on the wrapper's owning thread. Reacquire the adapter after refresh. The operation is read-only and does not activate a case, run analysis, or guarantee result freshness.</para>
+        /// <para>The native read and projection finish on the owning thread before the task is returned. Awaiting observes the result or the original failure.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The returned task faults. A required argument is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The returned task faults. A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The returned task faults. The supplied or hydrated geometry does not contain the requested corner or has invalid incidence or a degenerate projection frame.</exception>
+        /// <exception cref="ObjectDisposedException">The returned task faults. The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The returned task faults. The binding is stale, on the wrong thread, or reentered, or a required native result is unsuccessful, malformed or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The returned task faults. Native dispatch fails. The original exception is propagated.</exception>
+        /// <exception cref="OverflowException">The returned task faults. A projected component exceeds the finite Double range.</exception>
+        /// <example><code>
+        /// var corner = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var other = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var third = new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(corner, other, third) { Id = 17 };
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var result = wrapper.Output.GetPlateCornerForcesAsync(loadCase, plate, corner, other).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Fy);
+        /// </code></example>
+        public Task<MemberForces> GetPlateCornerForcesAsync(ILoadCase loadCase, Plate plate, Node cornerNode, Node otherMemberNode)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadProjected(wrapper, loadCase, plate, cornerNode, otherMemberNode))); }
+            catch (Exception error) { return Task.FromException<MemberForces>(error); }
+        }
+
+        /// <summary>Reads one plate-corner action and expresses its force and moment in the supplied member's start-to-end basis.</summary>
+        /// <param name="loadCase">Case or combination metadata with a positive ID. The ID and title are captured before the native force read.</param>
+        /// <param name="plate">Plate with a positive ID. Complete A/B/C incidence is reused; otherwise the current Geometry binding hydrates the plate and the corner coordinates.</param>
+        /// <param name="cornerNode">Positive incidence-node ID. Uses the matching plate incidence node, even when a different object supplied the same ID.</param>
+        /// <param name="member">Supplied positive-ID beam with finite start and end coordinates and beta in degrees. The resolved corner must match one of its endpoints.</param>
+        /// <returns>An editable member-local record retaining the captured case ID and title. Force and moment remain at the original corner.</returns>
+        /// <remarks>
+        /// <para>After resolving the corner, validates the projection frame before the native force call. Exactly one qualified force packet is read under the same binding lease. The frame uses supplied start-to-end incidence and beta, including at the end node. The result carries the supplied beam ID and matched end.</para>
+        /// <para>Projects the force and moment vectors independently without end-sign reversal, moment transfer or conversion to analytical member internal forces. The axis convention follows prior STAAD.Pro 2026.0.0.340 equilibrium evidence for the native six-component packet. Other builds and model contexts need independent verification. Components retain the native units.</para>
+        /// <para>Runs through the current Output binding on the wrapper's owning thread. Reacquire the adapter after refresh. The operation is read-only and does not activate a case, run analysis, or guarantee result freshness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required argument is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The supplied or hydrated geometry does not contain the requested corner or has invalid incidence or a degenerate projection frame.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, on the wrong thread, or reentered, or a required native result is unsuccessful, malformed or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch fails. The original exception is propagated.</exception>
+        /// <exception cref="OverflowException">A projected component exceeds the finite Double range.</exception>
+        /// <example><code>
+        /// var corner = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var other = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var third = new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(corner, other, third) { Id = 17 };
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var member = new StaadPro.Interop.Core.Entities.Beam(21, corner, other) { BetaAngle = 90 };
+        /// var result = wrapper.Output.GetPlateCornerForces(loadCase, plate, corner, member);
+        /// Console.WriteLine(result.Fy);
+        /// </code></example>
+        public MemberForces GetPlateCornerForces(ILoadCase loadCase, Plate plate, Node cornerNode, Beam member) =>
+            Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadProjected(wrapper, loadCase, plate, cornerNode, member));
+
+        /// <summary>Reads one plate-corner action and expresses its force and moment in the supplied member's start-to-end basis through a settled task.</summary>
+        /// <param name="loadCase">Case or combination metadata with a positive ID. The ID and title are captured before the native force read.</param>
+        /// <param name="plate">Plate with a positive ID. Complete A/B/C incidence is reused; otherwise the current Geometry binding hydrates the plate and the corner coordinates.</param>
+        /// <param name="cornerNode">Positive incidence-node ID. Uses the matching plate incidence node, even when a different object supplied the same ID.</param>
+        /// <param name="member">Supplied positive-ID beam with finite start and end coordinates and beta in degrees. The resolved corner must match one of its endpoints.</param>
+        /// <returns>A completed or faulted task. On success it contains an editable member-local record retaining the captured case ID and title. Force and moment remain at the original corner.</returns>
+        /// <remarks>
+        /// <para>After resolving the corner, validates the projection frame before the native force call. Exactly one qualified force packet is read under the same binding lease. The frame uses supplied start-to-end incidence and beta, including at the end node. The result carries the supplied beam ID and matched end.</para>
+        /// <para>Projects the force and moment vectors independently without end-sign reversal, moment transfer or conversion to analytical member internal forces. The axis convention follows prior STAAD.Pro 2026.0.0.340 equilibrium evidence for the native six-component packet. Other builds and model contexts need independent verification. Components retain the native units.</para>
+        /// <para>Runs through the current Output binding on the wrapper's owning thread. Reacquire the adapter after refresh. The operation is read-only and does not activate a case, run analysis, or guarantee result freshness.</para>
+        /// <para>The native read and projection finish on the owning thread before the task is returned. Awaiting observes the result or the original failure.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The returned task faults. A required argument is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The returned task faults. A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The returned task faults. The supplied or hydrated geometry does not contain the requested corner or has invalid incidence or a degenerate projection frame.</exception>
+        /// <exception cref="ObjectDisposedException">The returned task faults. The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The returned task faults. The binding is stale, on the wrong thread, or reentered, or a required native result is unsuccessful, malformed or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The returned task faults. Native dispatch fails. The original exception is propagated.</exception>
+        /// <exception cref="OverflowException">The returned task faults. A projected component exceeds the finite Double range.</exception>
+        /// <example><code>
+        /// var corner = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var other = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var third = new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(corner, other, third) { Id = 17 };
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var member = new StaadPro.Interop.Core.Entities.Beam(21, corner, other) { BetaAngle = 90 };
+        /// var result = wrapper.Output.GetPlateCornerForcesAsync(loadCase, plate, corner, member).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Fy);
+        /// </code></example>
+        public Task<MemberForces> GetPlateCornerForcesAsync(ILoadCase loadCase, Plate plate, Node cornerNode, Beam member)
+        {
+            try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadProjected(wrapper, loadCase, plate, cornerNode, member))); }
+            catch (Exception error) { return Task.FromException<MemberForces>(error); }
+        }
     }
 }

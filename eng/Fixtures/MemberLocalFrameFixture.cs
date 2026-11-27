@@ -8,6 +8,7 @@ using StaadPro.Interop.Core.Adapters.Models;
 using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Enums;
 using StaadPro.Interop.Core.Models;
+using StaadPro.Interop.Core.Models.Output;
 
 public sealed class MemberLocalFrameRoot : NativeRoot
 {
@@ -67,6 +68,52 @@ internal static class MemberLocalFrameFixture
             VerifyContract(docs, "TransformPlateCornerForcesToMemberLocalAsync", typeof(Task<MemberForces>), types, names);
         }
         VerifyContract(docs, "GetMemberLocalCoordinateSystem", typeof(LocalCS), [typeof(Beam)], ["member"]);
+        VerifyLiveQueries(docs);
+    }
+
+    private static void VerifyLiveQueries(XDocument docs)
+    {
+        var native = new PlateCornerHydrationNative();
+        using var wrapper = new OpenStaadWrapper(new PlateCornerHydrationRoot(native));
+        IOSOutput output = wrapper.Output;
+        var corner = new Node(11, 0, 0, 0);
+        var start = new Node(12, -2, 0, 0);
+        var up = new Node(13, 0, 4, 0);
+        var plate = new Plate(corner, start, up) { Id = 17 };
+        var member = new Beam(21, start, corner) { BetaAngle = 90 };
+        var load = new LoadCase(1, "Dead");
+
+        var actions = output.GetPlateCornerForcesGlobal(plate, corner, 1);
+        if (!actions.IsSuccessful || actions.Key != new PlateCornerForcesKey(1, 17, 11) ||
+            actions.Forces.Fx != 1 || actions.Forces.Mz != -6)
+            throw new Exception("Installed global corner observation did not preserve data and identity.");
+
+        CheckForces(output.GetPlateCornerForces(load, plate, corner, up), [-2, -1, 3, 5, 4, -6], 0, MemberEnd.Start);
+        CheckForces(output.GetPlateCornerForces(load, plate, corner, member), [1, 3, 2, -4, -6, -5], 21, MemberEnd.End);
+        var nodeTask = output.GetPlateCornerForcesAsync(load, plate, corner, up);
+        var memberTask = output.GetPlateCornerForcesAsync(load, plate, corner, member);
+        if (!nodeTask.IsCompletedSuccessfully || !memberTask.IsCompletedSuccessfully ||
+            native.Calls.Count != 5 || native.Calls.Any(call => call != "force:17:11:1") ||
+            native.Threads.Any(thread => thread != Environment.CurrentManagedThreadId))
+            throw new Exception("Installed corner composition must do one force read per call on the owning thread.");
+        CheckForces(nodeTask.Result, [-2, -1, 3, 5, 4, -6], 0, MemberEnd.Start);
+        CheckForces(memberTask.Result, [1, 3, 2, -4, -6, -5], 21, MemberEnd.End);
+
+        native.ForceStatus = false;
+        var failure = output.GetPlateCornerForcesGlobal(plate, corner, 1);
+        if (failure.IsSuccessful || failure.Forces != null || failure.Key != actions.Key ||
+            !output.GetPlateCornerForcesAsync(load, plate, corner, member).IsFaulted)
+            throw new Exception("Installed corner failure contract changed.");
+
+        VerifyContract(docs, "GetPlateCornerForcesGlobal", typeof(PlateCornerForcesQueryResult),
+            [typeof(Plate), typeof(Node), typeof(int)], ["plate", "cornerNode", "loadCaseId"]);
+        foreach (Type geometryType in new[] { typeof(Node), typeof(Beam) })
+        {
+            Type[] types = [typeof(ILoadCase), typeof(Plate), typeof(Node), geometryType];
+            string[] names = ["loadCase", "plate", "cornerNode", geometryType == typeof(Node) ? "otherMemberNode" : "member"];
+            VerifyContract(docs, "GetPlateCornerForces", typeof(MemberForces), types, names);
+            VerifyContract(docs, "GetPlateCornerForcesAsync", typeof(Task<MemberForces>), types, names);
+        }
     }
 
     private static void CheckForces(MemberForces result, double[] expected, int beamId, MemberEnd end)

@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.0.0-preview.20261128.1 - 28 November 2026
+
+Added `GetSelectedNodesIds()`, both `GetSelectedNodesExt` overloads and `GetSelectedNodesListAsync()`. The selection reader validates count and unique positive IDs before returning data. It hydrates native coordinates or matches the first supplied node by ID. The supplied-node overload keeps one null marker for unmatched IDs. The array task preserves native selection order and completes native work on the wrapper's owning COM thread.
+
+Added `GetNode(int nId, IEnumerable<Node> fromModelNodes)` to return the first matching supplied node without a native read. Geometry now exposes ten operations with matching interface and adapter IntelliSense. [Node selection guide](Geometry-Node-Selection.md).
+
 ## 1.0.0-preview.20261128 - 28 November 2026
 
 Added `GetAllBeamsList()`, `GetAllNodesList()`, `GetAllPlatesList()` and `GetAllSolidsList()`. These return detached, eager ID snapshots in native order. Each inventory checks the native count, array shape, unique positive IDs and count stability before returning results. Empty inventories skip the list call.

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Models;
 
 public sealed class GeometryInventoryNative
@@ -17,11 +18,19 @@ public sealed class GeometryInventoryNative
     public object GetNodeCount() => ReadCount(nameof(GetNodeCount));
     public object GetPlateCount() => ReadCount(nameof(GetPlateCount));
     public object GetSolidCount() => ReadCount(nameof(GetSolidCount));
+    public object GetNoOfSelectedNodes() => ReadCount(nameof(GetNoOfSelectedNodes));
 
     public void GetBeamList(ref object ids) => WriteIds(nameof(GetBeamList), ref ids);
     public void GetNodeList(ref object ids) => WriteIds(nameof(GetNodeList), ref ids);
     public void GetPlateList(ref object ids) => WriteIds(nameof(GetPlateList), ref ids);
     public void GetSolidList(ref object ids) => WriteIds(nameof(GetSolidList), ref ids);
+
+    public void GetSelectedNodes(ref object ids, object nIsSorted)
+    {
+        if (nIsSorted is not int flag || flag != 0)
+            throw new InvalidOperationException("Expected the Int32 selection-order flag zero.");
+        WriteIds(nameof(GetSelectedNodes), ref ids);
+    }
 
     public void GetNodeCoordinates(int nId, ref object x, ref object y, ref object z)
     {
@@ -85,6 +94,15 @@ internal static class GeometryInventoryFixture
         var node = geometry.GetNode(nId: 3);
         if (node.Id != 3 || node.X != 0 || node.Y != -2.25 || node.Z != 7 || geometry.GetNode(0) != null)
             throw new InvalidOperationException("Installed Geometry node projection changed.");
+        if (!geometry.GetSelectedNodesIds().SetEquals(expected) ||
+            !geometry.GetSelectedNodesListAsync().GetAwaiter().GetResult().SequenceEqual(expected) ||
+            !geometry.GetSelectedNodesExt().Select(selected => selected.Id).ToHashSet().SetEquals(expected))
+            throw new InvalidOperationException("Installed Geometry selection order or membership changed.");
+        var supplied = new[] { new Node(3, 5, 0, 0), new Node(3, 6, 0, 0) };
+        var mapped = geometry.GetSelectedNodesExt(supplied);
+        if (!ReferenceEquals(geometry.GetNode(3, supplied), supplied[0]) ||
+            !mapped.SetEquals(new Node[] { supplied[0], null }))
+            throw new InvalidOperationException("Installed Geometry supplied-node identity changed.");
         if (native.Threads.Any(thread => thread != Environment.CurrentManagedThreadId))
             throw new InvalidOperationException("Installed Geometry reads left the wrapper's owner thread.");
     }

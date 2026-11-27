@@ -44,6 +44,11 @@ namespace StaadPro.Interop.Core.Tests.Adapters
             public IEnumerable<int> GetAllPlatesList() => throw new NotSupportedException();
             public IEnumerable<int> GetAllSolidsList() => throw new NotSupportedException();
             public StaadPro.Interop.Core.Entities.Node GetNode(int nId) => throw new NotSupportedException();
+            public StaadPro.Interop.Core.Entities.Node GetNode(int nId, IEnumerable<StaadPro.Interop.Core.Entities.Node> fromModelNodes) => throw new NotSupportedException();
+            public HashSet<int> GetSelectedNodesIds() => throw new NotSupportedException();
+            public HashSet<StaadPro.Interop.Core.Entities.Node> GetSelectedNodesExt() => throw new NotSupportedException();
+            public HashSet<StaadPro.Interop.Core.Entities.Node> GetSelectedNodesExt(IEnumerable<StaadPro.Interop.Core.Entities.Node> fromModelNodes) => throw new NotSupportedException();
+            public Task<int[]> GetSelectedNodesListAsync() => throw new NotSupportedException();
         }
         [TestCaseSource(nameof(Operations))]
         public void IdQueriesHydrateDetachedMetadataCopyForcesAndKeepCallerThread(string op)

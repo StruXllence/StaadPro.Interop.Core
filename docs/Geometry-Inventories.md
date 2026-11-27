@@ -1,6 +1,6 @@
 # Geometry inventories and node coordinates
 
-`wrapper.Geometry` exposes five read-only queries. Call them on the same COM thread that acquired the wrapper. Reacquire the adapter after `RefreshComObjects()`.
+The five queries below cover model-wide inventories and direct coordinate lookup. [Selected nodes and supplied-node lookup](Geometry-Node-Selection.md). Call them on the same COM thread that acquired the wrapper. Reacquire the adapter after `RefreshComObjects()`.
 
 | Method | Scope | Native calls |
 | --- | --- | --- |

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Services.Interop;
 
@@ -8,7 +10,7 @@ namespace StaadPro.Interop.Core.Services.Geometry
     {
         private const int MaximumInventorySize = 1_000_000;
 
-        internal enum Entity { Beams, Nodes, Plates, Solids }
+        internal enum Entity { Beams, Nodes, Plates, Solids, SelectedNodes }
 
         internal static int[] ReadIds(object geometry, Entity entity)
         {
@@ -24,6 +26,7 @@ namespace StaadPro.Interop.Core.Services.Geometry
                 case Entity.Nodes: native.GetNodeList(ref buffer); break;
                 case Entity.Plates: native.GetPlateList(ref buffer); break;
                 case Entity.Solids: native.GetSolidList(ref buffer); break;
+                case Entity.SelectedNodes: native.GetSelectedNodes(ref buffer, 0); break;
                 default: throw new ArgumentOutOfRangeException(nameof(entity));
             }
 
@@ -42,12 +45,60 @@ namespace StaadPro.Interop.Core.Services.Geometry
                 Entity.Nodes => native.GetNodeCount(),
                 Entity.Plates => native.GetPlateCount(),
                 Entity.Solids => native.GetSolidCount(),
+                Entity.SelectedNodes => native.GetNoOfSelectedNodes(),
                 _ => throw new ArgumentOutOfRangeException(nameof(entity))
             };
             int count = NativeValues.ReadInt32(value, $"{entity} count");
             if (count < 0 || count > MaximumInventorySize)
                 throw new InvalidOperationException($"OpenSTAAD {entity} count must be between zero and {MaximumInventorySize}.");
             return count;
+        }
+
+        internal static Node FindNode(int nId, IEnumerable<Node> fromModelNodes)
+        {
+            ArgumentNullException.ThrowIfNull(fromModelNodes);
+            foreach (Node node in fromModelNodes)
+            {
+                if (node is null)
+                    throw new ArgumentException("The supplied sequence contains a null node.", nameof(fromModelNodes));
+                if (node.Id == nId)
+                    return node;
+            }
+            return null;
+        }
+
+        internal static HashSet<Node> ReadSelectedNodes(object geometry)
+        {
+            int[] ids = ReadIds(geometry, Entity.SelectedNodes);
+            var nodes = new HashSet<Node>();
+            foreach (int id in ids)
+                nodes.Add(ReadNode(geometry, id));
+            return nodes;
+        }
+
+        internal static HashSet<Node> ReadSelectedNodes(object geometry, IEnumerable<Node> fromModelNodes)
+        {
+            ArgumentNullException.ThrowIfNull(fromModelNodes);
+            var remaining = ReadIds(geometry, Entity.SelectedNodes).ToHashSet();
+            var nodes = new HashSet<Node>();
+            if (remaining.Count == 0)
+                return nodes;
+
+            foreach (Node node in fromModelNodes)
+            {
+                if (node is null)
+                    throw new ArgumentException("The supplied sequence contains a null node.", nameof(fromModelNodes));
+                if (!remaining.Remove(node.Id))
+                    continue;
+
+                nodes.Add(node);
+                if (remaining.Count == 0)
+                    return nodes;
+            }
+
+            // Preserve the source set's null entry for one or more unmatched IDs.
+            nodes.Add(null);
+            return nodes;
         }
 
         internal static Node ReadNode(object geometry, int nId)

@@ -79,6 +79,8 @@ namespace StaadPro.Interop.Core.Services.Output
 
         private static (NodePosition Corner, ILoadCase LoadCase) CaptureCorner(PlateCornerForces plateCornerForces)
         {
+            if (plateCornerForces.IsMemberLocal)
+                throw new ArgumentException("The supplied result is already member-local.", nameof(plateCornerForces));
             var loadCase = plateCornerForces.LoadCase;
             var plate = plateCornerForces.Plate;
             var node = plateCornerForces.CornerNode;

@@ -120,18 +120,29 @@ namespace StaadPro.Interop.Core.Services.Output
             Node cornerNode, Node otherMemberNode)
         {
             ArgumentNullException.ThrowIfNull(otherMemberNode);
-            return ReadProjected(wrapper, loadCase, plate, cornerNode, corner => MemberLocalFrame.Prepare(corner, otherMemberNode));
+            return ReadProjected(wrapper, loadCase, plate, cornerNode, corner => MemberLocalFrame.Prepare(corner, otherMemberNode), static (_, _, forces) => forces);
         }
 
         internal static MemberForces ReadProjected(OpenStaadWrapper wrapper, ILoadCase loadCase, Plate plate,
             Node cornerNode, Beam member)
         {
             ArgumentNullException.ThrowIfNull(member);
-            return ReadProjected(wrapper, loadCase, plate, cornerNode, corner => MemberLocalFrame.Prepare(corner, member));
+            return ReadProjected(wrapper, loadCase, plate, cornerNode, corner => MemberLocalFrame.Prepare(corner, member), static (_, _, forces) => forces);
         }
 
-        private static MemberForces ReadProjected(OpenStaadWrapper wrapper, ILoadCase loadCase, Plate plate,
-            Node cornerNode, Func<Node, MemberLocalFrame.Projection> prepare)
+        internal static PlateCornerForces ReadProjectedCorner(OpenStaadWrapper wrapper, ILoadCase loadCase, Plate plate,
+            Node cornerNode, Node otherMemberNode)
+        {
+            ArgumentNullException.ThrowIfNull(otherMemberNode);
+            return ReadProjected(wrapper, loadCase, plate, cornerNode,
+                corner => MemberLocalFrame.Prepare(corner, otherMemberNode),
+                (resolvedPlate, resolvedCorner, forces) =>
+                    new PlateCornerForces(loadCase, resolvedPlate, resolvedCorner,
+                        forces.Fx, forces.Fy, forces.Fz, forces.Mx, forces.My, forces.Mz) { IsMemberLocal = true });
+        }
+
+        private static TResult ReadProjected<TResult>(OpenStaadWrapper wrapper, ILoadCase loadCase, Plate plate,
+            Node cornerNode, Func<Node, MemberLocalFrame.Projection> prepare, Func<Plate, Node, MemberForces, TResult> createResult)
         {
             ArgumentNullException.ThrowIfNull(loadCase);
             int loadId = loadCase.Id;
@@ -140,7 +151,7 @@ namespace StaadPro.Interop.Core.Services.Output
             var captured = CaptureSingle((object)wrapper.RawGeometry, plate, cornerNode);
             var projection = prepare(captured.Corner.Node);
             var actions = RequireActions((object)wrapper.RawOutput, captured.PlateId, captured.Corner.Id, loadId);
-            return projection.Apply(actions, loadId, loadTitle);
+            return createResult(captured.Plate, captured.Corner.Node, projection.Apply(actions, loadId, loadTitle));
         }
 
         private static (Plate Plate, int PlateId, Corner Corner) CaptureSingle(object geometry, Plate plate, Node cornerNode)

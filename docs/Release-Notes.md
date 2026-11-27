@@ -1,5 +1,13 @@
 # Release notes
 
+## 1.0.0-preview.20261127.1 - 27 November 2026
+
+Added two member-local plate-corner overloads that preserve case, plate and resolved corner metadata. Both mark the components as member-local, allowing the detached transform to catch accidental double projection. The task overload completes the read and projection on the wrapper's owning thread. [Member-local plate-corner guide](Member-Local-Plate-Corner-Forces.md)
+
+Added three plate cut-line resultant methods. `QueryPlateCutLineResultant` preserves the captured request and reports ordinary native failure explicitly. `GetPlateCutLineResultant` and its task counterpart require six complete, finite force and moment components. The wrapper passes the requested axes to OpenSTAAD and preserves native values and units. [Plate cut-line guide](Plate-Cut-Line-Resultants.md)
+
+Output now provides 80 contracts with matching interface and adapter XML IntelliSense.
+
 ## 1.0.0-preview.20261127 - 27 November 2026
 
 Added five Output contracts. `GetPlateCornerForcesGlobal(Plate, Node, int)` retains the queried identifiers and returns a copied six-component record on native success. An ordinary native failure keeps the identifiers and leaves `Forces` null. Invalid input, malformed output and transport errors propagate.

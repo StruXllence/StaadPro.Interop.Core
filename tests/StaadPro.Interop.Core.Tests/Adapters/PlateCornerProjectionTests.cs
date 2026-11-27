@@ -167,6 +167,55 @@ namespace StaadPro.Interop.Core.Tests.Adapters
             Assert.That(wrapper.Output.GetPlateCornerForces(load, plate, plate.A, plate.B).Fx, Is.EqualTo(1));
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void MemberLocalPlateResultRetainsCanonicalMetadataAndCannotBeProjectedAgain(bool useTask)
+        {
+            var native = new PlateCornerHydrationNative();
+            native.Coordinates = id => id == 11 ? [0d, 0d, 0d] : [(double)id, 0d, 0d];
+            using var wrapper = new OpenStaadWrapper(new PlateCornerHydrationRoot(native));
+            var plate = new Plate(null, null, null) { Id = 17 };
+            var corner = new Node(11, 999, 999, 999);
+            var other = new Node(14, 0, 0, 2);
+            var load = new LoadCase(8, "Dead");
+            var output = wrapper.Output;
+
+            PlateCornerForces result;
+            if (useTask)
+            {
+                var task = output.GetPlateCornerForcesInMemberLocalCoordinatesAsync(load, plate, corner, other);
+                Assert.That(task.IsCompletedSuccessfully, Is.True);
+                result = task.GetAwaiter().GetResult();
+            }
+            else result = output.GetPlateCornerForcesInMemberLocalCoordinates(load, plate, corner, other);
+
+            Assert.That(result.IsMemberLocal, Is.True);
+            Assert.That(result.Key, Is.EqualTo(new PlateCornerForcesKey(8, 17, 11)));
+            Assert.That(result.LoadCase, Is.SameAs(load));
+            Assert.That(result.Plate, Is.Not.SameAs(plate));
+            Assert.That(result.CornerNode, Is.SameAs(result.Plate.A));
+            Assert.That(new[] { result.Fx, result.Fy, result.Fz, result.Mx, result.My, result.Mz },
+                Is.EqualTo(new[] { 3d, -2d, -1d, -6d, 5d, 4d }));
+            Assert.Throws<ArgumentException>(() => output.TransformPlateCornerForcesToMemberLocal(result, other));
+            Assert.That(native.Calls, Is.EqualTo(new[]
+                { "incidence:17", "coordinate:11", "coordinate:12", "coordinate:13", "force:17:11:8" }));
+        }
+
+        [Test]
+        public void MemberLocalPlateTaskPreservesOriginalNativeFailure()
+        {
+            var error = new COMException("Transport failure", unchecked((int)0x800706BA));
+            var native = new PlateCornerHydrationNative { Failure = error, FailureAt = "force:" };
+            using var wrapper = new OpenStaadWrapper(new PlateCornerHydrationRoot(native));
+            var plate = CreatePlate();
+
+            var task = wrapper.Output.GetPlateCornerForcesInMemberLocalCoordinatesAsync(new LoadCase(8), plate, plate.A, plate.B);
+
+            Assert.That(task.IsFaulted, Is.True);
+            Assert.That(Assert.Throws<COMException>(() => task.GetAwaiter().GetResult()), Is.SameAs(error));
+            Assert.That(native.Calls, Is.EqualTo(new[] { "force:17:11:8" }));
+        }
+
         private static MemberForces Read(IOSOutput output, LoadCase load, Plate plate, Node corner, Node other,
             Beam member, bool beam, bool task)
         {

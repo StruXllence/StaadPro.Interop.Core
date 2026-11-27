@@ -5,8 +5,8 @@ namespace StaadPro.Interop.Core.Models
 {
     /// <summary>Stores six copied native plate-corner force and moment components with editable context metadata.</summary>
     /// <remarks>Inherits Fx,Fy,Fz,Mx,My,Mz and component notifications from Forces. Values retain the native
-    /// output axes, signs and base force/length units; they are not plate-center stresses or moments per width.
-    /// No rotation, unit conversion, averaging or equilibrium/design acceptance is performed. Public manual
+    /// output axes unless the query marks them as member-local. Both forms retain the original reference point
+    /// and units. They represent concentrated corner actions. Public manual
     /// constructors/setters accept unvalidated scalar/context data; qualified query readers validate separately.</remarks>
     public class PlateCornerForces : Forces
     {
@@ -31,6 +31,11 @@ namespace StaadPro.Interop.Core.Models
         /// <exception cref="ArgumentException">forcesArray does not have six values.</exception>
         public PlateCornerForces(ILoadCase loadCase, Plate plate, Node cornerNode, double[] forcesArray)
             : this(loadCase, plate, cornerNode, Forces.ParseFromArray(forcesArray)) { }
+        /// <summary>Indicates that the reader projected the components into a zero-beta member-local basis.</summary>
+        /// <value>True for member-local compatibility queries. False for ordinary corner queries and manually
+        /// constructed records. False alone does not certify the axes of supplied data.</value>
+        public bool IsMemberLocal { get; internal init; }
+
         /// <summary>Gets or sets the shared case metadata reference.</summary>
         /// <value>Caller-owned metadata; edits do not requery or rebuild result-set indexes.</value>
         public ILoadCase LoadCase { get; set; }

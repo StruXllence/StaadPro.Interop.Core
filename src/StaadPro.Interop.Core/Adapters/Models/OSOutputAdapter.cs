@@ -2090,5 +2090,160 @@ namespace StaadPro.Interop.Core.Adapters.Models
             try { return Task.FromResult(Wrapper.UseOutputBinding(this, wrapper => PlateCornerReader.ReadProjected(wrapper, loadCase, plate, cornerNode, member))); }
             catch (Exception error) { return Task.FromException<MemberForces>(error); }
         }
+
+        /// <summary>Reads a plate-corner action in a conceptual zero-beta member basis and retains the plate, corner and case metadata.</summary>
+        /// <param name="loadCase">Case or combination metadata with a positive numerical ID.</param>
+        /// <param name="plate">Plate with a positive ID. Complete A/B/C incidence is reused. Sparse incidence is hydrated from the current Geometry binding.</param>
+        /// <param name="cornerNode">Positive incidence-node ID. The resolved plate incidence node provides the coordinates and metadata.</param>
+        /// <param name="otherMemberNode">Other end of the conceptual local X direction, with finite coordinates more than 1e-9 coordinate units from the resolved corner.</param>
+        /// <returns>An editable plate-corner record marked <see cref="PlateCornerForces.IsMemberLocal"/>. Its six components are expressed in the basis directed from the resolved corner to the other node.</returns>
+        /// <remarks>
+        /// <para>Reads one native packet under the current Output lease, then projects force and moment independently at the original corner. It retains the units and applies no moment transfer or end sign reversal.</para>
+        /// <para>Use this result shape when you need plate and corner metadata. Use <see cref="IOSOutput.GetPlateCornerForces(ILoadCase, Plate, Node, Node)"/> for conceptual <see cref="MemberForces"/> or the <see cref="IOSOutput.GetPlateCornerForces(ILoadCase, Plate, Node, Beam)"/> overload for an actual beam with beta and member-end identity. A marked result cannot be passed back to the global-to-member transforms.</para>
+        /// <para>Invoke on the owning thread with the current Output adapter. This read does not run analysis or establish result freshness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required reference is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">Geometry, incidence or the frame is invalid.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, reentered or on a different thread, or native status or data is invalid, unsuccessful or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch failed. The original error is preserved.</exception>
+        /// <exception cref="OverflowException">A projected component exceeds the finite Double range.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var c = new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(a, b, c) { Id = 17 };
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var result = wrapper.Output.GetPlateCornerForcesInMemberLocalCoordinates(loadCase, plate, a, c);
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public PlateCornerForces GetPlateCornerForcesInMemberLocalCoordinates(ILoadCase loadCase, Plate plate, Node cornerNode, Node otherMemberNode)
+        => Wrapper.UseOutputBinding(this, wrapper =>
+            PlateCornerReader.ReadProjectedCorner(wrapper, loadCase, plate, cornerNode, otherMemberNode));
+
+        /// <summary>Reads and projects a plate-corner action on the wrapper's owning thread and returns a settled task.</summary>
+        /// <param name="loadCase">Case or combination metadata with a positive numerical ID.</param>
+        /// <param name="plate">Plate with a positive ID. Complete A/B/C incidence is reused. Sparse incidence is hydrated from the current Geometry binding.</param>
+        /// <param name="cornerNode">Positive incidence-node ID. The resolved plate incidence node provides the coordinates and metadata.</param>
+        /// <param name="otherMemberNode">Other end of the conceptual local X direction, with finite coordinates more than 1e-9 coordinate units from the resolved corner.</param>
+        /// <returns>A completed task with an editable member-local plate-corner record, or a faulted task carrying the original error.</returns>
+        /// <remarks>
+        /// <para>Reads one native packet under the current Output lease, then projects force and moment independently at the original corner. It retains the units and applies no moment transfer or end sign reversal.</para>
+        /// <para>Use this result shape when you need plate and corner metadata. Use <see cref="IOSOutput.GetPlateCornerForces(ILoadCase, Plate, Node, Node)"/> for conceptual <see cref="MemberForces"/> or the <see cref="IOSOutput.GetPlateCornerForces(ILoadCase, Plate, Node, Beam)"/> overload for an actual beam with beta and member-end identity. A marked result cannot be passed back to the global-to-member transforms.</para>
+        /// <para>Invoke on the owning thread with the current Output adapter. This read does not run analysis or establish result freshness.</para>
+        /// <para>The native work finishes before the task is returned. Awaiting observes the result or failure.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The task faults. A required reference is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The task faults. A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The task faults. Geometry, incidence or the frame is invalid.</exception>
+        /// <exception cref="ObjectDisposedException">The task faults. The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The task faults. The binding is stale, reentered or on a different thread, or native status or data is invalid, unsuccessful or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The task faults. Native dispatch failed. The original error is preserved.</exception>
+        /// <exception cref="OverflowException">The task faults. A projected component exceeds the finite Double range.</exception>
+        /// <example><code>
+        /// var a = new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0);
+        /// var b = new StaadPro.Interop.Core.Entities.Node(12, 2, 0, 0);
+        /// var c = new StaadPro.Interop.Core.Entities.Node(13, 0, 0, 1);
+        /// var plate = new StaadPro.Interop.Core.Entities.Plate(a, b, c) { Id = 17 };
+        /// var loadCase = new StaadPro.Interop.Core.Entities.LoadCase(1, "Dead");
+        /// var result = wrapper.Output.GetPlateCornerForcesInMemberLocalCoordinatesAsync(loadCase, plate, a, c).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public Task<PlateCornerForces> GetPlateCornerForcesInMemberLocalCoordinatesAsync(ILoadCase loadCase, Plate plate, Node cornerNode, Node otherMemberNode)
+        {
+            try { return Task.FromResult(GetPlateCornerForcesInMemberLocalCoordinates(loadCase, plate, cornerNode, otherMemberNode)); }
+            catch (Exception error) { return Task.FromException<PlateCornerForces>(error); }
+        }
+
+        /// <summary>Queries the integrated force and moment along a cut through the supplied plates, with an explicit native success outcome.</summary>
+        /// <param name="plateList">Plates crossed by the cut. Supply positive plate IDs. Null entries are skipped, repeated IDs are captured once in first-occurrence order, and up to 100,000 entries may be enumerated.</param>
+        /// <param name="loadCaseId">Positive ID of the analyzed load case or combination. Passed directly to OpenSTAAD.</param>
+        /// <param name="startPoint">Finite global start coordinates in active OpenSTAAD base length units.</param>
+        /// <param name="endPoint">Finite global end coordinates in the same units, more than 1e-9 coordinate units from the start.</param>
+        /// <param name="transformForceToGlobal">True requests STAAD global XYZ. False requests native cut-line local axes.</param>
+        /// <returns>The captured plate IDs, case ID, endpoints and requested axes, with six copied components on success. Native false or zero leaves <see cref="PlateCutLineResult.Forces"/> null.</returns>
+        /// <remarks>
+        /// <para>OpenSTAAD integrates the cut and determines the default surface frame from the plates. The wrapper passes the requested axis flag and copies native components without a further rotation, normalization, or unit conversion. The inputs should describe a cut through the model's plates.</para>
+        /// <para>Use this method when native false is an expected outcome. <see cref="IOSOutput.GetPlateCutLineResultant"/> and <see cref="IOSOutput.GetPlateCutLineResultantAsync"/> require a valid resultant and report native false as an error.</para>
+        /// <para>Invoke on the owning thread with the current Output adapter. This read does not run analysis or establish result freshness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required reference is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The list is empty, invalid or too large, or the cut coordinates do not define a finite noncoincident line.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, reentered or on a different thread, or native status or data is invalid.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch failed. The original error is preserved.</exception>
+        /// <example><code>
+        /// var plates = new[] { new StaadPro.Interop.Core.Entities.Plate(null, null, null) { Id = 17 } };
+        /// var start = new StaadPro.Interop.Core.Models.CartesianVector3(0, 0, 0);
+        /// var end = new StaadPro.Interop.Core.Models.CartesianVector3(2, 0, 1);
+        /// var result = wrapper.Output.QueryPlateCutLineResultant(plates, 1, start, end, transformForceToGlobal: true);
+        /// if (result.IsSuccessful) Console.WriteLine(result.Forces.Fx);
+        /// </code></example>
+        public PlateCutLineResult QueryPlateCutLineResultant(IEnumerable<Plate> plateList, int loadCaseId, CartesianVector3 startPoint, CartesianVector3 endPoint, bool transformForceToGlobal)
+        => Wrapper.UseOutputBinding(this, wrapper =>
+            PlateCutLineReader.Read((object)wrapper.RawOutput, plateList, loadCaseId, startPoint, endPoint, transformForceToGlobal));
+
+        /// <summary>Gets the integrated force and moment along a cut through the supplied plates. Requires a valid native resultant.</summary>
+        /// <param name="plateList">Plates crossed by the cut. Supply positive plate IDs. Null entries are skipped, repeated IDs are captured once in first-occurrence order, and up to 100,000 entries may be enumerated.</param>
+        /// <param name="loadCaseId">Positive ID of the analyzed load case or combination. Passed directly to OpenSTAAD.</param>
+        /// <param name="startPoint">Finite global start coordinates in active OpenSTAAD base length units.</param>
+        /// <param name="endPoint">Finite global end coordinates in the same units, more than 1e-9 coordinate units from the start.</param>
+        /// <param name="transformForceToGlobal">True requests STAAD global XYZ. False requests native cut-line local axes.</param>
+        /// <returns>An editable copy of Fx, Fy, Fz, Mx, My and Mz in the requested native axes and units.</returns>
+        /// <remarks>
+        /// <para>OpenSTAAD integrates the cut and determines the default surface frame from the plates. The wrapper passes the requested axis flag and copies native components without a further rotation, normalization, or unit conversion. The inputs should describe a cut through the model's plates.</para>
+        /// <para>Use <see cref="IOSOutput.QueryPlateCutLineResultant"/> to inspect and handle an ordinary native false result without an exception.</para>
+        /// <para>Invoke on the owning thread with the current Output adapter. This read does not run analysis or establish result freshness.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">A required reference is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The list is empty, invalid or too large, or the cut coordinates do not define a finite noncoincident line.</exception>
+        /// <exception cref="ObjectDisposedException">The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding is stale, reentered or on a different thread, or native status or data is invalid, unsuccessful or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">Native dispatch failed. The original error is preserved.</exception>
+        /// <example><code>
+        /// var plates = new[] { new StaadPro.Interop.Core.Entities.Plate(null, null, null) { Id = 17 } };
+        /// var start = new StaadPro.Interop.Core.Models.CartesianVector3(0, 0, 0);
+        /// var end = new StaadPro.Interop.Core.Models.CartesianVector3(2, 0, 1);
+        /// var result = wrapper.Output.GetPlateCutLineResultant(plates, 1, start, end, transformForceToGlobal: true);
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public Forces GetPlateCutLineResultant(IEnumerable<Plate> plateList, int loadCaseId, CartesianVector3 startPoint, CartesianVector3 endPoint, bool transformForceToGlobal)
+        => QueryPlateCutLineResultant(plateList, loadCaseId, startPoint, endPoint, transformForceToGlobal).Forces
+            ?? throw new InvalidOperationException("OpenSTAAD could not retrieve the plate cut-line resultant.");
+
+        /// <summary>Gets the required cut-line resultant on the wrapper's owning thread and returns a settled task.</summary>
+        /// <param name="plateList">Plates crossed by the cut. Supply positive plate IDs. Null entries are skipped, repeated IDs are captured once in first-occurrence order, and up to 100,000 entries may be enumerated.</param>
+        /// <param name="loadCaseId">Positive ID of the analyzed load case or combination. Passed directly to OpenSTAAD.</param>
+        /// <param name="startPoint">Finite global start coordinates in active OpenSTAAD base length units.</param>
+        /// <param name="endPoint">Finite global end coordinates in the same units, more than 1e-9 coordinate units from the start.</param>
+        /// <param name="transformForceToGlobal">True requests STAAD global XYZ. False requests native cut-line local axes.</param>
+        /// <returns>A completed task with an editable copy of the six components, or a faulted task carrying the original error.</returns>
+        /// <remarks>
+        /// <para>OpenSTAAD integrates the cut and determines the default surface frame from the plates. The wrapper passes the requested axis flag and copies native components without a further rotation, normalization, or unit conversion. The inputs should describe a cut through the model's plates.</para>
+        /// <para>Use <see cref="IOSOutput.QueryPlateCutLineResultant"/> to inspect and handle an ordinary native false result without an exception.</para>
+        /// <para>Invoke on the owning thread with the current Output adapter. This read does not run analysis or establish result freshness.</para>
+        /// <para>The native work finishes before the task is returned. Awaiting observes the result or failure.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The task faults. A required reference is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The task faults. A required identifier is not positive.</exception>
+        /// <exception cref="ArgumentException">The task faults. The list is empty, invalid or too large, or the cut coordinates do not define a finite noncoincident line.</exception>
+        /// <exception cref="ObjectDisposedException">The task faults. The wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The task faults. The binding is stale, reentered or on a different thread, or native status or data is invalid, unsuccessful or incomplete.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The task faults. Native dispatch failed. The original error is preserved.</exception>
+        /// <example><code>
+        /// var plates = new[] { new StaadPro.Interop.Core.Entities.Plate(null, null, null) { Id = 17 } };
+        /// var start = new StaadPro.Interop.Core.Models.CartesianVector3(0, 0, 0);
+        /// var end = new StaadPro.Interop.Core.Models.CartesianVector3(2, 0, 1);
+        /// var result = wrapper.Output.GetPlateCutLineResultantAsync(plates, 1, start, end, transformForceToGlobal: true).GetAwaiter().GetResult();
+        /// Console.WriteLine(result.Fx);
+        /// </code></example>
+        public Task<Forces> GetPlateCutLineResultantAsync(IEnumerable<Plate> plateList, int loadCaseId, CartesianVector3 startPoint, CartesianVector3 endPoint, bool transformForceToGlobal)
+        {
+            try { return Task.FromResult(GetPlateCutLineResultant(plateList, loadCaseId, startPoint, endPoint, transformForceToGlobal)); }
+            catch (Exception error) { return Task.FromException<Forces>(error); }
+        }
     }
 }

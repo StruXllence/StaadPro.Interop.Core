@@ -4,5 +4,6 @@
   <ItemGroup><ProjectReference Include="../../src/StaadPro.Interop.Core/StaadPro.Interop.Core.csproj" /></ItemGroup>
   <ItemGroup>
     <Compile Include="../../eng/Fixtures/PlateCornerHydrationFixture.cs" Link="Fixtures/PlateCornerHydrationFixture.cs" />
+    <Compile Include="../../eng/Fixtures/PlateCutLineFixture.cs" Link="Fixtures/PlateCutLineFixture.cs" />
   </ItemGroup>
 </Project>

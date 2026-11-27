@@ -63,7 +63,9 @@ Console.WriteLine(beamLocal.Fy);
 
 Bentley's print reference describes global plate-corner actions in the printed results. The earlier read-only equilibrium check is the evidence for interpreting the OpenSTAAD packet on the sampled STAAD.Pro 2026.0.0.340 model. Verify axes and signs for other builds and fixtures. The queries preserve native units and do not establish analysis freshness. [Prior equilibrium check](https://github.com/StruXllence/StaadPro.Interop/blob/98d95f0ff44e37a45d045018182555d93dd84ae6/docs/Output-Plate-Corners.md#contract-evidence-and-coordinate-decision). [Bentley print reference](https://docs.bentley.com/LiveContent/web/STAAD.Pro%20Help-v21/en/STD_PRINT.html)
 
-All five live methods keep one lease for hydration, force retrieval and projection as applicable. They do not launch or analyze a model, alter case selection, or change its data. Task overloads return after performing the read and projection and retain the original failure.
+Use the plate-shaped compatibility overloads when you need plate and resolved corner metadata alongside the projected components. `GetPlateCornerForcesInMemberLocalCoordinates` and its task counterpart return a `PlateCornerForces` record marked `IsMemberLocal`. The mark prevents supplying it to a global-to-member transform a second time. Use the node and beam overloads above when you need `MemberForces` and member-end metadata.
+
+Each live method keeps one lease for hydration, force retrieval and projection as applicable. They do not launch or analyze a model, alter case selection, or change its data. Task overloads return after performing the read and projection and retain the original failure.
 
 ## Basis and projection
 

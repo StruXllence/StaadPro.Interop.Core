@@ -99,6 +99,13 @@ internal static class MemberLocalFrameFixture
         CheckForces(nodeTask.Result, [-2, -1, 3, 5, 4, -6], 0, MemberEnd.Start);
         CheckForces(memberTask.Result, [1, 3, 2, -4, -6, -5], 21, MemberEnd.End);
 
+        var localPlate = output.GetPlateCornerForcesInMemberLocalCoordinates(load, plate, corner, up);
+        var localPlateTask = output.GetPlateCornerForcesInMemberLocalCoordinatesAsync(load, plate, corner, up);
+        if (!localPlate.IsMemberLocal || localPlate.Plate != plate || localPlate.CornerNode != corner ||
+            !ReferenceEquals(localPlate.LoadCase, load) || localPlate.Fx != -2 || localPlate.Mx != 5 ||
+            !localPlateTask.IsCompletedSuccessfully || localPlateTask.Result.Mx != 5 || native.Calls.Count != 7)
+            throw new Exception("Installed member-local corner metadata or components changed.");
+
         native.ForceStatus = false;
         var failure = output.GetPlateCornerForcesGlobal(plate, corner, 1);
         if (failure.IsSuccessful || failure.Forces != null || failure.Key != actions.Key ||

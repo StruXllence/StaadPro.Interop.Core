@@ -46,6 +46,7 @@ try {
     $stressOffsetGuide = Read-Entry 'docs/Point-Stress-and-Member-Offsets.md'
     $geometryGuide = Read-Entry 'docs/Geometry-Inventories.md'
     $selectionGuide = Read-Entry 'docs/Geometry-Node-Selection.md'
+    $beamPlateGuide = Read-Entry 'docs/Geometry-Beam-Plate-Selection.md'
     [xml] $nuspec = Read-Entry (@($archive.Entries | Where-Object FullName -like '*.nuspec')[0].FullName)
     $metadata = $nuspec.package.metadata
     if ($metadata.id -ne 'StaadPro.Interop.Core' -or $metadata.authors -ne 'Srinivasa Rao Masanam' -or $metadata.copyright -ne 'Copyright (c) 2026 StruXllence') { throw 'Unexpected package identity.' }
@@ -59,7 +60,7 @@ try {
     }
     if ($metadata.license.InnerText -ne 'Apache-2.0' -or $metadata.repository.url -ne 'https://github.com/StruXllence/StaadPro.Interop.Core') { throw 'Unexpected license/repository.' }
     if (@($metadata.dependencies.group.dependency).Where({ $null -ne $_ }).Count -ne 0 -or @($metadata.frameworkReferences.group.frameworkReference).Where({ $null -ne $_ }).Count -ne 0) { throw 'Unexpected runtime dependency.' }
-    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Geometry-Inventories.md','docs/Geometry-Node-Selection.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Static-Check-Batches-and-Plate-Center-Stresses.md','docs/Member-Force-Queries.md','docs/Load-Case-Metadata.md','docs/Load-Definitions.md','docs/Buckling-Results.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
+    foreach ($name in @('LICENSE','NOTICE.md','LICENSES/MIT-legacy.txt','TRADEMARKS.md','CITATION.cff','docs/Licensing.md','docs/Wrapper-Foundation.md','docs/Geometry-Inventories.md','docs/Geometry-Node-Selection.md','docs/Geometry-Beam-Plate-Selection.md','docs/Root-Creation-Views-and-Shutdown.md','docs/Root-View-Changes-and-Optional-Operations.md','docs/Static-Check-Batches-and-Plate-Center-Stresses.md','docs/Member-Force-Queries.md','docs/Load-Case-Metadata.md','docs/Load-Definitions.md','docs/Buckling-Results.md','docs/Root-Metadata.md','docs/Root-Observations.md','docs/Root-Path-Helpers.md','docs/Root-Model-Lifecycle.md','docs/Root-Job-Information-and-Windows.md','docs/Root-Model-Coordination.md','docs/Root-Analysis.md','docs/Root-Model-Edits.md','docs/Root-Job-Analysis-and-Projects.md','docs/Installation.md','docs/Publishing.md','docs/Release-Notes.md','images/symbol-only-logo.png','images/symbol-only-logo-core.png','images/logo-with-text-core.png','images/logo-with-text-core-400.png')) { if ($null -eq $archive.GetEntry($name)) { throw "Missing entry: $name" } }
     if ((Read-Entry 'LICENSE') -notmatch 'Apache License' -or (Read-Entry 'LICENSES/MIT-legacy.txt') -notmatch 'MIT License') { throw 'Missing licensing terms.' }
     if ($readme -notmatch 'binding-only placeholders' -or $readme -notmatch '53 common Root' -or $readme -notmatch 'net9.0-windows' -or $readme -match '<img') { throw 'Inaccurate README scope/image syntax.' }
     if (!$readme.StartsWith('![StaadPro.Interop.Core](https://raw.githubusercontent.com/StruXllence/StaadPro.Interop.Core/staadpro-interop-core/docs/images/logo-with-text-core-400.png)')) { throw 'Unexpected banner.' }
@@ -110,7 +111,7 @@ try {
     $gatewayContract = $documentation.SelectSingleNode("//member[@name='P:StaadPro.Interop.Core.Adapters.Interfaces.IOSRoot.Capabilities']")
     $gatewayConcrete = $documentation.SelectSingleNode("//member[@name='P:StaadPro.Interop.Core.Adapters.Models.OSRootAdapter.Capabilities']")
     if ($null -eq $gatewayContract -or $null -eq $gatewayConcrete -or $gatewayContract.InnerXml -cne $gatewayConcrete.InnerXml) { throw 'Mismatched capability gateway IntelliSense.' }
-    $domainCounts = @{ Geometry = 10; Load = 19; Output = 85 }
+    $domainCounts = @{ Geometry = 15; Load = 19; Output = 85 }
     foreach($domain in @('Geometry','Load','Output')) {
         $prefix='M:StaadPro.Interop.Core.Adapters.Interfaces.IOS'+$domain+'.'
         $contracts=@($documentation.SelectNodes('//member') | Where-Object {$_.name.StartsWith($prefix)})
@@ -125,6 +126,10 @@ try {
                 $null -eq $lookup.SelectSingleNode("param[@name='fromModelNodes']") -or
                 $null -eq $selection -or $null -eq $selection.SelectSingleNode("param[@name='fromModelNodes']")) {
                 throw 'Incomplete supplied-node parameter IntelliSense.'
+            }
+            $beamSelection = $documentation.SelectSingleNode("//member[@name='M:StaadPro.Interop.Core.Adapters.Interfaces.IOSGeometry.GetSelectedBeamsExt(System.Collections.Generic.IEnumerable{StaadPro.Interop.Core.Entities.Beam})']")
+            if ($null -eq $beamSelection -or $null -eq $beamSelection.SelectSingleNode("param[@name='fromModelBeams']")) {
+                throw 'Incomplete supplied-beam parameter IntelliSense.'
             }
         }
         foreach($contract in $contracts){$id='M:StaadPro.Interop.Core.Adapters.Models.OS'+$domain+'Adapter.'+$contract.name.Substring($prefix.Length);$concrete=$documentation.SelectSingleNode("//member[@name='$id']");if($null -eq $concrete -or $concrete.InnerXml -cne $contract.InnerXml){throw 'Mismatched domain IntelliSense.'};foreach($tag in @('summary','returns','remarks','exception','example/code')){if($null -eq $contract.SelectSingleNode($tag)){throw 'Incomplete domain IntelliSense.'}}}
@@ -817,7 +822,8 @@ internal static class PackageSmoke
             else if (contract == typeof(IOSGeometry))
             {
                 string[] names = { "GetAllBeamsList", "GetAllNodesList", "GetAllPlatesList", "GetAllSolidsList",
-                    "GetNode", "GetNode", "GetSelectedNodesIds", "GetSelectedNodesExt", "GetSelectedNodesExt", "GetSelectedNodesListAsync" };
+                    "GetNode", "GetNode", "GetSelectedNodesIds", "GetSelectedNodesExt", "GetSelectedNodesExt", "GetSelectedNodesListAsync",
+                    "GetSelectedBeamsIds", "GetSelectedPlatesIds", "GetSelectedBeamsListAsync", "GetSelectedPlatesListAsync", "GetSelectedBeamsExt" };
                 if (!methods.Select(m => m.Name).OrderBy(n => n).SequenceEqual(names.OrderBy(n => n)))
                     throw new Exception("Unexpected Geometry operations.");
                 foreach (var method in methods)
@@ -834,8 +840,10 @@ internal static class PackageSmoke
                             Match(typeof(Node), new[] { typeof(int), typeof(IEnumerable<Node>) }, new[] { "nId", "fromModelNodes" }),
                         "GetSelectedNodesExt" => Match(typeof(HashSet<Node>), Type.EmptyTypes, Array.Empty<string>()) ||
                             Match(typeof(HashSet<Node>), new[] { typeof(IEnumerable<Node>) }, new[] { "fromModelNodes" }),
-                        "GetSelectedNodesIds" => Match(typeof(HashSet<int>), Type.EmptyTypes, Array.Empty<string>()),
-                        "GetSelectedNodesListAsync" => Match(typeof(System.Threading.Tasks.Task<int[]>), Type.EmptyTypes, Array.Empty<string>()),
+                        "GetSelectedNodesIds" or "GetSelectedBeamsIds" or "GetSelectedPlatesIds" => Match(typeof(HashSet<int>), Type.EmptyTypes, Array.Empty<string>()),
+                        "GetSelectedNodesListAsync" or "GetSelectedBeamsListAsync" or "GetSelectedPlatesListAsync" =>
+                            Match(typeof(System.Threading.Tasks.Task<int[]>), Type.EmptyTypes, Array.Empty<string>()),
+                        "GetSelectedBeamsExt" => Match(typeof(HashSet<Beam>), new[] { typeof(IEnumerable<Beam>) }, new[] { "fromModelBeams" }),
                         _ => Match(typeof(IEnumerable<int>), Type.EmptyTypes, Array.Empty<string>())
                     };
                     if (!valid) throw new Exception("Unexpected Geometry signature for " + method.Name);
@@ -988,6 +996,9 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Fixtures/GeometryInventoryFixtu
 $selectionCode = [regex]::Match($selectionGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
 if ([string]::IsNullOrWhiteSpace($selectionCode)) { throw 'Missing Geometry selection guide example.' }
 [IO.File]::WriteAllText((Join-Path $consumer 'GeometryNodeSelectionExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class GeometryNodeSelectionExample{static void Example(){using var wrapper = new OpenStaadWrapper(new GeometryInventoryRoot(new GeometryInventoryNative()));'+$selectionCode+'}}')
+$beamPlateCode = [regex]::Match($beamPlateGuide,'(?s)~~~csharp\s*\r?\n(.*?)~~~').Groups[1].Value
+if ([string]::IsNullOrWhiteSpace($beamPlateCode)) { throw 'Missing beam and plate selection guide example.' }
+[IO.File]::WriteAllText((Join-Path $consumer 'GeometryBeamPlateSelectionExample.cs'),'using System; using StaadPro.Interop.Core.Models; internal static class GeometryBeamPlateSelectionExample{static void Example(){using var wrapper = new OpenStaadWrapper(new GeometryInventoryRoot(new GeometryInventoryNative()));'+$beamPlateCode+'}}')
 $exampleCode = 'using System; using StaadPro.Interop.Core.Models; using StaadPro.Interop.Core.Services; internal static class XmlExamples {'
 for ($index = 0; $index -lt $examples.Count; $index++) {
     $snippet = $examples[$index].InnerText
@@ -1008,4 +1019,4 @@ if ($installedDocumentation.OuterXml -cne $documentation.OuterXml) { throw 'Inst
 if ($LASTEXITCODE -ne 0) { throw 'Consumer runtime failed.' }
 $restored = Join-Path $consumer "packages/staadpro.interop.core/$version/staadpro.interop.core.$version.nupkg"
 if ((Get-FileHash -LiteralPath $restored -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash) { throw 'Restored archive differs.' }
-Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all twenty-nine Root/domain guide examples compiled without executing native examples.')
+Write-Output ("PASS: " + $examples.Count + ' XML examples, README and all thirty Root/domain guide examples compiled without executing native examples.')

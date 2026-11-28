@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using StaadPro.Interop.Core.Common;
 using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Services.Interop;
 
@@ -10,7 +11,7 @@ namespace StaadPro.Interop.Core.Services.Geometry
     {
         private const int MaximumInventorySize = 1_000_000;
 
-        internal enum Entity { Beams, Nodes, Plates, Solids, SelectedNodes }
+        internal enum Entity { Beams, Nodes, Plates, Solids, SelectedNodes, SelectedBeams, SelectedPlates }
 
         internal static int[] ReadIds(object geometry, Entity entity)
         {
@@ -27,6 +28,8 @@ namespace StaadPro.Interop.Core.Services.Geometry
                 case Entity.Plates: native.GetPlateList(ref buffer); break;
                 case Entity.Solids: native.GetSolidList(ref buffer); break;
                 case Entity.SelectedNodes: native.GetSelectedNodes(ref buffer, 0); break;
+                case Entity.SelectedBeams: native.GetSelectedBeams(ref buffer, 0); break;
+                case Entity.SelectedPlates: native.GetSelectedPlates(ref buffer, 0); break;
                 default: throw new ArgumentOutOfRangeException(nameof(entity));
             }
 
@@ -46,6 +49,8 @@ namespace StaadPro.Interop.Core.Services.Geometry
                 Entity.Plates => native.GetPlateCount(),
                 Entity.Solids => native.GetSolidCount(),
                 Entity.SelectedNodes => native.GetNoOfSelectedNodes(),
+                Entity.SelectedBeams => native.GetNoOfSelectedBeams(),
+                Entity.SelectedPlates => native.GetNoOfSelectedPlates(),
                 _ => throw new ArgumentOutOfRangeException(nameof(entity))
             };
             int count = NativeValues.ReadInt32(value, $"{entity} count");
@@ -76,29 +81,30 @@ namespace StaadPro.Interop.Core.Services.Geometry
             return nodes;
         }
 
-        internal static HashSet<Node> ReadSelectedNodes(object geometry, IEnumerable<Node> fromModelNodes)
+        internal static HashSet<T> ReadSuppliedSelection<T>(object geometry, Entity entity, IEnumerable<T> supplied, string parameter)
+            where T : class, IEntity
         {
-            ArgumentNullException.ThrowIfNull(fromModelNodes);
-            var remaining = ReadIds(geometry, Entity.SelectedNodes).ToHashSet();
-            var nodes = new HashSet<Node>();
+            ArgumentNullException.ThrowIfNull(supplied, parameter);
+            var remaining = ReadIds(geometry, entity).ToHashSet();
+            var result = new HashSet<T>();
             if (remaining.Count == 0)
-                return nodes;
+                return result;
 
-            foreach (Node node in fromModelNodes)
+            foreach (T item in supplied)
             {
-                if (node is null)
-                    throw new ArgumentException("The supplied sequence contains a null node.", nameof(fromModelNodes));
-                if (!remaining.Remove(node.Id))
+                if (item is null)
+                    throw new ArgumentException("The supplied sequence contains a null entity.", parameter);
+                if (!remaining.Remove(item.Id))
                     continue;
 
-                nodes.Add(node);
+                result.Add(item);
                 if (remaining.Count == 0)
-                    return nodes;
+                    return result;
             }
 
-            // Preserve the source set's null entry for one or more unmatched IDs.
-            nodes.Add(null);
-            return nodes;
+            // Preserve one null entry when the supplied entities omit selected IDs.
+            result.Add(null);
+            return result;
         }
 
         internal static Node ReadNode(object geometry, int nId)

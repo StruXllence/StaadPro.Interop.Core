@@ -182,5 +182,93 @@ namespace StaadPro.Interop.Core.Adapters.Interfaces
         /// Console.WriteLine(ids.Length);
         /// </code></example>
         Task<int[]> GetSelectedNodesListAsync();
+
+        /// <summary>Reads the IDs of analytical members currently selected in the native model.</summary>
+        /// <returns>A fresh set of unique positive IDs. No selection returns an empty set. Set iteration order is unspecified.</returns>
+        /// <remarks>
+        /// <para>Reads an integral GetNoOfSelectedBeams count from zero through 1,000,000. A positive count calls void GetSelectedBeams with an Int32 SAFEARRAY and integer zero for native selection order. The buffer must contain the reported number of unique positive IDs. A replacement array or nonzero lower bound is supported. The count is checked again before returning the result.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one current-binding operation. Reacquire the adapter after refresh. External edits that leave the count unchanged can affect the read. These calls observe the selection without changing it.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, or the native count or ID array is malformed or inconsistent.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native exception and HRESULT are preserved.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected Geometry binding lacks a required native signature.</exception>
+        /// <example><code>
+        /// var ids = wrapper.Geometry.GetSelectedBeamsIds();
+        /// foreach (int id in ids) Console.WriteLine(id);
+        /// </code></example>
+        HashSet<int> GetSelectedBeamsIds();
+
+        /// <summary>Reads selected analytical member IDs in native selection order and returns a settled task.</summary>
+        /// <returns>A completed task with a detached Int32 array in native order, including an empty array for no selection, or a faulted task.</returns>
+        /// <remarks>
+        /// <para>Reads an integral GetNoOfSelectedBeams count from zero through 1,000,000. A positive count calls void GetSelectedBeams with an Int32 SAFEARRAY and integer zero for native selection order. The buffer must contain the reported number of unique positive IDs. A replacement array or nonzero lower bound is supported. The count is checked again before returning the result.</para>
+        /// <para>Native reads and validation finish synchronously before the task is returned. Invocation can block. The task preserves the original validation or native exception.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one current-binding operation. Reacquire the adapter after refresh. External edits that leave the count unchanged can affect the read. These calls observe the selection without changing it.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed. The task faults.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, or the native count or ID array is malformed or inconsistent. The task faults.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native exception and HRESULT are preserved. The task faults.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected Geometry binding lacks a required native signature. The task faults.</exception>
+        /// <example><code>
+        /// var ids = wrapper.Geometry.GetSelectedBeamsListAsync().GetAwaiter().GetResult();
+        /// foreach (int id in ids) Console.WriteLine(id);
+        /// </code></example>
+        Task<int[]> GetSelectedBeamsListAsync();
+
+        /// <summary>Reads the IDs of plate elements currently selected in the native model.</summary>
+        /// <returns>A fresh set of unique positive IDs. No selection returns an empty set. Set iteration order is unspecified.</returns>
+        /// <remarks>
+        /// <para>Reads an integral GetNoOfSelectedPlates count from zero through 1,000,000. A positive count calls void GetSelectedPlates with an Int32 SAFEARRAY and integer zero for native selection order. The buffer must contain the reported number of unique positive IDs. A replacement array or nonzero lower bound is supported. The count is checked again before returning the result.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one current-binding operation. Reacquire the adapter after refresh. External edits that leave the count unchanged can affect the read. These calls observe the selection without changing it.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, or the native count or ID array is malformed or inconsistent.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native exception and HRESULT are preserved.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected Geometry binding lacks a required native signature.</exception>
+        /// <example><code>
+        /// var ids = wrapper.Geometry.GetSelectedPlatesIds();
+        /// foreach (int id in ids) Console.WriteLine(id);
+        /// </code></example>
+        HashSet<int> GetSelectedPlatesIds();
+
+        /// <summary>Reads selected plate element IDs in native selection order and returns a settled task.</summary>
+        /// <returns>A completed task with a detached Int32 array in native order, including an empty array for no selection, or a faulted task.</returns>
+        /// <remarks>
+        /// <para>Reads an integral GetNoOfSelectedPlates count from zero through 1,000,000. A positive count calls void GetSelectedPlates with an Int32 SAFEARRAY and integer zero for native selection order. The buffer must contain the reported number of unique positive IDs. A replacement array or nonzero lower bound is supported. The count is checked again before returning the result.</para>
+        /// <para>Native reads and validation finish synchronously before the task is returned. Invocation can block. The task preserves the original validation or native exception.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one current-binding operation. Reacquire the adapter after refresh. External edits that leave the count unchanged can affect the read. These calls observe the selection without changing it.</para>
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed. The task faults.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, or the native count or ID array is malformed or inconsistent. The task faults.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native exception and HRESULT are preserved. The task faults.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected Geometry binding lacks a required native signature. The task faults.</exception>
+        /// <example><code>
+        /// var ids = wrapper.Geometry.GetSelectedPlatesListAsync().GetAwaiter().GetResult();
+        /// foreach (int id in ids) Console.WriteLine(id);
+        /// </code></example>
+        Task<int[]> GetSelectedPlatesListAsync();
+
+        /// <summary>Maps selected analytical member numbers to caller-supplied beam objects.</summary>
+        /// <param name="fromModelBeams">A non-null beam sequence. Each selected ID uses the first supplied beam with that ID.</param>
+        /// <returns>A fresh set containing the matching supplied <see cref="Beam"/> references and one <see langword="null"/> entry if any selected ID is missing. An empty selection returns an empty set. Set iteration order is unspecified.</returns>
+        /// <remarks>
+        /// <para>Reads an integral GetNoOfSelectedBeams count from zero through 1,000,000. A positive count calls void GetSelectedBeams with an Int32 SAFEARRAY and integer zero for native selection order. The buffer must contain the reported number of unique positive IDs. A replacement array or nonzero lower bound is supported. The count is checked again before returning the result.</para>
+        /// <para>Enumerates the supplied sequence at most once and stops when every selected ID has a match. The only native reads are for the selected IDs and their counts. Supplied incidence and other metadata remain as provided.</para>
+        /// <para>The set uses the Beam ID equality contract. Remove a beam from the set before changing its ID and reinsert it after the change.</para>
+        /// <para>Runs on the wrapper's constructing COM thread under one current-binding operation. Reacquire the adapter after refresh. External edits that leave the count unchanged can affect the read. These calls observe the selection without changing it.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">The supplied beam sequence is null.</exception>
+        /// <exception cref="ArgumentException">An inspected sequence element is null.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, or the native count or ID array is malformed or inconsistent.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native exception and HRESULT are preserved.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The connected Geometry binding lacks a required native signature.</exception>
+        /// <example><code>
+        /// var beams = new[] { new StaadPro.Interop.Core.Entities.Beam { Id = 3 } };
+        /// foreach (var beam in wrapper.Geometry.GetSelectedBeamsExt(beams))
+        ///     if (beam != null) Console.WriteLine(beam.Id);
+        /// </code></example>
+        HashSet<Beam> GetSelectedBeamsExt(IEnumerable<Beam> fromModelBeams);
     }
 }

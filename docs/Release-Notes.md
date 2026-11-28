@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.0.0-preview.20261128.2 - 28 November 2026
+
+Added `GetSelectedBeamsIds()` and `GetSelectedPlatesIds()` for validated ID sets and `GetSelectedBeamsListAsync()` and `GetSelectedPlatesListAsync()` for ordered ID arrays. The task-shaped calls complete native work on the wrapper's owning COM thread.
+
+Added `GetSelectedBeamsExt(IEnumerable<Beam> fromModelBeams)`. It matches each selected member ID to the first supplied beam and keeps one null entry for unmatched IDs. Geometry provides fifteen operations with matching XML IntelliSense on the interface and adapter. [Beam and plate selection guide](Geometry-Beam-Plate-Selection.md).
+
 ## 1.0.0-preview.20261128.1 - 28 November 2026
 
 Added `GetSelectedNodesIds()`, both `GetSelectedNodesExt` overloads and `GetSelectedNodesListAsync()`. The selection reader validates count and unique positive IDs before returning data. It hydrates native coordinates or matches the first supplied node by ID. The supplied-node overload keeps one null marker for unmatched IDs. The array task preserves native selection order and completes native work on the wrapper's owning COM thread.

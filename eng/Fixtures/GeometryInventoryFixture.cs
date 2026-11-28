@@ -19,17 +19,23 @@ public sealed class GeometryInventoryNative
     public object GetPlateCount() => ReadCount(nameof(GetPlateCount));
     public object GetSolidCount() => ReadCount(nameof(GetSolidCount));
     public object GetNoOfSelectedNodes() => ReadCount(nameof(GetNoOfSelectedNodes));
+    public object GetNoOfSelectedBeams() => ReadCount(nameof(GetNoOfSelectedBeams));
+    public object GetNoOfSelectedPlates() => ReadCount(nameof(GetNoOfSelectedPlates));
 
     public void GetBeamList(ref object ids) => WriteIds(nameof(GetBeamList), ref ids);
     public void GetNodeList(ref object ids) => WriteIds(nameof(GetNodeList), ref ids);
     public void GetPlateList(ref object ids) => WriteIds(nameof(GetPlateList), ref ids);
     public void GetSolidList(ref object ids) => WriteIds(nameof(GetSolidList), ref ids);
 
-    public void GetSelectedNodes(ref object ids, object nIsSorted)
+    public void GetSelectedNodes(ref object ids, object nIsSorted) => WriteSelectedIds(nameof(GetSelectedNodes), ref ids, nIsSorted);
+    public void GetSelectedBeams(ref object ids, object nIsSorted) => WriteSelectedIds(nameof(GetSelectedBeams), ref ids, nIsSorted);
+    public void GetSelectedPlates(ref object ids, object nIsSorted) => WriteSelectedIds(nameof(GetSelectedPlates), ref ids, nIsSorted);
+
+    private void WriteSelectedIds(string operation, ref object ids, object nIsSorted)
     {
         if (nIsSorted is not int flag || flag != 0)
             throw new InvalidOperationException("Expected the Int32 selection-order flag zero.");
-        WriteIds(nameof(GetSelectedNodes), ref ids);
+        WriteIds(operation, ref ids);
     }
 
     public void GetNodeCoordinates(int nId, ref object x, ref object y, ref object z)
@@ -103,6 +109,16 @@ internal static class GeometryInventoryFixture
         if (!ReferenceEquals(geometry.GetNode(3, supplied), supplied[0]) ||
             !mapped.SetEquals(new Node[] { supplied[0], null }))
             throw new InvalidOperationException("Installed Geometry supplied-node identity changed.");
+        if (!geometry.GetSelectedBeamsIds().SetEquals(expected) ||
+            !geometry.GetSelectedPlatesIds().SetEquals(expected) ||
+            !geometry.GetSelectedBeamsListAsync().GetAwaiter().GetResult().SequenceEqual(expected) ||
+            !geometry.GetSelectedPlatesListAsync().GetAwaiter().GetResult().SequenceEqual(expected))
+            throw new InvalidOperationException("Installed member or plate selection changed.");
+        var beam = new Beam { Id = 3 };
+        var beams = geometry.GetSelectedBeamsExt(new[] { beam, new Beam { Id = 3 } });
+        if (beams.Count != 2 || !beams.Contains(null) ||
+            !ReferenceEquals(beams.Single(member => member is not null), beam))
+            throw new InvalidOperationException("Installed supplied-beam selection changed.");
         if (native.Threads.Any(thread => thread != Environment.CurrentManagedThreadId))
             throw new InvalidOperationException("Installed Geometry reads left the wrapper's owner thread.");
     }

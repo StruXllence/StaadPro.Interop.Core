@@ -301,6 +301,114 @@ namespace StaadPro.Interop.Core.Adapters.Models
             Wrapper.UseGeometryBinding(this, wrapper => GeometryReader.ReadSuppliedSelection((object)wrapper.RawGeometry,
                 GeometryReader.Entity.SelectedBeams, fromModelBeams, nameof(fromModelBeams)));
 
+        /// <summary>Reads a detached analytical member with its native start and end nodes.</summary>
+        /// <param name="beamNumber">Positive analytical member number. Zero represents no member and skips native calls.</param>
+        /// <returns>A new beam with the requested ID and two detached endpoints, or <see langword="null"/> for zero.</returns>
+        /// <remarks>
+        /// <para>Reads member incidence and then the two finite global XYZ positions in OpenSTAAD length units. Preserves native start and end order. Beta angle and design metadata are not queried.</para>
+        /// <para>OpenSTAAD must report integral zero success from <c>GetMemberIncidence</c>. Failed status and malformed outputs stop the read without exposing a partial native result.</para>
+        /// <para>Runs under one current Geometry binding operation on the wrapper's constructing COM thread. Reacquire Geometry after refresh. The call observes the model without changing it. Coordinate external edits with the owning thread.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="beamNumber"/> is negative.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, native incidence failed, or returned values are unwritten or invalid.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// var beam = wrapper.Geometry.GetBeam(17);
+        /// if (beam != null) Console.WriteLine(beam.StartNode.Id);
+        /// </code></example>
+        public Beam GetBeam(int beamNumber) =>
+            Wrapper.UseGeometryBinding(this, wrapper => GeometryReader.ReadBeam((object)wrapper.RawGeometry, beamNumber));
+
+        /// <summary>Reads member incidence and resolves its ends against supplied nodes.</summary>
+        /// <param name="bId">Positive analytical member number. Zero returns null without reading incidence or enumerating the supplied nodes.</param>
+        /// <param name="fromModelNodes">Non-null node sequence for a positive member number. The first matching object for each node ID is used.</param>
+        /// <returns>A new beam with the requested ID and the matching supplied references. A missing endpoint is null. A zero member number returns null.</returns>
+        /// <remarks>
+        /// <para>Reads only native member incidence. Enumerates supplied nodes at most once and stops when both endpoints are found. It performs no coordinate queries or conversion and leaves supplied objects unchanged. Beta and design metadata are not queried.</para>
+        /// <para>OpenSTAAD must report integral zero success from <c>GetMemberIncidence</c>. Failed status and malformed outputs stop the read without exposing a partial native result.</para>
+        /// <para>Runs under one current Geometry binding operation on the wrapper's constructing COM thread. Reacquire Geometry after refresh. The call observes the model without changing it. Coordinate external edits with the owning thread.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="bId"/> is negative.</exception>
+        /// <exception cref="ArgumentNullException">A required supplied sequence is null.</exception>
+        /// <exception cref="ArgumentException">An inspected supplied node is null.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, native incidence failed, or returned values are unwritten or invalid.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// var nodes = new[] { new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0) };
+        /// var beam = wrapper.Geometry.GetBeam(17, nodes);
+        /// if (beam?.StartNode != null) Console.WriteLine(beam.StartNode.Id);
+        /// </code></example>
+        public Beam GetBeam(int bId, IEnumerable<Node> fromModelNodes) =>
+            Wrapper.UseGeometryBinding(this, wrapper => GeometryReader.ReadBeam((object)wrapper.RawGeometry, bId, fromModelNodes));
+
+        /// <summary>Reads a detached plate and its native incidence coordinates.</summary>
+        /// <param name="pId">Positive analytical plate element number.</param>
+        /// <returns>A new plate with the requested ID and detached A/B/C/D nodes. D is null for an absent fourth node. A repeated D shares the corresponding earlier node reference.</returns>
+        /// <remarks>
+        /// <para>The first three node IDs must be distinct and positive. D can be zero or a positive ID, including a repeated closing node. Queries each unique positive node ID once. Coordinates are written finite global XYZ values in OpenSTAAD length units.</para>
+        /// <para>OpenSTAAD must report integral zero success from <c>GetPlateIncidence</c>. Failed status and malformed outputs stop the read without exposing a partial native result.</para>
+        /// <para>Runs under one current Geometry binding operation on the wrapper's constructing COM thread. Reacquire Geometry after refresh. The call observes the model without changing it. Coordinate external edits with the owning thread.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="pId"/> is nonpositive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, native incidence failed, or returned values are unwritten or invalid.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// var plate = wrapper.Geometry.GetPlate(17);
+        /// Console.WriteLine(plate.A.Id);
+        /// </code></example>
+        public Plate GetPlate(int pId) =>
+            Wrapper.UseGeometryBinding(this, wrapper => GeometryReader.ReadPlate((object)wrapper.RawGeometry, pId));
+
+        /// <summary>Reads native plate incidence and resolves its corners against supplied nodes.</summary>
+        /// <param name="pId">Positive analytical plate element number.</param>
+        /// <param name="fromModelNodes">Non-null node sequence. The first matching object for each positive incidence ID is used.</param>
+        /// <returns>A new plate with matching supplied references in A/B/C/D order. Unmatched nodes and a zero D use null. A repeated D shares its earlier matching reference.</returns>
+        /// <remarks>
+        /// <para>Reads and validates native incidence before matching supplied nodes. Enumerates the sequence at most once and stops once all required IDs match. No coordinate read or conversion occurs. Supplied nodes are left unchanged.</para>
+        /// <para>OpenSTAAD must report integral zero success from <c>GetPlateIncidence</c>. Failed status and malformed outputs stop the read without exposing a partial native result.</para>
+        /// <para>Runs under one current Geometry binding operation on the wrapper's constructing COM thread. Reacquire Geometry after refresh. The call observes the model without changing it. Coordinate external edits with the owning thread.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="pId"/> is nonpositive.</exception>
+        /// <exception cref="ArgumentNullException">A required supplied sequence is null.</exception>
+        /// <exception cref="ArgumentException">An inspected supplied node is null.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, native incidence failed, or returned values are unwritten or invalid.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// var nodes = new[] { new StaadPro.Interop.Core.Entities.Node(11, 0, 0, 0) };
+        /// var plate = wrapper.Geometry.GetPlate(17, nodes);
+        /// if (plate.A != null) Console.WriteLine(plate.A.Id);
+        /// </code></example>
+        public Plate GetPlate(int pId, IEnumerable<Node> fromModelNodes) =>
+            Wrapper.UseGeometryBinding(this, wrapper => GeometryReader.ReadPlate((object)wrapper.RawGeometry, pId, fromModelNodes));
+
+        /// <summary>Reads an eager, ordered snapshot of the unique native plate corners.</summary>
+        /// <param name="pId">Positive analytical plate element number.</param>
+        /// <returns>A detached sequence of three or four nodes in first-seen A/B/C/D order. A zero or repeated D adds no entry. Re-enumerating the result makes no native calls.</returns>
+        /// <remarks>
+        /// <para>Requires three distinct positive A/B/C IDs. Each distinct corner ID is queried once and must yield finite global XYZ coordinates in OpenSTAAD length units.</para>
+        /// <para>OpenSTAAD must report integral zero success from <c>GetPlateIncidence</c>. Failed status and malformed outputs stop the read without exposing a partial native result.</para>
+        /// <para>Runs under one current Geometry binding operation on the wrapper's constructing COM thread. Reacquire Geometry after refresh. The call observes the model without changing it. Coordinate external edits with the owning thread.</para>
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="pId"/> is nonpositive.</exception>
+        /// <exception cref="ObjectDisposedException">The owning wrapper is disposed.</exception>
+        /// <exception cref="InvalidOperationException">The binding or calling context is invalid, native incidence failed, or returned values are unwritten or invalid.</exception>
+        /// <exception cref="System.Runtime.InteropServices.COMException">The original native failure and HRESULT propagate.</exception>
+        /// <exception cref="Microsoft.CSharp.RuntimeBinder.RuntimeBinderException">The native binding lacks a required signature.</exception>
+        /// <example><code>
+        /// foreach (var node in wrapper.Geometry.GetPlateIncidence(17))
+        ///     Console.WriteLine($"{node.Id}: ({node.X}, {node.Y}, {node.Z})");
+        /// </code></example>
+        public IEnumerable<Node> GetPlateIncidence(int pId) =>
+            Wrapper.UseGeometryBinding(this, wrapper => GeometryReader.ReadPlateCorners((object)wrapper.RawGeometry, pId));
+
         private Task<int[]> ReadSelectedIdsTask(GeometryReader.Entity entity)
         {
             try

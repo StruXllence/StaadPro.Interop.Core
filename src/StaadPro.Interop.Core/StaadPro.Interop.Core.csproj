@@ -11,13 +11,13 @@
     <PackageId>StaadPro.Interop.Core</PackageId>
     <Title>StaadPro.Interop.Core - OpenSTAAD C# API for STAAD.Pro (.NET 9)</Title>
     <Version>1.0.0</Version>
-    <ReleaseDocumentationVersion>1.0.0-preview.20261128.2</ReleaseDocumentationVersion>
+    <ReleaseDocumentationVersion>1.0.0-preview.20261128.3</ReleaseDocumentationVersion>
     <PackageVersion>$(ReleaseDocumentationVersion)</PackageVersion>
     <Authors>Srinivasa Rao Masanam</Authors>
     <Company>StruXllence</Company>
     <Copyright>Copyright (c) 2026 StruXllence</Copyright>
-    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro. Geometry provides model ID inventories, global node coordinates and node, member and plate selection queries; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction, static-check and plate-center moment/surface-stress composite, corner-force and cut-line resultant queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
-    <PackageReleaseNotes>Ported five Geometry operations for selected beam and plate ID sets, ordered task arrays, and supplied beam matching. Geometry provides fifteen contracts with matching XML IntelliSense.</PackageReleaseNotes>
+    <Description>Strongly typed C# OpenSTAAD wrapper for Bentley STAAD.Pro automation on Windows .NET 9 (.NET Core). Provides session attachment/acquisition with process and model identity checks, metadata and model/path/process observations, and model/application operations with XML IntelliSense. This preview supplies 53 common Root contracts and three optional Root operations and wrapper foundations. Requires installed, licensed STAAD.Pro. Geometry provides model ID inventories, global node coordinates, member and plate incidence, and node, member and plate selection queries; Load metadata/envelope/ordinary-combination definitions and Output availability/member-end force/buckling/steel-design/support-reaction, static-check and plate-center moment/surface-stress composite, corner-force and cut-line resultant queries are implemented; other domain adapters are binding-only placeholders. Developer resources include Marketplace installation links for the optional StruXllence VS Code dark and light themes in the packaged README.</Description>
+    <PackageReleaseNotes>Ported five Geometry overloads for beam and plate hydration and ordered plate incidence. Qualified native IDs and coordinates and supported caller-supplied node references. Geometry provides twenty contracts with matching XML IntelliSense.</PackageReleaseNotes>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageTags>staad;staadpro;staad-pro;openstaad;openstaad-api;bentley;csharp;dotnet;dotnet-core;dotnet9;windows;com-interop;structural-engineering;engineering-automation;session-management;model-metadata;intellisense;struxllence</PackageTags>
     <RepositoryType>git</RepositoryType>
@@ -41,6 +41,7 @@
     <None Include="../../docs/Geometry-Inventories.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Geometry-Node-Selection.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Geometry-Beam-Plate-Selection.md" Pack="true" PackagePath="docs/" />
+    <None Include="../../docs/Geometry-Incidence.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Load-Definitions.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Buckling-Results.md" Pack="true" PackagePath="docs/" />
     <None Include="../../docs/Steel-Design-Queries.md" Pack="true" PackagePath="docs/" />

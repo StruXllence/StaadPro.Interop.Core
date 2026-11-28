@@ -7,5 +7,6 @@
     <Compile Include="../../eng/Fixtures/PlateCutLineFixture.cs" Link="Fixtures/PlateCutLineFixture.cs" />
     <Compile Include="../../eng/Fixtures/OutputStressOffsetFixture.cs" Link="Fixtures/OutputStressOffsetFixture.cs" />
     <Compile Include="../../eng/Fixtures/GeometryInventoryFixture.cs" Link="Fixtures/GeometryInventoryFixture.cs" />
+    <Compile Include="../../eng/Fixtures/GeometryIncidenceFixture.cs" Link="Fixtures/GeometryIncidenceFixture.cs" />
   </ItemGroup>
 </Project>

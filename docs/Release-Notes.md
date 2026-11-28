@@ -1,5 +1,11 @@
 # Release notes
 
+## 1.0.0-preview.20261128.3 - 28 November 2026
+
+Added `GetBeam(int beamNumber)` and `GetPlate(int pId)` to read qualified native incidence and hydrate global node coordinates. Added `GetBeam(int bId, IEnumerable<Node> fromModelNodes)` and `GetPlate(int pId, IEnumerable<Node> fromModelNodes)` to match incident node IDs to caller-supplied references. A node missing from the supplied collection leaves its matching member end or plate corner empty.
+
+Added `GetPlateIncidence(int pId)` for a distinct node snapshot in native incidence order. All five queries run on the wrapper owning thread and check the incidence status and output slots before publishing results. Geometry provides twenty operations with matching XML IntelliSense on the interface and adapter. [Member and plate incidence guide](Geometry-Incidence.md).
+
 ## 1.0.0-preview.20261128.2 - 28 November 2026
 
 Added `GetSelectedBeamsIds()` and `GetSelectedPlatesIds()` for validated ID sets and `GetSelectedBeamsListAsync()` and `GetSelectedPlatesListAsync()` for ordered ID arrays. The task-shaped calls complete native work on the wrapper's owning COM thread.

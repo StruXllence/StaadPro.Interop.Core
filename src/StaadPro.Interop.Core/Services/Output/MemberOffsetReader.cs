@@ -2,6 +2,7 @@ using System;
 using StaadPro.Interop.Core.Entities;
 using StaadPro.Interop.Core.Enums;
 using StaadPro.Interop.Core.Models;
+using StaadPro.Interop.Core.Services.Geometry;
 using StaadPro.Interop.Core.Services.Interop;
 
 namespace StaadPro.Interop.Core.Services.Output
@@ -35,16 +36,7 @@ namespace StaadPro.Interop.Core.Services.Output
             if (geometry == null)
                 throw new InvalidOperationException("Member incidence requires the current Geometry binding.");
 
-            object start = int.MinValue, end = int.MinValue;
-            object status = ((dynamic)geometry).GetMemberIncidence(beamId, ref start, ref end);
-            int code = NativeValues.ReadInt32(status, "member-incidence status");
-            if (code != 0)
-                throw new InvalidOperationException($"OpenSTAAD GetMemberIncidence failed with status {code} for member {beamId}.");
-
-            int startId = NativeValues.ReadInt32(start, "member start node ID");
-            int endId = NativeValues.ReadInt32(end, "member end node ID");
-            if (startId <= 0 || endId <= 0 || startId == endId)
-                throw new InvalidOperationException("Native member incidence must supply two distinct positive node IDs.");
+            GeometryReader.ReadMemberIncidence(geometry, beamId, out int startId, out int endId);
 
             int jointId = memberEnd == MemberEnd.Start ? startId : endId;
             object x = double.NaN, y = double.NaN, z = double.NaN;

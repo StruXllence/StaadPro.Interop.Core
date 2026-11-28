@@ -54,6 +54,11 @@ namespace StaadPro.Interop.Core.Tests.Adapters
             public Task<int[]> GetSelectedBeamsListAsync() => throw new NotSupportedException();
             public Task<int[]> GetSelectedPlatesListAsync() => throw new NotSupportedException();
             public HashSet<StaadPro.Interop.Core.Entities.Beam> GetSelectedBeamsExt(IEnumerable<StaadPro.Interop.Core.Entities.Beam> fromModelBeams) => throw new NotSupportedException();
+            public StaadPro.Interop.Core.Entities.Beam GetBeam(int beamNumber) => throw new NotSupportedException();
+            public StaadPro.Interop.Core.Entities.Beam GetBeam(int bId, IEnumerable<StaadPro.Interop.Core.Entities.Node> fromModelNodes) => throw new NotSupportedException();
+            public StaadPro.Interop.Core.Entities.Plate GetPlate(int pId) => throw new NotSupportedException();
+            public StaadPro.Interop.Core.Entities.Plate GetPlate(int pId, IEnumerable<StaadPro.Interop.Core.Entities.Node> fromModelNodes) => throw new NotSupportedException();
+            public IEnumerable<StaadPro.Interop.Core.Entities.Node> GetPlateIncidence(int pId) => throw new NotSupportedException();
         }
         [TestCaseSource(nameof(Operations))]
         public void IdQueriesHydrateDetachedMetadataCopyForcesAndKeepCallerThread(string op)
